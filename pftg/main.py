@@ -1,36 +1,92 @@
 import pygame
+
+pygame.init()
+
+import os
 import sys
-from scripts import interactions
+from scripts import interactions, battle_system
 
 # --- 기본 설정 ---
 WIDTH, HEIGHT = 800, 600
 FPS = 60
 PLAYER_SPEED = 5
-pftg_icon = pygame.image.load("resources\\pftg_icon.png")
-game_state = {"state": "start"}  # start, town, battle
+pftg_icon = pygame.image.load("resources\\png\\pftg_icon.png")
+game_state = {
+    "state": "start",  # start, town, battle등등
+    "player_name": "Hero",
+    "gold": 100,  # ✅ 초기 골드 추가
+    "message": "",
+    "message_timer": 0
+}
 blink_timer = 0
 
+# --- 폰트 경로 설정 ---
+FONT_PATH = os.path.join("resources", "font", "DOSGothic.ttf")
+FONT_MAIN = pygame.font.Font(FONT_PATH, 60)
+FONT_SMALL = pygame.font.Font(FONT_PATH, 28)
+
+# --- 전투 시스템 폰트 공유 설정 ---
+battle_system.FONT_PATH = FONT_PATH
+battle_system.FONT_MAIN = pygame.font.Font(FONT_PATH, 32)
+battle_system.FONT_SMALL = pygame.font.Font(FONT_PATH, 24)
+
 # --- 초기화 ---
-pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("PFTG")
+pygame.display.set_icon(pftg_icon)
 clock = pygame.time.Clock()
-font = pygame.font.Font(None, 60)
 
 # --- 색상 정의 ---
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
+BLACK = (0, 0, 0)
 
 # --- 플레이어 클래스 ---
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.Surface((40, 40))
-        self.image.fill(GREEN)
-        self.rect = self.image.get_rect(center=(x, y))
+
+        # 히트박스는 40x10
+        self.hitbox = pygame.Rect(0, 0, 40, 10)
+        self.hitbox.center = (x, y)
+        self.rect = self.hitbox.copy()  # 충돌 판정용
         self.pos = pygame.Vector2(x, y)
 
-    def handle_input(self, buildings_group):
+        # 스프라이트 이미지 로드 (3프레임)
+        try:
+            sprite_sheet = pygame.image.load("resources/png/hero_moving.png").convert_alpha()
+            frame_width = sprite_sheet.get_width() // 3
+            frame_height = sprite_sheet.get_height()
+            
+            # 가로를 40으로 고정, 세로는 원본 비율 유지
+            target_width = 40
+            aspect_ratio = frame_height / frame_width
+            target_height = int(target_width * aspect_ratio)
+            
+            self.frames = []
+            for i in range(3):
+                frame = sprite_sheet.subsurface((i * frame_width, 0, frame_width, frame_height))
+                scaled_frame = pygame.transform.scale(frame, (target_width, target_height))
+                self.frames.append(scaled_frame)
+            
+            self.display_image = self.frames[0]
+            self.image_height = target_height
+        except:
+            # 이미지 로드 실패 시 기본 초록 박스
+            default_surface = pygame.Surface((40, 40))
+            default_surface.fill(GREEN)
+            self.frames = [default_surface, default_surface, default_surface]
+            self.display_image = self.frames[0]
+            self.image_height = 40
+        
+        self.current_frame = 0
+        self.animation_timer = 0
+        self.animation_speed = 0.15  # 프레임 전환 속도 (초)
+        
+        self.facing_right = True  # 오른쪽을 보고 있는지
+        self.is_moving = False
+
+    def handle_input(self, buildings_group, dt):
         keys = pygame.key.get_pressed()
         direction = pygame.Vector2(0, 0)
 
@@ -41,8 +97,10 @@ class Player(pygame.sprite.Sprite):
             direction.y += 1
         if keys[pygame.K_a]:
             direction.x -= 1
+            self.facing_right = False  # 왼쪽으로 이동 시 방향 전환
         if keys[pygame.K_d]:
             direction.x += 1
+            self.facing_right = True  # 오른쪽으로 이동 시 방향 전환
 
         if direction.length_squared() > 0:
             direction = direction.normalize()
@@ -60,10 +118,38 @@ class Player(pygame.sprite.Sprite):
             if not collision:
                 self.pos = new_pos
                 self.rect.center = self.pos
+                self.hitbox.center = self.pos
+                self.is_moving = True
+                
+                # 애니메이션 업데이트
+                self.animation_timer += dt
+                if self.animation_timer >= self.animation_speed:
+                    self.animation_timer = 0
+                    # 2, 3번 프레임만 번갈아가며 표시
+                    if self.current_frame == 1:
+                        self.current_frame = 2
+                    else:
+                        self.current_frame = 1
+            else:
+                self.is_moving = False
+        else:
+            self.is_moving = False
+            self.current_frame = 0  # 정지 시 첫 번째 프레임
+        
+        # 이미지 업데이트
+        self.update_image()
+    
+    def update_image(self):
+        """현재 프레임과 방향에 따라 이미지 업데이트"""
+        self.display_image = self.frames[self.current_frame]
+        
+        # 왼쪽을 보고 있으면 이미지 반전
+        if not self.facing_right:
+            self.display_image = pygame.transform.flip(self.display_image, True, False)
 
 # --- 건물 클래스 ---
 class Building(pygame.sprite.Sprite):
-    def __init__(self, name, x, y, width, height, image=None,  on_interact=None):
+    def __init__(self, name, x, y, width, height, image=None, on_interact=None):
         super().__init__()
         self.name = name
         self.on_interact = on_interact
@@ -73,7 +159,7 @@ class Building(pygame.sprite.Sprite):
             self.image = pygame.transform.scale(pygame.image.load(image), (width, height))
         else:
             self.image = pygame.Surface((width, height))
-            self.image.fill((150, 150, 150))  # 기본 색상
+            self.image.fill((150, 150, 150))
 
         self.rect = self.image.get_rect(topleft=(x, y))
 
@@ -86,9 +172,9 @@ class Building(pygame.sprite.Sprite):
 
     def interact(self):
         if self.on_interact:
-            self.on_interact()  # ✅ 지정된 함수 실행
+            self.on_interact()
         else:
-            print(f"{self.name}과 상호작용 중...")  # 기본 동작
+            print(f"{self.name}과 상호작용 중...")
 
 # --- 그룹 생성 ---
 all_sprites = pygame.sprite.Group()
@@ -98,22 +184,34 @@ buildings = pygame.sprite.Group()
 player = Player(400, 300)
 all_sprites.add(player)
 
+if battle_system.battle_player is None:
+    battle_system.battle_player = battle_system.Entity(game_state["player_name"], hp=50, speed=10)
+    battle_system.battle_player.max_hp = 50
+    battle_system.battle_player.image = pygame.transform.scale(pygame.image.load("resources/png/hero.png").convert_alpha(), (160, 160))
+
 # --- 예시 건물 생성 ---
-house = Building("작은 집", 500, 300, 100, 100)
+house = Building("집", 100, -100, 125, 125, "resources\\png\\building\\pretty_house.png",
+    on_interact=lambda: interactions.home_interact(game_state)
+)
 buildings.add(house)
 all_sprites.add(house)
 
-house2 = Building("큰 집", 100, 300, 150, 150)
-buildings.add(house2)
-all_sprites.add(house2)
+shop = Building(
+    "상점", 300, -100, 125, 125, "resources\\png\\building\\shop.png",
+    on_interact=lambda: interactions.enter_shop(game_state)
+)
+buildings.add(shop)
+all_sprites.add(shop)
 
-house3 = Building("이쁜 집", 200, -100, 125, 125, "resources\\pretty_house.png")
-buildings.add(house3)
-all_sprites.add(house3)
+forge = Building("대장간", 500, -100, 175, 125)
+buildings.add(forge)
+all_sprites.add(forge)
 
 dungeon = Building(
-    "던전", 500, 600, 120, 200, "resources\\dungeon.png",
-    on_interact=lambda: interactions.enter_dungeon(game_state)
+    "던전", 600, 150, 120, 200, "resources\\png\\building\\dungeon.png",
+    on_interact=lambda: interactions.enter_dungeon(
+        battle_system.start_battle, game_state, game_state["player_name"]
+    )
 )
 buildings.add(dungeon)
 all_sprites.add(dungeon)
@@ -124,34 +222,71 @@ camera_offset = pygame.Vector2(0, 0)
 # --- E 키 상호작용 상태 변수 ---
 e_key_pressed = False
 
+# --- 이름 입력 변수 초기화 ---
+player_name_input = ""
+
 # --- 메인 게임 루프 ---
 while True:
-    dt = clock.tick(FPS) / 1000  # 프레임 시간 계산
+    dt = clock.tick(FPS) / 1000
+    events = pygame.event.get()
 
     # --- 이벤트 처리 ---
-    for event in pygame.event.get():
+    for event in events:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        elif event.type == pygame.KEYDOWN:
+            # 이름 입력 상태일 때만 글자 입력 받기
+            if game_state["state"] == "name_input":
+                if event.key == pygame.K_RETURN:
+                    game_state["player_name"] = player_name_input if player_name_input else "Hero"
+                    # ✅ 플레이어 이름 업데이트
+                    if battle_system.battle_player:
+                        battle_system.battle_player.name = game_state["player_name"]
+                    game_state["state"] = "town"
+                elif event.key == pygame.K_BACKSPACE:
+                    player_name_input = player_name_input[:-1]
+                else:
+                    if len(player_name_input) < 10 and event.unicode.isprintable():
+                        player_name_input += event.unicode
 
     match game_state["state"]:
         # 시작 화면
         case "start":
             keys = pygame.key.get_pressed()
             if keys[pygame.K_RETURN]:
-                game_state["state"] = "town"
+                game_state["state"] = "name_input"
+                player_name_input = ""
 
-            screen.fill((0, 0, 0))
+            # 배경 이미지 표시
+            try:
+                start_bg = pygame.image.load("resources/png/start_screen.png")
+                start_bg = pygame.transform.scale(start_bg, (WIDTH, HEIGHT))
+                screen.blit(start_bg, (0, 0))
+            except:
+                screen.fill((0, 0, 0))
+    
             blink_timer += dt
-            if int(blink_timer * 2) % 2 == 0:   # 0.5초마다 깜빡임
-                text = font.render("Press Enter to Start", True, (255, 255, 255))
-                rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+            if int(blink_timer * 2) % 2 == 0:
+                text = FONT_MAIN.render("Press Enter to Start", True, (255, 255, 255))
+                rect = text.get_rect(center=(WIDTH // 2, HEIGHT * 0.9))
                 screen.blit(text, rect)
+
+        case "name_input":
+            screen.fill((0, 0, 0))
+            title = FONT_MAIN.render("플레이어 이름을 입력하세요", True, (255, 255, 255))
+            screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 3))
+            
+            input_surface = FONT_MAIN.render(player_name_input + "|", True, (255, 255, 0))
+            screen.blit(input_surface, (WIDTH // 2 - input_surface.get_width() // 2, HEIGHT // 2))
+
+            notice_text = FONT_SMALL.render("* 영어만 입력 가능 / 최대 10글자", True, (180, 180, 180))
+            screen.blit(notice_text, (WIDTH // 2 - notice_text.get_width() // 2, HEIGHT // 2 + 100))
 
         # 마을 화면
         case "town":
             # --- 입력 처리 및 이동 ---
-            player.handle_input(buildings)
+            player.handle_input(buildings, dt)
 
             # --- 카메라: 플레이어를 화면 중앙에 유지 ---
             camera_offset.x = player.rect.centerx - WIDTH // 2
@@ -180,20 +315,67 @@ while True:
                 pygame.draw.rect(screen, (255, 0, 0), debug_rect, 1)
 
             # --- 플레이어 그리기 (항상 화면 중앙에 위치) ---
-            player_screen_pos = (WIDTH // 2 - player.rect.width // 2, HEIGHT // 2 - player.rect.height // 2)
-            screen.blit(player.image, player_screen_pos)
+            image_bottom_y = HEIGHT // 2 + player.hitbox.height // 2
+            image_top_y = image_bottom_y - player.image_height
+            image_rect = player.display_image.get_rect(centerx=WIDTH // 2, top=image_top_y)
+            screen.blit(player.display_image, image_rect)
 
-        # 전투 화면
+            # 히트박스 시각화 (초록색 테두리)
+            hitbox_screen = pygame.Rect(
+                WIDTH // 2 - player.hitbox.width // 2,
+                HEIGHT // 2 - player.hitbox.height // 2,
+                player.hitbox.width,
+                player.hitbox.height
+            )
+            pygame.draw.rect(screen, (0, 255, 0), hitbox_screen, 2)
+
+            # --- 마을 체력 표시 (텍스트 + 체력바) ---
+            if battle_system.battle_player:
+                bp = battle_system.battle_player
+                # 텍스트 표시
+                hp_text = FONT_SMALL.render(
+                    f"{bp.name} HP: {bp.hp}/{bp.max_hp}", True, BLACK
+                )
+                screen.blit(hp_text, (20, 20))
+
+                # 체력바 배경
+                bar_x, bar_y, bar_width, bar_height = 20, 50, 200, 20
+                pygame.draw.rect(screen, (80, 80, 80), (bar_x, bar_y, bar_width, bar_height))
+
+                # 체력바 채우기
+                if bp.max_hp > 0:
+                    hp_ratio = max(0, bp.hp) / bp.max_hp
+                else:
+                    hp_ratio = 0
+                pygame.draw.rect(
+                    screen,
+                    (200, 50, 50),
+                    (bar_x, bar_y, int(bar_width * hp_ratio), bar_height)
+                )
+
+            # 메시지가 있으면 하단에 출력
+            if game_state.get("message"):
+                msg_text = FONT_SMALL.render(game_state["message"], True, (100, 0, 0))
+                msg_rect = msg_text.get_rect(center=(WIDTH // 2, HEIGHT - 40))
+                screen.blit(msg_text, msg_rect)
+
+                game_state["message_timer"] += dt
+                if game_state["message_timer"] > 3:
+                    game_state["message"] = ""
+                    game_state["message_timer"] = 0
+
+        case "shop":
+            screen.fill((100, 50, 50))
+            text = FONT_SMALL.render("buy scene", True, WHITE)
+            rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+            screen.blit(text, rect)
+
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_ESCAPE]:
+                game_state["state"] = "town"
+        
         case "battle":
-                screen.fill((50, 50, 100))
-                text = font.render("fight scene", True, (255, 255, 255))
-                rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
-                screen.blit(text, rect)
-
-                keys = pygame.key.get_pressed()
-                if keys[pygame.K_ESCAPE]:  # ESC로 마을 복귀
-                    game_state["state"] = "town"
+            battle_system.update_battle(screen, FONT_SMALL, WIDTH, HEIGHT, game_state, events)
 
     # --- 화면 업데이트 ---
     pygame.display.flip()
-    pygame.display.set_icon(pftg_icon)
