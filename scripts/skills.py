@@ -24,9 +24,9 @@ STRUGGLE = Skill(
 SWING = Skill(
     id_="swing",
     name="휘두르기",
-    power=10,
+    power=100,
     priority=10,
-    durability_cost=10,
+    durability_cost=0,
     description="무기를 휘둘러 적을 공격한다"
 )
 

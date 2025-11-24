@@ -187,7 +187,7 @@ all_sprites.add(player)
 
 # 전투 시스템 플레이어 초기화 (기본 무기 장착)
 if battle_system.battle_player is None:
-    battle_system.battle_player = battle_system.Entity(
+    battle_system.battle_player = battle_system.Player(
         game_state["player_name"], 
         hp=50, 
         speed=10
