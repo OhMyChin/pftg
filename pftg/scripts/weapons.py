@@ -1,4 +1,3 @@
-# scripts/weapons.py
 from scripts.skills import ALL_SKILLS
 
 class Weapon:

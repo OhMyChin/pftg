@@ -1,25 +1,12 @@
-# scripts/skills.py
-
 class Skill:
     """스킬 기본 클래스"""
     def __init__(self, id_, name, power, priority=0, durability_cost=0, description=""):
-        self.id = id_
-        self.name = name
-        self.power = power
-        self.priority = priority
+        self.id = id_ # 스킬 ID
+        self.name = name # 스킬 이름
+        self.power = power # 스킬 위력
+        self.priority = priority # 스킬 우선 순위
         self.durability_cost = durability_cost  # 내구도 소모량
-        self.description = description
-
-# ==================== 기본 무기 스킬 ====================
-
-SWING = Skill(
-    id_="swing",
-    name="휘두르기",
-    power=10,
-    priority=10,
-    durability_cost=10,
-    description="무기를 휘둘러 적을 공격한다"
-)
+        self.description = description # 스킬 설명
 
 # ==================== 맨손 스킬 ====================
 
@@ -30,6 +17,17 @@ STRUGGLE = Skill(
     priority=10,
     durability_cost=0,
     description="무기가 없을 때 필사적으로 공격한다"
+)
+
+# ==================== 무기 스킬 ====================
+
+SWING = Skill(
+    id_="swing",
+    name="휘두르기",
+    power=10,
+    priority=10,
+    durability_cost=10,
+    description="무기를 휘둘러 적을 공격한다"
 )
 
 # ==================== 몬스터 전용 스킬 ====================

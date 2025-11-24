@@ -1,4 +1,3 @@
-# scripts/battle_system.py
 import pygame
 import random
 from scripts.weapons import create_weapon
