@@ -5,6 +5,7 @@ pygame.init()
 import os
 import sys
 from scripts import interactions, battle_system
+from scripts.weapons import create_weapon
 
 # --- 기본 설정 ---
 WIDTH, HEIGHT = 800, 600
@@ -14,7 +15,7 @@ pftg_icon = pygame.image.load("resources\\png\\pftg_icon.png")
 game_state = {
     "state": "start",  # start, town, battle등등
     "player_name": "Hero",
-    "gold": 100,  # ✅ 초기 골드 추가
+    "gold": 200,  # ✅ 초기 골드 추가
     "message": "",
     "message_timer": 0
 }
@@ -184,10 +185,20 @@ buildings = pygame.sprite.Group()
 player = Player(400, 300)
 all_sprites.add(player)
 
+# ✅ 전투 시스템 플레이어 초기화 (기본 무기 장착)
 if battle_system.battle_player is None:
-    battle_system.battle_player = battle_system.Entity(game_state["player_name"], hp=50, speed=10)
+    battle_system.battle_player = battle_system.Entity(
+        game_state["player_name"], 
+        hp=50, 
+        speed=10
+    )
     battle_system.battle_player.max_hp = 50
-    battle_system.battle_player.image = pygame.transform.scale(pygame.image.load("resources/png/hero.png").convert_alpha(), (160, 160))
+    battle_system.battle_player.image = pygame.transform.scale(
+        pygame.image.load("resources/png/hero.png").convert_alpha(), 
+        (160, 160)
+    )
+    # 기본 무기 장착
+    battle_system.battle_player.equip_weapon(create_weapon("wooden_stick"))
 
 # --- 예시 건물 생성 ---
 house = Building("집", 100, -100, 125, 125, "resources\\png\\building\\pretty_house.png",
@@ -352,6 +363,14 @@ while True:
                     (200, 50, 50),
                     (bar_x, bar_y, int(bar_width * hp_ratio), bar_height)
                 )
+
+                # ✅ 무기 정보 표시
+                if bp.weapon:
+                    weapon_text = FONT_SMALL.render(
+                        f"무기: {bp.weapon.name} [{bp.weapon.durability}/{bp.weapon.max_durability}]",
+                        True, (100, 50, 0)
+                    )
+                    screen.blit(weapon_text, (20, 80))
 
             # 메시지가 있으면 하단에 출력
             if game_state.get("message"):
