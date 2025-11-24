@@ -15,7 +15,7 @@ pftg_icon = pygame.image.load("resources\\png\\pftg_icon.png")
 game_state = {
     "state": "start",  # start, town, battle등등
     "player_name": "Hero",
-    "gold": 100,  # ✅ 초기 골드 추가
+    "gold": 100,  # 초기 골드 추가
     "message": "",
     "message_timer": 0
 }
@@ -185,7 +185,7 @@ buildings = pygame.sprite.Group()
 player = Player(400, 300)
 all_sprites.add(player)
 
-# ✅ 전투 시스템 플레이어 초기화 (기본 무기 장착)
+# 전투 시스템 플레이어 초기화 (기본 무기 장착)
 if battle_system.battle_player is None:
     battle_system.battle_player = battle_system.Entity(
         game_state["player_name"], 
@@ -251,7 +251,7 @@ while True:
             if game_state["state"] == "name_input":
                 if event.key == pygame.K_RETURN:
                     game_state["player_name"] = player_name_input if player_name_input else "Hero"
-                    # ✅ 플레이어 이름 업데이트
+                    # 플레이어 이름 업데이트
                     if battle_system.battle_player:
                         battle_system.battle_player.name = game_state["player_name"]
                     game_state["state"] = "town"
@@ -364,7 +364,7 @@ while True:
                     (bar_x, bar_y, int(bar_width * hp_ratio), bar_height)
                 )
 
-                # ✅ 무기 정보 표시
+                # 무기 정보 표시
                 if bp.weapon:
                     weapon_text = FONT_SMALL.render(
                         f"무기: {bp.weapon.name} [{bp.weapon.durability}/{bp.weapon.max_durability}]",
