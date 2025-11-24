@@ -153,16 +153,37 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
         hp_fill_p = pygame.Rect(player_x, player_y - 15, int(160 * hp_ratio_p), 10)
         pygame.draw.rect(screen, (50, 200, 50), hp_fill_p)
 
-        # 무기 정보 표시
+    # --- 무기 정보 박스 (왼쪽 하단) ---
+    weapon_box_size = 120  # 정사각형
+    weapon_box_x = 20
+    weapon_box_y = HEIGHT - weapon_box_size - 20
+    
+    # 박스 배경
+    pygame.draw.rect(screen, (40, 40, 60), (weapon_box_x, weapon_box_y, weapon_box_size, weapon_box_size))
+    pygame.draw.rect(screen, (100, 100, 150), (weapon_box_x, weapon_box_y, weapon_box_size, weapon_box_size), 2)
+    
+    # 무기 이미지 영역 (중앙 상단)
+    weapon_img_size = 70
+    weapon_img_x = weapon_box_x + (weapon_box_size - weapon_img_size) // 2
+    weapon_img_y = weapon_box_y + 10
+    pygame.draw.rect(screen, (60, 60, 80), (weapon_img_x, weapon_img_y, weapon_img_size, weapon_img_size))
+    pygame.draw.rect(screen, (120, 120, 140), (weapon_img_x, weapon_img_y, weapon_img_size, weapon_img_size), 1)
+    
+    # 내구도 텍스트 (이미지 아래 중앙)
+    if battle_player:
         if battle_player.weapon:
-            weapon_text = font.render(
-                f"무기: {battle_player.weapon.name} [{battle_player.weapon.durability}/{battle_player.weapon.max_durability}]",
-                True, (200, 200, 100)
+            durability_text = font.render(
+                f"{battle_player.weapon.durability}/{battle_player.weapon.max_durability}",
+                True, (200, 200, 200)
             )
-            screen.blit(weapon_text, (player_x, player_y + 170))
+            durability_rect = durability_text.get_rect(centerx=weapon_box_x + weapon_box_size // 2, 
+                                                       y=weapon_img_y + weapon_img_size + 8)
+            screen.blit(durability_text, durability_rect)
         else:
-            weapon_text = font.render("무기: 없음 (맨손)", True, (150, 150, 150))
-            screen.blit(weapon_text, (player_x, player_y + 170))
+            no_weapon_text = font.render("맨손", True, (150, 150, 150))
+            no_weapon_rect = no_weapon_text.get_rect(centerx=weapon_box_x + weapon_box_size // 2,
+                                                      y=weapon_img_y + weapon_img_size + 8)
+            screen.blit(no_weapon_text, no_weapon_rect)
 
     # ---------- 전투 종료 체크 (먼저 처리) ----------
     if battle_player and battle_player.hp <= 0 and battle_state["turn_phase"] != "end":
@@ -227,14 +248,16 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
                         game_state_ref["state"] = "town"
                         return
         
-        return  # ✅ 전투 종료 상태에서는 여기서 함수 종료
+        return  # 전투 종료 상태에서는 여기서 함수 종료
 
     # ---------- 버튼 위치 계산 ----------
-    button_w = 180
-    button_h = 48
-    gap = 12
+    button_w = 240
+    button_h = 60
+    gap = 15
+    
+    # 버튼을 중앙으로 배치
     start_x = (WIDTH - (button_w * 2 + gap)) // 2
-    start_y = HEIGHT - 160
+    start_y = HEIGHT - 180
 
     # 스킬 버튼 위치 (2x2)
     skill_button_rects = []
@@ -258,7 +281,7 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
         for i, rect in enumerate(skill_button_rects):
             if battle_player and i < len(available_skills):
                 skill = available_skills[i]
-                label = f"{skill.name} (-{skill.durability_cost})"
+                label = skill.name
                 
                 # 내구도 부족 체크
                 can_use = True
