@@ -4,7 +4,7 @@ pygame.init()
 
 import os
 import sys
-from scripts import interactions, battle_system
+from scripts import interactions, battle_system, inventory
 from scripts.weapons import create_weapon
 
 # --- 기본 설정 ---
@@ -15,7 +15,7 @@ pftg_icon = pygame.image.load("resources\\png\\pftg_icon.png")
 game_state = {
     "state": "start",  # start, town, battle등등
     "player_name": "Hero",
-    "gold": 100,  # 초기 골드 추가
+    "gold": 20,  # 초기 골드 추가
     "message": "",
     "message_timer": 0
 }
@@ -185,7 +185,7 @@ buildings = pygame.sprite.Group()
 player = Player(400, 300)
 all_sprites.add(player)
 
-# 전투 시스템 플레이어 초기화 (기본 무기 장착)
+# 전투 시스템 플레이어 초기화
 if battle_system.battle_player is None:
     battle_system.battle_player = battle_system.Player(
         game_state["player_name"], 
@@ -199,6 +199,9 @@ if battle_system.battle_player is None:
     )
     # 기본 무기 장착
     battle_system.battle_player.equip_weapon(create_weapon("wooden_stick"))
+
+# 인벤토리 초기화
+inventory.init_inventory(battle_system.battle_player)
 
 # --- 예시 건물 생성 ---
 house = Building("집", 100, -100, 125, 125, "resources\\png\\building\\pretty_house.png",
@@ -314,6 +317,14 @@ while True:
             else:
                 e_key_pressed = False
 
+            # --- I 키 인벤토리 열기 ---
+            if keys[pygame.K_i]:
+                if not i_key_pressed:
+                    game_state["state"] = "inventory"
+                    i_key_pressed = True
+            else:
+                i_key_pressed = False
+
             # --- 화면 그리기 ---
             screen.fill(WHITE)
 
@@ -383,12 +394,25 @@ while True:
                     game_state["message"] = ""
                     game_state["message_timer"] = 0
 
-        case "shop":
-            screen.fill((100, 50, 50))
-            text = FONT_SMALL.render("buy scene", True, WHITE)
-            rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
-            screen.blit(text, rect)
+        case "inventory":
+            inventory.draw_inventory(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, 
+                                    battle_system.battle_player, dt, FONT_PATH)
+            inventory.handle_inventory_input(events, battle_system.battle_player)
+            
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_ESCAPE]:
+                game_state["state"] = "town"
+            elif keys[pygame.K_i]:
+                if not i_key_pressed:
+                    game_state["state"] = "town"
+                    i_key_pressed = True
+            else:
+                i_key_pressed = False
 
+        case "shop":
+            from scripts import shop
+            shop.draw_shop(screen, FONT_SMALL, WIDTH, HEIGHT, game_state, battle_system.battle_player, events)
+            
             keys = pygame.key.get_pressed()
             if keys[pygame.K_ESCAPE]:
                 game_state["state"] = "town"

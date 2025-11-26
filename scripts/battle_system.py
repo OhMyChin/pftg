@@ -1,4 +1,3 @@
-# scripts/battle_system.py
 import pygame
 import random
 from scripts.weapons import create_weapon
@@ -545,12 +544,9 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
         text_surface = font.render(battle_state["current_text"], True, (255, 255, 255))
         screen.blit(text_surface, (text_box.x + 20, text_box.y + 30))
         
-        # ✅ 클릭 안내 화살표 (더 큰 폰트 사용)
+        # 클릭 안내 화살표 (더 큰 폰트 사용)
         if battle_state["waiting_for_click"]:
-            if FONT_MAIN:  # 더 큰 폰트 사용
-                arrow_text = FONT_MAIN.render("▼", True, (255, 255, 100))
-            else:
-                arrow_text = font.render(">>", True, (255, 255, 100))  # 폰트 없으면 대체
-            screen.blit(arrow_text, (text_box.x + text_box.width - 60, text_box.y + text_box.height - 50))
+            arrow_text = pygame.font.SysFont("consolas", 30).render("▼", True, (255, 255, 255))
+            screen.blit(arrow_text, (text_box.x + text_box.width - 40, text_box.y + text_box.height - 40))
     else:
         battle_state["text_box_rect"] = None
