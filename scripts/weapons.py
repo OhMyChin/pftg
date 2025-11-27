@@ -44,17 +44,58 @@ WOODEN_STICK = Weapon(
     description="평범한 나무 막대기. 기본적인 공격만 가능하다."
 )
 
-# 몬스터 전용 무기
+# ==================== 몬스터 전용 무기 ====================
+
 SLIME_BODY = Weapon(
-    id_="slime",
+    id_="slime1",
     name="슬라임의 몸",
     grade="몬스터",
-    max_durability=9999,  # 몸으로 공격하므로 내구도 무한
-    skill_ids=["body_slam"],
-    description="슬라임의 말랑말랑한 몸. 몸통박치기로 공격한다."
+    max_durability=9999,
+    skill_ids=["body_slam"]
 )
 
-# 향후 확장용 무기 예시
+RED_SLIME_BODY = Weapon(
+    id_="slime2",
+    name="빨간 슬라임의 몸",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["red_attack"]
+)
+
+YELLOW_SLIME_BODY = Weapon(
+    id_="slime3",
+    name="노란 슬라임의 몸",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["yellow_attack"]
+)
+
+BLUE_SLIME_BODY = Weapon(
+    id_="slime4",
+    name="파란 슬라임의 몸",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["blue_attack"]
+)
+
+MAGMA_SLIME_BODY = Weapon(
+    id_="slime5",
+    name="마그마 슬라임의 몸",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["yellow_attack", "magma_shot"]
+)
+
+SWORD_SLIME_BODY = Weapon(
+    id_="slime6",
+    name="소드 슬라임의 몸",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["blue_attack", "slime_slash"]
+)
+
+# ==================== 향후 확장용 무기 예시 ====================
+
 IRON_SWORD = Weapon(
     id_="iron_sword",
     name="철 검",
@@ -76,7 +117,12 @@ RUSTY_DAGGER = Weapon(
 # 무기 딕셔너리 (ID로 접근 가능)
 ALL_WEAPONS = {
     "wooden_stick": WOODEN_STICK,
-    "slime": SLIME_BODY,
+    "slime1": SLIME_BODY,
+    "slime2": RED_SLIME_BODY,
+    "slime3": YELLOW_SLIME_BODY,
+    "slime4": BLUE_SLIME_BODY,
+    "slime5": MAGMA_SLIME_BODY,
+    "slime6": SWORD_SLIME_BODY,
     "iron_sword": IRON_SWORD,
     "rusty_dagger": RUSTY_DAGGER,
 }

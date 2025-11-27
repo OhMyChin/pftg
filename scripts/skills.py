@@ -24,9 +24,9 @@ STRUGGLE = Skill(
 SWING = Skill(
     id_="swing",
     name="휘두르기",
-    power=10,
+    power=100000,
     priority=10,
-    durability_cost=10,
+    durability_cost=0,
     description="무기를 휘둘러 적을 공격한다"
 )
 
@@ -39,6 +39,46 @@ BODY_SLAM = Skill(
     priority=5,
     durability_cost=0,  # 몬스터의 신체 공격은 내구도 소모 없음
     description="온몸으로 적에게 부딪친다"
+)
+RED_ATTACK = Skill(
+    id_="red_attack",
+    name="빨강 어택",
+    power=10,
+    priority=7,
+    durability_cost=0,  # 몬스터의 신체 공격은 내구도 소모 없음
+    description="온몸으로 적에게 부딪친다"
+)
+YELLOW_ATTACK = Skill(
+    id_="yellow_attack",
+    name="노랑 어택",
+    power=10,
+    priority=7,
+    durability_cost=0,  # 몬스터의 신체 공격은 내구도 소모 없음
+    description="온몸으로 적에게 부딪친다"
+)
+BLUE_ATTACK = Skill(
+    id_="blue_attack",
+    name="파랑 어택",
+    power=10,
+    priority=7,
+    durability_cost=0,  # 몬스터의 신체 공격은 내구도 소모 없음
+    description="온몸으로 적에게 부딪친다"
+)
+MAGMA_SHOT = Skill(
+    id_="magma_shot",
+    name="마그마 샷",
+    power=15,
+    priority=10,
+    durability_cost=0,  # 몬스터의 신체 공격은 내구도 소모 없음
+    description="마그마 덩어리를 발사한다"
+)
+SLIME_SLASH = Skill(
+    id_="slime_slash",
+    name="슬라임 베기",
+    power=15,
+    priority=10,
+    durability_cost=0,  # 몬스터의 신체 공격은 내구도 소모 없음
+    description="슬라임의 완력으로 적을 베어버린다"
 )
 
 # ==================== 향후 확장용 스킬 예시 ====================
@@ -75,7 +115,13 @@ ALL_SKILLS = {
     "swing": SWING,
     "struggle": STRUGGLE,
     "body_slam": BODY_SLAM,
+    "red_attack": RED_ATTACK,
+    "yellow_attack": YELLOW_ATTACK,
+    "blue_attack": BLUE_ATTACK,
+    "magma_shot": MAGMA_SHOT,
+    "slime_slash": SLIME_SLASH,
     "pierce": PIERCE,
     "slash": SLASH,
     "quick_strike": QUICK_STRIKE,
+    
 }

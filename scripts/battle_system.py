@@ -350,39 +350,84 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
     enemy_x = WIDTH - 300
     enemy_y = 120
 
+    # 층 진행도 (왼쪽 위)
+    floor_info_text = font.render(
+        f"{current_floor}층 - {current_monster_index}/{len(floor_monsters)}", 
+        True, (200, 200, 200)
+    )
+    screen.blit(floor_info_text, (20, 20))
+
     if battle_enemy and battle_enemy.image:
+        # 체력바 설정
+        hp_bar_width = 200
+        hp_bar_height = 25
+        name_hp_gap = 5  # 이름과 체력바 사이 간격
+        hp_image_gap = 5  # 체력바와 이미지 사이 간격
+        
+        # 체력바 위치 (이미지 바로 위)
+        hp_bar_y = enemy_y - hp_image_gap - hp_bar_height
+        
+        # 이름 위치 (체력바 바로 위)
+        name_y = hp_bar_y - name_hp_gap - 30  # 폰트 높이 약 30px
+        
+        # 이미지 그리기
         screen.blit(battle_enemy.image, (enemy_x, enemy_y))
 
-        floor_info_text = font.render(
-            f"{current_floor}층 - {current_monster_index}/{len(floor_monsters)}", 
-            True, (200, 200, 200)
-        )
-        screen.blit(floor_info_text, (enemy_x, enemy_y - 70))
+        # 이름 그리기
+        enemy_name_text = font.render(f"{battle_enemy.name}", True, (255, 255, 255))
+        screen.blit(enemy_name_text, (enemy_x, name_y))
 
-        enemy_name_text = font.render(f"{battle_enemy.name}  HP: {battle_enemy.hp}/{battle_enemy.max_hp}", True, (255, 255, 255))
-        screen.blit(enemy_name_text, (enemy_x, enemy_y - 40))
-
+        # 체력바 그리기
         hp_ratio = max(0, battle_enemy.hp) / (battle_enemy.max_hp if battle_enemy.max_hp else 1)
-        hp_back = pygame.Rect(enemy_x, enemy_y - 10, 160, 10)
+        hp_back = pygame.Rect(enemy_x, hp_bar_y, hp_bar_width, hp_bar_height)
         pygame.draw.rect(screen, (60, 60, 60), hp_back)
-        hp_fill = pygame.Rect(enemy_x, enemy_y - 10, int(160 * hp_ratio), 10)
+        hp_fill = pygame.Rect(enemy_x, hp_bar_y, int(hp_bar_width * hp_ratio), hp_bar_height)
         pygame.draw.rect(screen, (200, 50, 50), hp_fill)
+        pygame.draw.rect(screen, (100, 100, 100), hp_back, 2)  # 테두리
+        
+        # 체력바 안에 HP 수치 표시
+        hp_text = font.render(f"{max(0, battle_enemy.hp)}/{battle_enemy.max_hp}", True, (255, 255, 255))
+        hp_text_rect = hp_text.get_rect(center=(enemy_x + hp_bar_width // 2, hp_bar_y + hp_bar_height // 2))
+        screen.blit(hp_text, hp_text_rect)
+
 
     # 플레이어 정보 (왼쪽 하단)
     player_x = 100
     player_y = HEIGHT - 360
 
     if battle_player and battle_player.image:
+        # 체력바 설정
+        hp_bar_width_p = 200
+        hp_bar_height_p = 25
+        name_hp_gap_p = 5  # 이름과 체력바 사이 간격
+        hp_image_gap_p = 5  # 체력바와 이미지 사이 간격
+        
+        # 체력바 위치 (이미지 바로 위)
+        hp_bar_y_p = player_y - hp_image_gap_p - hp_bar_height_p
+        
+        # 이름 위치 (체력바 바로 위)
+        name_y_p = hp_bar_y_p - name_hp_gap_p - 30  # 폰트 높이 약 30px
+        
+        # 이미지 그리기
         screen.blit(battle_player.image, (player_x, player_y))
         
-        player_name_text = font.render(f"{battle_player.name}  HP: {battle_player.hp}/{battle_player.max_hp}", True, (255, 255, 255))
-        screen.blit(player_name_text, (player_x, player_y - 45))
+        # 이름 그리기
+        player_name_text = font.render(f"{battle_player.name}", True, (255, 255, 255))
+        screen.blit(player_name_text, (player_x, name_y_p))
 
+        # 체력바 그리기
         hp_ratio_p = max(0, battle_player.hp) / (battle_player.max_hp if battle_player.max_hp else 1)
-        hp_back_p = pygame.Rect(player_x, player_y - 15, 160, 10)
+        hp_back_p = pygame.Rect(player_x, hp_bar_y_p, hp_bar_width_p, hp_bar_height_p)
         pygame.draw.rect(screen, (60, 60, 60), hp_back_p)
-        hp_fill_p = pygame.Rect(player_x, player_y - 15, int(160 * hp_ratio_p), 10)
+        hp_fill_p = pygame.Rect(player_x, hp_bar_y_p, int(hp_bar_width_p * hp_ratio_p), hp_bar_height_p)
         pygame.draw.rect(screen, (50, 200, 50), hp_fill_p)
+        pygame.draw.rect(screen, (100, 100, 100), hp_back_p, 2)  # 테두리
+        
+        # 체력바 안에 HP 수치 표시
+        hp_text_p = font.render(f"{max(0, battle_player.hp)}/{battle_player.max_hp}", True, (255, 255, 255))
+        hp_text_rect_p = hp_text_p.get_rect(center=(player_x + hp_bar_width_p // 2, hp_bar_y_p + hp_bar_height_p // 2))
+        screen.blit(hp_text_p, hp_text_rect_p)
+
 
     # --- 무기 정보 박스 (왼쪽 하단) ---
     weapon_box_size = 120
@@ -455,7 +500,7 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
                 pygame.draw.rect(screen, (150, 80, 80), town_rect)
 
             next_txt = font.render(f"{current_floor + 1}층으로", True, (255, 255, 255))
-            town_txt = font.render("마을로 돌아가기", True, (255, 255, 255))
+            town_txt = font.render("돌아가기", True, (255, 255, 255))
             screen.blit(next_txt, next_txt.get_rect(center=next_rect.center))
             screen.blit(town_txt, town_txt.get_rect(center=town_rect.center))
 
@@ -481,7 +526,7 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
             town_rect = pygame.Rect(WIDTH//2 - btn_w//2, HEIGHT//2, btn_w, btn_h)
             pygame.draw.rect(screen, (200, 120, 120), town_rect)
             pygame.draw.rect(screen, (100, 150, 255), town_rect, 4)
-            town_txt = font.render("마을로 돌아가기", True, (255, 255, 255))
+            town_txt = font.render("돌아가기", True, (255, 255, 255))
             screen.blit(town_txt, town_txt.get_rect(center=town_rect.center))
 
             for event in events:
@@ -503,7 +548,7 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
         town_rect = pygame.Rect(WIDTH//2 - btn_w//2, HEIGHT//2, btn_w, btn_h)
         pygame.draw.rect(screen, (200, 120, 120), town_rect)
         pygame.draw.rect(screen, (100, 150, 255), town_rect, 4)
-        town_txt = font.render("마을로 돌아가기", True, (255, 255, 255))
+        town_txt = font.render("돌아가기", True, (255, 255, 255))
         screen.blit(town_txt, town_txt.get_rect(center=town_rect.center))
 
         for event in events:

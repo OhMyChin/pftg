@@ -13,18 +13,24 @@ class MonsterData:
 
 FLOOR_DATA = {
     1: [
-        MonsterData("슬라임", 30, 8, "slime", "resources/png/enemy/slime.png"),
-        MonsterData("슬라임", 30, 8, "slime", "resources/png/enemy/slime.png"),
+        MonsterData("슬라임", 30, 8, "slime1", "resources/png/enemy/slime.png"),
     ],
     2: [
-        MonsterData("슬라임", 35, 9, "slime", "resources/png/enemy/slime.png"),
-        MonsterData("슬라임", 35, 9, "slime", "resources/png/enemy/slime.png"),
-        MonsterData("슬라임", 35, 9, "slime", "resources/png/enemy/slime.png"),
+        MonsterData("빨간 슬라임", 35, 9, "slime2", "resources/png/enemy/slime.png"),
     ],
     3: [
-        MonsterData("강한 슬라임", 50, 10, "slime", "resources/png/enemy/slime.png"),
-        MonsterData("강한 슬라임", 50, 10, "slime", "resources/png/enemy/slime.png"),
+        MonsterData("노랑 슬라임", 35, 9, "slime3", "resources/png/enemy/yellow_slime.png"),
+        MonsterData("마그마 슬라임", 50, 15, "slime5", "resources/png/enemy/magma_slime.png"),
     ],
+    4: [
+        MonsterData("파란 슬라임", 35, 9, "slime4", "resources/png/enemy/blue_slime.png"),
+        MonsterData("소드 슬라임", 50, 15, "slime6", "resources/png/enemy/sword_slime.png"),
+    ],
+    5: [
+        MonsterData("빨간 슬라임", 35, 9, "slime2", "resources/png/enemy/slime.png"),
+        MonsterData("노란 슬라임", 25, 15, "slime3", "resources/png/enemy/yellow_slime.png"),
+        MonsterData("파란 슬라임", 35, 9, "slime4", "resources/png/enemy/blue_slime.png"),
+    ]
 }
 
 def get_floor_monsters(floor_num):
