@@ -27,7 +27,9 @@ battle_state = {
     "stage": "announce",
     "current_text": "",
     "waiting_for_click": False,
-    "text_box_rect": None
+    "text_box_rect": None,
+    "selected_row": 0,  # 선택된 행
+    "selected_col": 0,  # 선택된 열
 }
 
 # --- 플레이어 전용 클래스 ---
@@ -87,9 +89,6 @@ def start_battle(game_state_ref, player_name):
         print("Error: battle_player not initialized.")
         return
 
-    # ✅ 무기 상태 그대로 유지 (맨손이면 맨손으로 전투)
-    # 무기 자동 장착 로직 제거
-    
     battle_player.speed = 12
 
     current_floor = 1
@@ -109,7 +108,9 @@ def start_battle(game_state_ref, player_name):
         "stage": "monster_appear",
         "current_text": f"{battle_enemy.name}(이)가 나타났다!",
         "waiting_for_click": True,
-        "text_box_rect": None
+        "text_box_rect": None,
+        "selected_row": 0,
+        "selected_col": 0,
     })
 
 
@@ -120,18 +121,16 @@ def spawn_next_monster():
     if current_monster_index < len(floor_monsters):
         monster_data = floor_monsters[current_monster_index]
         
-        # ✅ 새로운 객체 생성 (원본 데이터 보호)
         class Monster:
             pass
         
         battle_enemy = Monster()
         battle_enemy.name = monster_data.name
-        battle_enemy.hp = monster_data.hp  # ✅ 복사
+        battle_enemy.hp = monster_data.hp
         battle_enemy.max_hp = monster_data.hp
         battle_enemy.speed = monster_data.speed
         battle_enemy.weapon = create_weapon(monster_data.weapon_id)
         
-        # 이미지 로드
         try:
             battle_enemy.image = pygame.transform.scale(
                 pygame.image.load(monster_data.image_path).convert_alpha(),
@@ -141,7 +140,6 @@ def spawn_next_monster():
             print(f"Failed to load image: {monster_data.image_path}")
             battle_enemy.image = None
         
-        # get_available_skills 메서드 추가
         def get_skills():
             from scripts.skills import ALL_SKILLS
             if battle_enemy.weapon:
@@ -169,6 +167,192 @@ def advance_floor():
     current_monster_index = 0
     
     spawn_next_monster()
+
+
+def move_battle_selection(d_row, d_col):
+    """전투 중 선택 이동"""
+    from scripts.inventory import player_inventory
+    
+    if battle_state["turn_phase"] == "weapon_swap":
+        # 무기 교체 화면에서는 세로로만 이동
+        new_index = battle_state["selected_row"] * 3 + battle_state["selected_col"] + d_row
+        max_index = min(2, len(player_inventory["equipped_weapons"]) - 1)
+        
+        if 0 <= new_index <= max_index:
+            battle_state["selected_row"] = new_index // 3
+            battle_state["selected_col"] = new_index % 3
+    else:
+        # 기존 2x2 그리드 이동
+        new_row = battle_state["selected_row"] + d_row
+        new_col = battle_state["selected_col"] + d_col
+        
+        # 2x2 그리드 범위 체크
+        if 0 <= new_row <= 1:
+            battle_state["selected_row"] = new_row
+        if 0 <= new_col <= 1:
+            battle_state["selected_col"] = new_col
+
+
+def execute_battle_action(game_state_ref):
+    """엔터키로 현재 선택된 액션 실행"""
+    global battle_state, battle_player, battle_enemy
+    
+    # 텍스트 진행 중이면 텍스트 넘기기
+    if battle_state["turn_phase"] == "text" and battle_state["waiting_for_click"]:
+        if battle_state["stage"] == "announce" and battle_state["action_queue"]:
+            # announce -> calculate
+            actor_tag, skill_obj = battle_state["action_queue"][battle_state["action_index"]]
+            if actor_tag == "player":
+                attacker, defender = battle_player, battle_enemy
+            else:
+                attacker, defender = battle_enemy, battle_player
+
+            if attacker.weapon and skill_obj.durability_cost > 0:
+                attacker.weapon.use_skill(skill_obj)
+
+            dmg = calc_damage(attacker, skill_obj, defender)
+            defender.hp = max(0, defender.hp - dmg)
+            battle_state["current_text"] = f"{defender.name}이(가) {dmg} 데미지를 입었다!"
+            battle_state["stage"] = "calculate"
+            
+            if defender.hp <= 0:
+                battle_state["action_queue"].clear()
+            
+        elif battle_state["stage"] == "calculate":
+            # 다음 action으로 이동
+            battle_state["action_index"] += 1
+            if battle_state["action_index"] < len(battle_state["action_queue"]):
+                actor_tag, skill_obj = battle_state["action_queue"][battle_state["action_index"]]
+                who = battle_player.name if actor_tag == "player" else battle_enemy.name
+                battle_state["current_text"] = f"{who}이(가) {skill_obj.name}을(를) 사용했다!"
+                battle_state["stage"] = "announce"
+            else:
+                # 모든 행동 완료 → HP 체크
+                if battle_player.hp <= 0:
+                    battle_state["current_text"] = "플레이어 패배..."
+                    battle_state["stage"] = "player_defeat"
+                elif battle_enemy.hp <= 0:
+                    battle_state["current_text"] = f"{battle_enemy.name}을(를) 격파했다!"
+                    battle_state["stage"] = "enemy_defeat"
+                else:
+                    # 턴 종료
+                    battle_state["turn_phase"] = "menu"
+                    battle_state["waiting_for_click"] = False
+                    battle_state["current_text"] = ""
+                    battle_state["action_queue"].clear()
+                    battle_state["action_index"] = 0
+                    battle_state["stage"] = "announce"
+                    battle_state["selected_row"] = 0
+                    battle_state["selected_col"] = 0
+        
+        elif battle_state["stage"] == "player_defeat":
+            battle_state["turn_phase"] = "end"
+            battle_state["waiting_for_click"] = False
+            battle_state["current_text"] = "플레이어 패배..."
+            battle_state["action_queue"].clear()
+        
+        elif battle_state["stage"] == "enemy_defeat":
+            if current_monster_index < len(floor_monsters):
+                spawn_next_monster()
+                battle_state["current_text"] = f"{battle_enemy.name}(이)가 나타났다!"
+                battle_state["stage"] = "monster_appear"
+            else:
+                battle_state["turn_phase"] = "floor_clear"
+                battle_state["waiting_for_click"] = False
+                battle_state["current_text"] = f"{current_floor}층 클리어!"
+                battle_state["action_queue"].clear()
+        
+        elif battle_state["stage"] == "monster_appear":
+            battle_state["turn_phase"] = "menu"
+            battle_state["waiting_for_click"] = False
+            battle_state["current_text"] = ""
+            battle_state["action_queue"].clear()
+            battle_state["action_index"] = 0
+            battle_state["stage"] = "announce"
+            battle_state["selected_row"] = 0
+            battle_state["selected_col"] = 0
+        else:
+            battle_state["turn_phase"] = "menu"
+            battle_state["waiting_for_click"] = False
+            battle_state["current_text"] = ""
+            battle_state["selected_row"] = 0
+            battle_state["selected_col"] = 0
+        return False
+    
+    # 메뉴 버튼 클릭
+    if battle_state["turn_phase"] == "menu" and not battle_state["current_text"]:
+        selected_button = battle_state["selected_row"] * 2 + battle_state["selected_col"]
+        
+        if selected_button == 0:  # 전투
+            battle_state["turn_phase"] = "skill_select"
+            battle_state["current_text"] = ""
+            battle_state["selected_row"] = 0
+            battle_state["selected_col"] = 0
+        elif selected_button == 1:  # 소비
+            battle_state["current_text"] = "아직 구현되지 않은 기능입니다."
+            battle_state["turn_phase"] = "text"
+            battle_state["waiting_for_click"] = True
+        elif selected_button == 2:  # 교체
+            from scripts.inventory import player_inventory
+            if len(player_inventory["equipped_weapons"]) > 1:
+                battle_state["turn_phase"] = "weapon_swap"
+                battle_state["current_text"] = ""
+                battle_state["selected_row"] = 0
+                battle_state["selected_col"] = 0
+            else:
+                battle_state["current_text"] = "교체할 무기가 없습니다!"
+                battle_state["turn_phase"] = "text"
+                battle_state["waiting_for_click"] = True
+        elif selected_button == 3:  # 도망
+            game_state_ref["state"] = "town"
+            return True  # 마을로 돌아갔음을 표시
+    
+    # 스킬 선택
+    elif battle_state["turn_phase"] == "skill_select":
+        selected_button = battle_state["selected_row"] * 2 + battle_state["selected_col"]
+        available_skills = battle_player.get_available_skills() if battle_player else []
+        
+        if selected_button < len(available_skills):
+            selected_skill = available_skills[selected_button]
+            
+            if battle_player.weapon and selected_skill.durability_cost > 0:
+                can_use = battle_player.weapon.durability >= selected_skill.durability_cost
+            else:
+                can_use = True
+            
+            if not can_use:
+                battle_state["current_text"] = "무기의 내구도가 부족합니다!"
+                battle_state["turn_phase"] = "text"
+                battle_state["waiting_for_click"] = True
+            else:
+                enemy_skills = battle_enemy.get_available_skills() if battle_enemy else []
+                if enemy_skills:
+                    enemy_skill = random.choice(enemy_skills)
+
+                    order = decide_order(battle_player, selected_skill, battle_enemy, enemy_skill)
+                    battle_state["action_queue"] = order.copy()
+                    battle_state["action_index"] = 0
+                    battle_state["stage"] = "announce"
+                    
+                    actor_tag, skill_obj = battle_state["action_queue"][0]
+                    who = battle_player.name if actor_tag == "player" else battle_enemy.name
+                    battle_state["current_text"] = f"{who}이(가) {skill_obj.name}을(를) 사용했다!"
+                    battle_state["turn_phase"] = "text"
+                    battle_state["waiting_for_click"] = True
+    
+    # 무기 교체
+    elif battle_state["turn_phase"] == "weapon_swap":
+        from scripts.inventory import player_inventory
+        selected_button = battle_state["selected_row"] * 3 + battle_state["selected_col"]
+        
+        if selected_button < len(player_inventory["equipped_weapons"]):
+            selected_weapon = player_inventory["equipped_weapons"][selected_button]
+            battle_player.equip_weapon(selected_weapon)
+            battle_state["current_text"] = f"{selected_weapon.name}(으)로 교체했다!"
+            battle_state["turn_phase"] = "text"
+            battle_state["waiting_for_click"] = True
+    
+    return False  # 도망치지 않았음
 
 
 def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
@@ -256,9 +440,6 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
                                                       y=weapon_img_y + weapon_img_size + 8)
             screen.blit(no_weapon_text, no_weapon_rect)
 
-    # ---------- 전투 종료 체크 ----------
-    # HP 0 체크는 데미지 계산 직후에만 수행
-
     # ---------- 전투 종료 상태 처리 ----------
     if battle_state["turn_phase"] == "floor_clear":
         text_box = pygame.Rect(50, HEIGHT - 180, WIDTH - 100, 100)
@@ -276,8 +457,18 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
             next_rect = pygame.Rect(WIDTH//2 - btn_w - gap//2, HEIGHT//2, btn_w, btn_h)
             town_rect = pygame.Rect(WIDTH//2 + gap//2, HEIGHT//2, btn_w, btn_h)
             
-            pygame.draw.rect(screen, (80, 150, 80), next_rect)
-            pygame.draw.rect(screen, (150, 80, 80), town_rect)
+            # 선택 표시 (0: 다음 층, 1: 마을)
+            if battle_state["selected_col"] == 0:
+                pygame.draw.rect(screen, (120, 200, 120), next_rect)
+                pygame.draw.rect(screen, (100, 150, 255), next_rect, 4)
+            else:
+                pygame.draw.rect(screen, (80, 150, 80), next_rect)
+            
+            if battle_state["selected_col"] == 1:
+                pygame.draw.rect(screen, (200, 120, 120), town_rect)
+                pygame.draw.rect(screen, (100, 150, 255), town_rect, 4)
+            else:
+                pygame.draw.rect(screen, (150, 80, 80), town_rect)
 
             next_txt = font.render(f"{current_floor + 1}층으로", True, (255, 255, 255))
             town_txt = font.render("마을로 돌아가기", True, (255, 255, 255))
@@ -285,27 +476,33 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
             screen.blit(town_txt, town_txt.get_rect(center=town_rect.center))
 
             for event in events:
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    mouse_pos = event.pos
-                    if next_rect.collidepoint(mouse_pos):
-                        advance_floor()
-                        battle_state["turn_phase"] = "menu"
-                        battle_state["waiting_for_click"] = False
-                        battle_state["current_text"] = ""
-                        return
-                    elif town_rect.collidepoint(mouse_pos):
-                        game_state_ref["state"] = "town"
-                        return
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_a:
+                        battle_state["selected_col"] = 0
+                    elif event.key == pygame.K_d:
+                        battle_state["selected_col"] = 1
+                    elif event.key == pygame.K_RETURN:
+                        if battle_state["selected_col"] == 0:
+                            advance_floor()
+                            battle_state["turn_phase"] = "menu"
+                            battle_state["waiting_for_click"] = False
+                            battle_state["current_text"] = ""
+                            battle_state["selected_row"] = 0
+                            battle_state["selected_col"] = 0
+                            return
+                        else:
+                            game_state_ref["state"] = "town"
+                            return
         else:
             town_rect = pygame.Rect(WIDTH//2 - btn_w//2, HEIGHT//2, btn_w, btn_h)
-            pygame.draw.rect(screen, (150, 80, 80), town_rect)
+            pygame.draw.rect(screen, (200, 120, 120), town_rect)
+            pygame.draw.rect(screen, (100, 150, 255), town_rect, 4)
             town_txt = font.render("마을로 돌아가기", True, (255, 255, 255))
             screen.blit(town_txt, town_txt.get_rect(center=town_rect.center))
 
             for event in events:
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    mouse_pos = event.pos
-                    if town_rect.collidepoint(mouse_pos):
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
                         game_state_ref["state"] = "town"
                         return
         
@@ -320,14 +517,14 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
 
         btn_w, btn_h = 180, 50
         town_rect = pygame.Rect(WIDTH//2 - btn_w//2, HEIGHT//2, btn_w, btn_h)
-        pygame.draw.rect(screen, (150, 80, 80), town_rect)
+        pygame.draw.rect(screen, (200, 120, 120), town_rect)
+        pygame.draw.rect(screen, (100, 150, 255), town_rect, 4)
         town_txt = font.render("마을로 돌아가기", True, (255, 255, 255))
         screen.blit(town_txt, town_txt.get_rect(center=town_rect.center))
 
         for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                mouse_pos = event.pos
-                if town_rect.collidepoint(mouse_pos):
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
                     game_state_ref["state"] = "town"
                     return
         
@@ -355,9 +552,14 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
         by = start_y + (i // 2) * (button_h + gap)
         menu_button_rects.append(pygame.Rect(bx, by, button_w, button_h))
 
-    # ---------- 버튼 그리기 (텍스트박스 있어도 항상 그리기) ----------
+    # ---------- 버튼 그리기 ----------
     if battle_state["turn_phase"] == "skill_select":
         for i, rect in enumerate(skill_button_rects):
+            row = i // 2
+            col = i % 2
+            is_selected = (battle_state["selected_row"] == row and 
+                          battle_state["selected_col"] == col)
+            
             if battle_player and i < len(available_skills):
                 skill = available_skills[i]
                 label = skill.name
@@ -366,175 +568,153 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
                 if battle_player.weapon and skill.durability_cost > 0:
                     can_use = battle_player.weapon.durability >= skill.durability_cost
                 
-                color = (80, 80, 80) if not can_use else (150, 150, 250)
+                if is_selected:
+                    color = (100, 100, 120) if not can_use else (200, 200, 255)
+                else:
+                    color = (80, 80, 80) if not can_use else (150, 150, 250)
             else:
                 label = "—"
                 color = (80, 80, 80)
 
             pygame.draw.rect(screen, color, rect)
+            
+            # 선택된 버튼 하이라이트
+            if is_selected:
+                pygame.draw.rect(screen, (100, 150, 255), rect, 4)
+            
             txt = font.render(label, True, (0, 0, 0))
             txt_rect = txt.get_rect(center=rect.center)
             screen.blit(txt, txt_rect)
     
+    elif battle_state["turn_phase"] == "weapon_swap":
+        # 무기 교체 화면
+        from scripts.inventory import player_inventory
+        
+        weapon_button_w = 360
+        weapon_button_h = 80
+        weapon_gap = 15
+        weapon_start_x = (WIDTH - weapon_button_w) // 2
+        weapon_start_y = HEIGHT - 280
+        
+        for i, weapon in enumerate(player_inventory["equipped_weapons"]):
+            if i >= 3:  # 최대 3개까지만 표시
+                break
+            
+            weapon_rect = pygame.Rect(
+                weapon_start_x,
+                weapon_start_y + i * (weapon_button_h + weapon_gap),
+                weapon_button_w,
+                weapon_button_h
+            )
+            
+            is_selected = (battle_state["selected_row"] * 3 + battle_state["selected_col"] == i)
+            is_current = (battle_player.weapon == weapon)
+            
+            # 배경색
+            if is_current:
+                base_color = (100, 150, 100)  # 현재 장착 중
+            else:
+                base_color = (100, 100, 150)
+            
+            if is_selected:
+                color = tuple(min(255, c + 50) for c in base_color)
+            else:
+                color = base_color
+            
+            pygame.draw.rect(screen, color, weapon_rect)
+            
+            if is_selected:
+                pygame.draw.rect(screen, (100, 150, 255), weapon_rect, 4)
+            else:
+                pygame.draw.rect(screen, (200, 200, 200), weapon_rect, 2)
+            
+            # 무기 이미지
+            try:
+                weapon_img_path = f"resources/png/weapon/{weapon.id}.png"
+                weapon_img = pygame.image.load(weapon_img_path).convert_alpha()
+                weapon_img = pygame.transform.scale(weapon_img, (60, 60))
+                screen.blit(weapon_img, (weapon_rect.x + 10, weapon_rect.y + 10))
+            except:
+                pygame.draw.rect(screen, (80, 80, 100), 
+                               (weapon_rect.x + 10, weapon_rect.y + 10, 60, 60))
+            
+            # 무기 정보 텍스트
+            weapon_name = font.render(weapon.name, True, (255, 255, 255))
+            screen.blit(weapon_name, (weapon_rect.x + 80, weapon_rect.y + 15))
+            
+            durability_text = font.render(
+                f"{weapon.durability}/{weapon.max_durability}",
+                True, (200, 200, 200)
+            )
+            screen.blit(durability_text, (weapon_rect.x + 80, weapon_rect.y + 45))
+            
+            # 현재 장착 표시
+            if is_current:
+                current_text = font.render("장착중", True, (100, 255, 100))
+                screen.blit(current_text, (weapon_rect.x + weapon_button_w - 100, weapon_rect.y + 30))
+    
     elif battle_state["turn_phase"] in ["menu", "text"]:
-        # ✅ 텍스트 상태에서도 버튼 그리기
         menu_labels = ["전투", "소비", "교체", "도망"]
         menu_colors = [(150, 150, 250), (100, 200, 100), (200, 150, 100), (200, 100, 100)]
         
         for i, rect in enumerate(menu_button_rects):
-            pygame.draw.rect(screen, menu_colors[i], rect)
+            row = i // 2
+            col = i % 2
+            is_selected = (battle_state["selected_row"] == row and 
+                          battle_state["selected_col"] == col and
+                          battle_state["turn_phase"] == "menu")
+            
+            if is_selected:
+                # 선택된 버튼은 더 밝게
+                r, g, b = menu_colors[i]
+                color = (min(255, r + 50), min(255, g + 50), min(255, b + 50))
+            else:
+                color = menu_colors[i]
+            
+            pygame.draw.rect(screen, color, rect)
+            
+            # 선택된 버튼 하이라이트
+            if is_selected:
+                pygame.draw.rect(screen, (100, 150, 255), rect, 4)
+            
             txt = font.render(menu_labels[i], True, (0, 0, 0))
             txt_rect = txt.get_rect(center=rect.center)
             screen.blit(txt, txt_rect)
 
-    # ---------- 이벤트 처리 ----------
+    # ---------- 키보드 이벤트 처리 ----------
     for event in events:
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mouse_pos = event.pos
-            
-            # ✅ 1) 텍스트 진행 중이면 텍스트박스 클릭 체크
-            if battle_state["turn_phase"] == "text" and battle_state["waiting_for_click"]:
-                # 텍스트박스 영역 클릭 시에만 진행
-                if battle_state["text_box_rect"] and battle_state["text_box_rect"].collidepoint(mouse_pos):
-                    if battle_state["stage"] == "announce" and battle_state["action_queue"]:
-                        # announce -> calculate
-                        actor_tag, skill_obj = battle_state["action_queue"][battle_state["action_index"]]
-                        if actor_tag == "player":
-                            attacker, defender = battle_player, battle_enemy
-                        else:
-                            attacker, defender = battle_enemy, battle_player
-
-                        if attacker.weapon and skill_obj.durability_cost > 0:
-                            attacker.weapon.use_skill(skill_obj)
-
-                        dmg = calc_damage(attacker, skill_obj, defender)
-                        defender.hp = max(0, defender.hp - dmg)
-                        battle_state["current_text"] = f"{defender.name}이(가) {dmg} 데미지를 입었다!"
-                        battle_state["stage"] = "calculate"
-                        
-                        # ✅ 데미지 계산 직후 HP 체크
-                        if defender.hp <= 0:
-                            battle_state["action_queue"].clear()  # 남은 행동 취소
-                        
-                    elif battle_state["stage"] == "calculate":
-                        # 다음 action으로 이동
-                        battle_state["action_index"] += 1
-                        if battle_state["action_index"] < len(battle_state["action_queue"]):
-                            actor_tag, skill_obj = battle_state["action_queue"][battle_state["action_index"]]
-                            who = battle_player.name if actor_tag == "player" else battle_enemy.name
-                            battle_state["current_text"] = f"{who}이(가) {skill_obj.name}을(를) 사용했다!"
-                            battle_state["stage"] = "announce"
-                        else:
-                            # 모든 행동 완료 → HP 체크
-                            if battle_player.hp <= 0:
-                                battle_state["current_text"] = "플레이어 패배..."
-                                battle_state["stage"] = "player_defeat"
-                            elif battle_enemy.hp <= 0:
-                                battle_state["current_text"] = f"{battle_enemy.name}을(를) 격파했다!"
-                                battle_state["stage"] = "enemy_defeat"
-                            else:
-                                # 턴 종료
-                                battle_state["turn_phase"] = "menu"
-                                battle_state["waiting_for_click"] = False
-                                battle_state["current_text"] = ""
-                                battle_state["action_queue"].clear()
-                                battle_state["action_index"] = 0
-                                battle_state["stage"] = "announce"
-                    
-                    elif battle_state["stage"] == "player_defeat":
-                        # 플레이어 패배 확정
-                        battle_state["turn_phase"] = "end"
-                        battle_state["waiting_for_click"] = False
-                        battle_state["current_text"] = "플레이어 패배..."
-                        battle_state["action_queue"].clear()
-                    
-                    elif battle_state["stage"] == "enemy_defeat":
-                        # 몬스터 처치 확정 - 다음 몬스터 소환
-                        if current_monster_index < len(floor_monsters):
-                            spawn_next_monster()
-                            battle_state["current_text"] = f"{battle_enemy.name}(이)가 나타났다!"
-                            battle_state["stage"] = "monster_appear"
-                        else:
-                            # 층 클리어
-                            battle_state["turn_phase"] = "floor_clear"
-                            battle_state["waiting_for_click"] = False
-                            battle_state["current_text"] = f"{current_floor}층 클리어!"
-                            battle_state["action_queue"].clear()
-                    
-                    elif battle_state["stage"] == "monster_appear":
-                        # 몬스터 등장 후 메뉴로
-                        battle_state["turn_phase"] = "menu"
-                        battle_state["waiting_for_click"] = False
-                        battle_state["current_text"] = ""
-                        battle_state["action_queue"].clear()
-                        battle_state["action_index"] = 0
-                        battle_state["stage"] = "announce"
-                    else:
-                        # ✅ 단순 알림 메시지는 바로 메뉴로
-                        battle_state["turn_phase"] = "menu"
-                        battle_state["waiting_for_click"] = False
-                        battle_state["current_text"] = ""
-            
-            # ✅ 2) 메뉴 버튼 클릭 처리
-            elif battle_state["turn_phase"] == "menu" and not battle_state["current_text"]:
-                clicked_button = None
-                for i, rect in enumerate(menu_button_rects):
-                    if rect.collidepoint(mouse_pos):
-                        clicked_button = i
-                        break
-                
-                if clicked_button == 0:  # 전투 버튼
-                    battle_state["turn_phase"] = "skill_select"
-                    battle_state["current_text"] = ""
-                elif clicked_button == 1:  # 소비 버튼
-                    battle_state["current_text"] = "아직 구현되지 않은 기능입니다."
-                    battle_state["turn_phase"] = "text"
-                    battle_state["waiting_for_click"] = True
-                elif clicked_button == 2:  # 교체 버튼
-                    battle_state["current_text"] = "아직 구현되지 않은 기능입니다."
-                    battle_state["turn_phase"] = "text"
-                    battle_state["waiting_for_click"] = True
-                elif clicked_button == 3:  # 도망 버튼
+        if event.type == pygame.KEYDOWN:
+            # ESC: 도망 또는 뒤로가기
+            if event.key == pygame.K_ESCAPE:
+                if battle_state["turn_phase"] == "skill_select":
+                    battle_state["turn_phase"] = "menu"
+                    battle_state["selected_row"] = 0
+                    battle_state["selected_col"] = 0
+                elif battle_state["turn_phase"] == "weapon_swap":
+                    battle_state["turn_phase"] = "menu"
+                    battle_state["selected_row"] = 0
+                    battle_state["selected_col"] = 0
+                elif battle_state["turn_phase"] == "menu":
                     game_state_ref["state"] = "town"
                     return
             
-            # ✅ 3) 스킬 선택 상태
-            elif battle_state["turn_phase"] == "skill_select":
-                clicked_button = None
-                for i, rect in enumerate(skill_button_rects):
-                    if rect.collidepoint(mouse_pos):
-                        clicked_button = i
-                        break
-                
-                if clicked_button is not None and battle_player and clicked_button < len(available_skills):
-                    selected_skill = available_skills[clicked_button]
-                    
-                    if battle_player.weapon and selected_skill.durability_cost > 0:
-                        can_use = battle_player.weapon.durability >= selected_skill.durability_cost
-                    else:
-                        can_use = True
-                    
-                    if not can_use:
-                        battle_state["current_text"] = "무기의 내구도가 부족합니다!"
-                        battle_state["turn_phase"] = "text"
-                        battle_state["waiting_for_click"] = True
-                    else:
-                        enemy_skills = battle_enemy.get_available_skills() if battle_enemy else []
-                        if enemy_skills:
-                            enemy_skill = random.choice(enemy_skills)
+            # 텍스트 진행 중이 아닐 때만 이동 가능
+            elif battle_state["turn_phase"] != "text":
+                if event.key == pygame.K_w:
+                    move_battle_selection(-1, 0)
+                elif event.key == pygame.K_s:
+                    move_battle_selection(1, 0)
+                elif event.key == pygame.K_a:
+                    move_battle_selection(0, -1)
+                elif event.key == pygame.K_d:
+                    move_battle_selection(0, 1)
+            
+            # 엔터: 액션 실행
+            if event.key == pygame.K_RETURN:
+                if execute_battle_action(game_state_ref):
+                    return  # 도망쳤으면 즉시 종료
 
-                            order = decide_order(battle_player, selected_skill, battle_enemy, enemy_skill)
-                            battle_state["action_queue"] = order.copy()
-                            battle_state["action_index"] = 0
-                            battle_state["stage"] = "announce"
-                            
-                            actor_tag, skill_obj = battle_state["action_queue"][0]
-                            who = battle_player.name if actor_tag == "player" else battle_enemy.name
-                            battle_state["current_text"] = f"{who}이(가) {skill_obj.name}을(를) 사용했다!"
-                            battle_state["turn_phase"] = "text"
-                            battle_state["waiting_for_click"] = True
-
-    # ---------- 전투 텍스트 박스 렌더 (버튼 위에 그리기) ----------
+    # ---------- 전투 텍스트 박스 렌더 ----------
     if battle_state["current_text"] and battle_state["turn_phase"] not in ["end", "floor_clear"]:
         text_box = pygame.Rect(50, HEIGHT - 180, WIDTH - 100, 100)
         battle_state["text_box_rect"] = text_box
@@ -544,7 +724,7 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
         text_surface = font.render(battle_state["current_text"], True, (255, 255, 255))
         screen.blit(text_surface, (text_box.x + 20, text_box.y + 30))
         
-        # 클릭 안내 화살표 (더 큰 폰트 사용)
+        # 클릭 안내 화살표
         if battle_state["waiting_for_click"]:
             arrow_text = pygame.font.SysFont("consolas", 30).render("▼", True, (255, 255, 255))
             screen.blit(arrow_text, (text_box.x + text_box.width - 40, text_box.y + text_box.height - 40))

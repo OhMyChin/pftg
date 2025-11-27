@@ -396,7 +396,7 @@ while True:
 
         case "inventory":
             inventory.draw_inventory(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, 
-                                    battle_system.battle_player, dt, FONT_PATH)
+                                    battle_system.battle_player, dt, FONT_PATH, game_state)
             inventory.handle_inventory_input(events, battle_system.battle_player)
             
             keys = pygame.key.get_pressed()

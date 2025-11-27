@@ -34,6 +34,28 @@ def home_interact(game_state_ref):
     game_state_ref["gold"] = max(0, game_state_ref.get("gold", 100) - 10)
     game_state_ref["message"] = "휴식을 취했습니다. 체력이 회복되었지만 10G를 잃었습니다."
 
+def obtain_iron_sword(game_state_ref):
+    """철검 획득 함수"""
+    from scripts.weapons import create_weapon
+    from scripts.inventory import player_inventory
+    
+    # 철검 생성
+    iron_sword = create_weapon("iron_sword")
+    
+    if iron_sword:
+        # 인벤토리에 추가
+        player_inventory["weapons"].append(iron_sword)
+        game_state_ref["message"] = f"{iron_sword.name}을(를) 획득했습니다!"
+        print(f"철검 획득! 현재 보유 무기: {len(player_inventory['weapons'])}개")
+    else:
+        game_state_ref["message"] = "아이템 획득에 실패했습니다."
+
 def enter_shop(game_state_ref):
+    """상점 진입 - 철검 획득"""
     print("상점에 들어갑니다...")
-    game_state_ref["state"] = "shop"
+    
+    # 철검 획득
+    obtain_iron_sword(game_state_ref)
+    
+    # 상점 화면으로 전환 (기존 로직)
+    # game_state_ref["state"] = "shop"

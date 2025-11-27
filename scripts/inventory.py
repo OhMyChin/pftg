@@ -22,7 +22,7 @@ player_inventory = {
     "consumables": []  # 소비 아이템 리스트
 }
 
-def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, dt, font_path=None):
+def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, dt, font_path=None, game_state=None):
     """인벤토리 화면 그리기"""
     global inventory_state
     
@@ -34,6 +34,18 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
         font_tiny = pygame.font.Font(font_path, 20)
     else:
         font_tiny = pygame.font.Font(None, 20)
+    
+    # ===== 골드 정보 표시 (오른쪽 위) =====
+    if game_state:
+        gold_text = font_small.render(f"골드: {game_state.get('gold', 0)}G", True, (255, 215, 0))
+        gold_rect = gold_text.get_rect(topright=(WIDTH - 30, 30))
+        
+        # 골드 배경 박스
+        gold_bg_rect = pygame.Rect(gold_rect.x - 15, gold_rect.y - 10, gold_rect.width + 30, gold_rect.height + 20)
+        pygame.draw.rect(screen, (40, 40, 50), gold_bg_rect)
+        pygame.draw.rect(screen, (255, 215, 0), gold_bg_rect, 2)
+        
+        screen.blit(gold_text, gold_rect)
     
     # 레이아웃 설정
     info_panel_width = 240
