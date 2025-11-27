@@ -171,26 +171,14 @@ def advance_floor():
 
 def move_battle_selection(d_row, d_col):
     """전투 중 선택 이동"""
-    from scripts.inventory import player_inventory
+    new_row = battle_state["selected_row"] + d_row
+    new_col = battle_state["selected_col"] + d_col
     
-    if battle_state["turn_phase"] == "weapon_swap":
-        # 무기 교체 화면에서는 세로로만 이동
-        new_index = battle_state["selected_row"] * 3 + battle_state["selected_col"] + d_row
-        max_index = min(2, len(player_inventory["equipped_weapons"]) - 1)
-        
-        if 0 <= new_index <= max_index:
-            battle_state["selected_row"] = new_index // 3
-            battle_state["selected_col"] = new_index % 3
-    else:
-        # 기존 2x2 그리드 이동
-        new_row = battle_state["selected_row"] + d_row
-        new_col = battle_state["selected_col"] + d_col
-        
-        # 2x2 그리드 범위 체크
-        if 0 <= new_row <= 1:
-            battle_state["selected_row"] = new_row
-        if 0 <= new_col <= 1:
-            battle_state["selected_col"] = new_col
+    # 2x2 그리드 범위 체크
+    if 0 <= new_row <= 1:
+        battle_state["selected_row"] = new_row
+    if 0 <= new_col <= 1:
+        battle_state["selected_col"] = new_col
 
 
 def execute_battle_action(game_state_ref):
@@ -294,11 +282,12 @@ def execute_battle_action(game_state_ref):
             battle_state["waiting_for_click"] = True
         elif selected_button == 2:  # 교체
             from scripts.inventory import player_inventory
+            from scripts import weapon_swap
             if len(player_inventory["equipped_weapons"]) > 1:
-                battle_state["turn_phase"] = "weapon_swap"
-                battle_state["current_text"] = ""
-                battle_state["selected_row"] = 0
-                battle_state["selected_col"] = 0
+                # 무기 교체 화면으로 전환
+                weapon_swap.swap_state["selected_index"] = 0
+                game_state_ref["state"] = "weapon_swap"
+                return True
             else:
                 battle_state["current_text"] = "교체할 무기가 없습니다!"
                 battle_state["turn_phase"] = "text"
@@ -340,24 +329,19 @@ def execute_battle_action(game_state_ref):
                     battle_state["turn_phase"] = "text"
                     battle_state["waiting_for_click"] = True
     
-    # 무기 교체
-    elif battle_state["turn_phase"] == "weapon_swap":
-        from scripts.inventory import player_inventory
-        selected_button = battle_state["selected_row"] * 3 + battle_state["selected_col"]
-        
-        if selected_button < len(player_inventory["equipped_weapons"]):
-            selected_weapon = player_inventory["equipped_weapons"][selected_button]
-            battle_player.equip_weapon(selected_weapon)
-            battle_state["current_text"] = f"{selected_weapon.name}(으)로 교체했다!"
-            battle_state["turn_phase"] = "text"
-            battle_state["waiting_for_click"] = True
-    
     return False  # 도망치지 않았음
 
 
 def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
     """전투 화면 업데이트"""
     global battle_player, battle_enemy, battle_state
+    
+    # weapon_swap에서 돌아왔으면 메뉴로 초기화
+    if battle_state.get("returning_from_swap", False):
+        battle_state["turn_phase"] = "menu"
+        battle_state["selected_row"] = 0
+        battle_state["selected_col"] = 0
+        battle_state["returning_from_swap"] = False
 
     # ---------- 레이아웃 설정 ----------
     screen.fill((30, 30, 60))
@@ -586,73 +570,6 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
             txt_rect = txt.get_rect(center=rect.center)
             screen.blit(txt, txt_rect)
     
-    elif battle_state["turn_phase"] == "weapon_swap":
-        # 무기 교체 화면
-        from scripts.inventory import player_inventory
-        
-        weapon_button_w = 360
-        weapon_button_h = 80
-        weapon_gap = 15
-        weapon_start_x = (WIDTH - weapon_button_w) // 2
-        weapon_start_y = HEIGHT - 280
-        
-        for i, weapon in enumerate(player_inventory["equipped_weapons"]):
-            if i >= 3:  # 최대 3개까지만 표시
-                break
-            
-            weapon_rect = pygame.Rect(
-                weapon_start_x,
-                weapon_start_y + i * (weapon_button_h + weapon_gap),
-                weapon_button_w,
-                weapon_button_h
-            )
-            
-            is_selected = (battle_state["selected_row"] * 3 + battle_state["selected_col"] == i)
-            is_current = (battle_player.weapon == weapon)
-            
-            # 배경색
-            if is_current:
-                base_color = (100, 150, 100)  # 현재 장착 중
-            else:
-                base_color = (100, 100, 150)
-            
-            if is_selected:
-                color = tuple(min(255, c + 50) for c in base_color)
-            else:
-                color = base_color
-            
-            pygame.draw.rect(screen, color, weapon_rect)
-            
-            if is_selected:
-                pygame.draw.rect(screen, (100, 150, 255), weapon_rect, 4)
-            else:
-                pygame.draw.rect(screen, (200, 200, 200), weapon_rect, 2)
-            
-            # 무기 이미지
-            try:
-                weapon_img_path = f"resources/png/weapon/{weapon.id}.png"
-                weapon_img = pygame.image.load(weapon_img_path).convert_alpha()
-                weapon_img = pygame.transform.scale(weapon_img, (60, 60))
-                screen.blit(weapon_img, (weapon_rect.x + 10, weapon_rect.y + 10))
-            except:
-                pygame.draw.rect(screen, (80, 80, 100), 
-                               (weapon_rect.x + 10, weapon_rect.y + 10, 60, 60))
-            
-            # 무기 정보 텍스트
-            weapon_name = font.render(weapon.name, True, (255, 255, 255))
-            screen.blit(weapon_name, (weapon_rect.x + 80, weapon_rect.y + 15))
-            
-            durability_text = font.render(
-                f"{weapon.durability}/{weapon.max_durability}",
-                True, (200, 200, 200)
-            )
-            screen.blit(durability_text, (weapon_rect.x + 80, weapon_rect.y + 45))
-            
-            # 현재 장착 표시
-            if is_current:
-                current_text = font.render("장착중", True, (100, 255, 100))
-                screen.blit(current_text, (weapon_rect.x + weapon_button_w - 100, weapon_rect.y + 30))
-    
     elif battle_state["turn_phase"] in ["menu", "text"]:
         menu_labels = ["전투", "소비", "교체", "도망"]
         menu_colors = [(150, 150, 250), (100, 200, 100), (200, 150, 100), (200, 100, 100)]
@@ -687,10 +604,6 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
             # ESC: 도망 또는 뒤로가기
             if event.key == pygame.K_ESCAPE:
                 if battle_state["turn_phase"] == "skill_select":
-                    battle_state["turn_phase"] = "menu"
-                    battle_state["selected_row"] = 0
-                    battle_state["selected_col"] = 0
-                elif battle_state["turn_phase"] == "weapon_swap":
                     battle_state["turn_phase"] = "menu"
                     battle_state["selected_row"] = 0
                     battle_state["selected_col"] = 0

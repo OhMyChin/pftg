@@ -6,6 +6,7 @@ import os
 import sys
 from scripts import interactions, battle_system, inventory
 from scripts.weapons import create_weapon
+from scripts import weapon_swap
 
 # --- 기본 설정 ---
 WIDTH, HEIGHT = 800, 600
@@ -217,7 +218,7 @@ shop = Building(
 buildings.add(shop)
 all_sprites.add(shop)
 
-forge = Building("대장간", 500, -100, 175, 125)
+forge = Building("대장간", 500, -150, 175, 175, "resources\\png\\building\\blacksmith.png")
 buildings.add(forge)
 all_sprites.add(forge)
 
@@ -419,6 +420,11 @@ while True:
         
         case "battle":
             battle_system.update_battle(screen, FONT_SMALL, WIDTH, HEIGHT, game_state, events)
+
+        case "weapon_swap":
+            weapon_swap.draw_weapon_swap(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT,
+                                        battle_system.battle_player, FONT_PATH)
+            weapon_swap.handle_weapon_swap_input(events, battle_system.battle_player, game_state)
 
     # --- 화면 업데이트 ---
     pygame.display.flip()

@@ -60,7 +60,7 @@ IRON_SWORD = Weapon(
     name="철 검",
     grade="고급",
     max_durability=100,
-    skill_ids=["swing", "pierce", "slash"],
+    skill_ids=["pierce", "slash"],
     description="잘 벼려진 철 검. 다양한 공격 기술을 사용할 수 있다."
 )
 
@@ -69,7 +69,7 @@ RUSTY_DAGGER = Weapon(
     name="녹슨 단검",
     grade="일반",
     max_durability=30,
-    skill_ids=["pierce", "quick_strike"],
+    skill_ids=["pierce"],
     description="오래되어 녹슨 단검. 빠른 공격에 특화되어 있다."
 )
 
