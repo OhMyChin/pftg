@@ -8,6 +8,8 @@ shop_state = {
     "dialog_index": 0,  # 현재 대사 인덱스
     "page": 0,  # 현재 페이지
     "selected_slot": 0,  # 선택된 상품 슬롯 (0-2)
+    "message": "",  # 구매 메시지
+    "message_timer": 0,  # 메시지 타이머
 }
 
 # 상점 아이템 정의
@@ -32,8 +34,15 @@ SHOP_ITEMS = [
     ],
 ]
 
-def draw_shop(screen, font_main, font_small, WIDTH, HEIGHT, game_state):
+def draw_shop(screen, font_main, font_small, WIDTH, HEIGHT, game_state, dt=0):
     """상점 화면 그리기"""
+    
+    # 메시지 타이머 업데이트
+    if shop_state["message"] and dt > 0:
+        shop_state["message_timer"] += dt
+        if shop_state["message_timer"] > 2:  # 2초 후 메시지 숨김
+            shop_state["message"] = ""
+            shop_state["message_timer"] = 0
     
     if shop_state["stage"] == "inside":
         # 상점 내부 화면
@@ -160,16 +169,20 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state):
     # 구매 UI 이미지 로드
     try:
         shop_ui = pygame.image.load("resources/png/building/shop_buy.png").convert_alpha()
-        # UI를 화면 중앙에 배치
-        ui_width = 600
-        ui_height = 400
+        # 원본 비율 유지하며 가로 600으로 조정
+        original_width = shop_ui.get_width()
+        original_height = shop_ui.get_height()
+        ui_width = 800
+        aspect_ratio = original_height / original_width
+        ui_height = int(ui_width * aspect_ratio)
+        
         shop_ui = pygame.transform.scale(shop_ui, (ui_width, ui_height))
         ui_x = (WIDTH - ui_width) // 2
         ui_y = (HEIGHT - ui_height) // 2
         screen.blit(shop_ui, (ui_x, ui_y))
     except:
         # 이미지 로드 실패 시 기본 UI
-        ui_width = 600
+        ui_width = 800
         ui_height = 400
         ui_x = (WIDTH - ui_width) // 2
         ui_y = (HEIGHT - ui_height) // 2
@@ -209,7 +222,7 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state):
             screen.blit(price_text, price_rect)
             
             # 아이템 이미지 (중앙)
-            item_img_y = start_y + 70
+            item_img_y = start_y + 60  # 이미지 위치 조정
             try:
                 if item["type"] == "consumable":
                     # 소모품 이미지 (consume.py에서 경로 가져오기)
@@ -261,7 +274,7 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state):
             
             # 아이템 이름 (하단)
             name_lines = wrap_text(item["name"], font_small, slot_width - 20)
-            name_y = start_y + 180
+            name_y = start_y + 170  # 이름 위치 조정
             for line in name_lines:
                 name_text = font_small.render(line, True, (0, 0, 0))
                 name_rect = name_text.get_rect(center=(slot_x + slot_width // 2, name_y))
@@ -270,7 +283,7 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state):
             
             # 구매 버튼 영역 (하단)
             button_y = start_y + slot_height - 50
-            buy_text = font_small.render("구매 (Enter)", True, (0, 0, 0))
+            buy_text = font_small.render("구매", True, (0, 0, 0))
             buy_rect = buy_text.get_rect(center=(slot_x + slot_width // 2, button_y))
             screen.blit(buy_text, buy_rect)
     
@@ -278,22 +291,39 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state):
     page_text = font_small.render(f"페이지 {current_page + 1}/{len(SHOP_ITEMS)}", True, (255, 255, 255))
     screen.blit(page_text, (WIDTH // 2 - page_text.get_width() // 2, ui_y + ui_height + 20))
     
-    # 조작 안내
-    controls = [
-        "A/D: 아이템 선택",
-        "W/S: 페이지 이동",
-        "Enter: 구매",
-        "ESC: 돌아가기"
-    ]
-    control_y = HEIGHT - 150
-    for control in controls:
-        control_text = font_small.render(control, True, (255, 255, 255))
-        screen.blit(control_text, (20, control_y))
-        control_y += 25
+    # 현재 골드 표시 (인벤토리 스타일)
+    gold_text = font_small.render(f"골드: {game_state.get('gold', 0)}G", True, (255, 215, 0))
+    gold_rect = gold_text.get_rect(topright=(WIDTH - 30, 30))
     
-    # 현재 골드 표시
-    gold_text = font_main.render(f"보유 골드: {game_state.get('gold', 0)}G", True, (255, 215, 0))
-    screen.blit(gold_text, (WIDTH - gold_text.get_width() - 20, 20))
+    # 골드 배경 박스
+    gold_bg_rect = pygame.Rect(gold_rect.x - 15, gold_rect.y - 10, gold_rect.width + 30, gold_rect.height + 20)
+    pygame.draw.rect(screen, (40, 40, 50), gold_bg_rect)
+    pygame.draw.rect(screen, (255, 215, 0), gold_bg_rect, 2)
+    
+    screen.blit(gold_text, gold_rect)
+    
+    # 메시지 박스 표시 (구매 성공/실패 메시지)
+    if shop_state["message"]:
+        # 메시지 박스 크기 및 위치
+        msg_box_width = 500
+        msg_box_height = 80
+        msg_box_x = (WIDTH - msg_box_width) // 2
+        msg_box_y = HEIGHT - 120  # 조작 안내 제거로 더 아래로 이동
+        
+        # 메시지 박스 배경 (반투명)
+        msg_surface = pygame.Surface((msg_box_width, msg_box_height))
+        msg_surface.set_alpha(230)
+        msg_surface.fill((40, 30, 20))
+        screen.blit(msg_surface, (msg_box_x, msg_box_y))
+        
+        # 메시지 박스 테두리
+        msg_rect = pygame.Rect(msg_box_x, msg_box_y, msg_box_width, msg_box_height)
+        pygame.draw.rect(screen, (200, 180, 150), msg_rect, 4)
+        
+        # 메시지 텍스트
+        msg_text = font_small.render(shop_state["message"], True, (255, 255, 255))
+        msg_text_rect = msg_text.get_rect(center=(msg_box_x + msg_box_width // 2, msg_box_y + msg_box_height // 2))
+        screen.blit(msg_text, msg_text_rect)
 
 
 def handle_shop_input(events, game_state):
@@ -395,16 +425,19 @@ def handle_shop_input(events, game_state):
                                     weapon = create_weapon(item["id"])
                                     if weapon:
                                         player_inventory["weapons"].append(weapon)
-                                        game_state["message"] = f"{item['name']}을(를) 구매했습니다! (인벤토리에 추가됨)"
+                                        shop_state["message"] = f"{item['name']}을(를) 구매했습니다!"
+                                        shop_state["message_timer"] = 0
                                 elif item["type"] == "consumable":
                                     # 소모품 추가
                                     from scripts.consume import create_consumable
                                     consumable = create_consumable(item["id"])
                                     if consumable:
                                         player_inventory["consumables"].append(consumable)
-                                        game_state["message"] = f"{item['name']}을(를) 구매했습니다! (인벤토리에 추가됨)"
+                                        shop_state["message"] = f"{item['name']}을(를) 구매했습니다!"
+                                        shop_state["message_timer"] = 0
                             else:
-                                game_state["message"] = "골드가 부족합니다!"
+                                shop_state["message"] = "골드가 부족합니다!"
+                                shop_state["message_timer"] = 0
                 
                 elif event.key == pygame.K_ESCAPE:
                     # 상점 내부로 돌아가기

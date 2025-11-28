@@ -451,7 +451,7 @@ while True:
 
         case "shop":
             from scripts import shop
-            shop.draw_shop(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, game_state)
+            shop.draw_shop(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, game_state, dt)
             shop.handle_shop_input(events, game_state)
                     
         case "battle":

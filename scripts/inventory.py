@@ -3,7 +3,7 @@ import pygame
 # 인벤토리 상태
 inventory_state = {
     "current_tab": "weapon",  # "weapon" 또는 "consume"
-    "selected_area": "slots",  # "tabs" 또는 "slots"
+    "selected_area": "slots",  # "tabs", "slots", 또는 "pages"
     "selected_tab_index": 0,  # 0: 무기, 1: 소비
     "selected_row": 1,  # 0: 장착템, 1~3: 보유템
     "selected_col": 0,
@@ -260,14 +260,15 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
     
     else:  # consume 탭
         consume_area_y = slots_start_y
-        max_pages = (len(player_inventory["consumables"]) + 23) // 24  # 6*4=24칸
+        max_pages = max(1, (len(player_inventory["consumables"]) + 29) // 30)  # 5*6=30칸
         
-        for row in range(6):
+        # 5x6 아이템 슬롯
+        for row in range(5):
             for col in range(6):
                 slot_x = tab_area_x + col * (slot_size + slot_gap)
                 slot_y = consume_area_y + row * (slot_size + slot_gap)
                 
-                slot_index = row * 6 + col + (inventory_state["consume_page"] * 24)
+                slot_index = row * 6 + col + (inventory_state["consume_page"] * 30)
                 is_selected = (inventory_state["selected_area"] == "slots" and 
                               inventory_state["selected_row"] == row and 
                               inventory_state["selected_col"] == col)
@@ -275,10 +276,66 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
                 item = player_inventory["consumables"][slot_index] if slot_index < len(player_inventory["consumables"]) else None
                 draw_slot(screen, slot_x, slot_y, slot_size, True, is_selected, item)
         
-        # 페이지 표시
-        if max_pages > 1:
-            page_text = font_small.render(f"페이지: {inventory_state['consume_page'] + 1}/{max_pages}", True, (200, 200, 200))
-            screen.blit(page_text, (tab_area_x, consume_area_y + 4 * (slot_size + slot_gap) + 10))
+        # 페이지 버튼 (아래쪽): [이전] [페이지 정보] [다음]
+        page_button_y = consume_area_y + 5 * (slot_size + slot_gap) + 10
+        page_button_width = 80
+        page_button_height = 40
+        page_button_gap = 20
+        
+        # 중앙 정렬을 위한 시작 X 좌표
+        total_width = page_button_width * 2 + 150 + page_button_gap * 2  # 이전 + 정보 + 다음
+        page_buttons_start_x = tab_area_x + (6 * (slot_size + slot_gap) - total_width) // 2
+        
+        # [이전] 버튼
+        prev_button_rect = pygame.Rect(page_buttons_start_x, page_button_y, page_button_width, page_button_height)
+        is_prev_selected = (inventory_state["selected_area"] == "pages" and inventory_state["selected_col"] == 0)
+        can_go_prev = inventory_state["consume_page"] > 0
+        
+        if can_go_prev:
+            prev_bg = (70, 80, 90) if not is_prev_selected else (90, 100, 110)
+            prev_border = (150, 150, 250) if is_prev_selected else (180, 180, 200)  # 선택 시 파란색, 평소 밝은 회색
+            prev_text_color = (255, 255, 255)
+        else:
+            prev_bg = (40, 40, 50)
+            prev_border = (80, 80, 100)
+            prev_text_color = (100, 100, 100)
+        
+        pygame.draw.rect(screen, prev_bg, prev_button_rect)
+        pygame.draw.rect(screen, prev_border, prev_button_rect, 4 if is_prev_selected else 2)
+        prev_text = font_small.render("이전", True, prev_text_color)
+        prev_text_rect = prev_text.get_rect(center=prev_button_rect.center)
+        screen.blit(prev_text, prev_text_rect)
+        
+        # 페이지 정보 (중앙)
+        page_info_x = page_buttons_start_x + page_button_width + page_button_gap
+        page_info_rect = pygame.Rect(page_info_x, page_button_y, 150, page_button_height)
+        pygame.draw.rect(screen, (60, 60, 70), page_info_rect)
+        pygame.draw.rect(screen, (100, 100, 120), page_info_rect, 2)
+        
+        page_info_text = font_small.render(f"{inventory_state['consume_page'] + 1} / {max_pages}", True, (200, 200, 200))
+        page_info_text_rect = page_info_text.get_rect(center=page_info_rect.center)
+        screen.blit(page_info_text, page_info_text_rect)
+        
+        # [다음] 버튼
+        next_button_x = page_info_x + 150 + page_button_gap
+        next_button_rect = pygame.Rect(next_button_x, page_button_y, page_button_width, page_button_height)
+        is_next_selected = (inventory_state["selected_area"] == "pages" and inventory_state["selected_col"] == 1)
+        can_go_next = inventory_state["consume_page"] < max_pages - 1
+        
+        if can_go_next:
+            next_bg = (70, 80, 90) if not is_next_selected else (90, 100, 110)
+            next_border = (150, 150, 250) if is_next_selected else (180, 180, 200)  # 선택 시 파란색, 평소 밝은 회색
+            next_text_color = (255, 255, 255)
+        else:
+            next_bg = (40, 40, 50)
+            next_border = (80, 80, 100)
+            next_text_color = (100, 100, 100)
+        
+        pygame.draw.rect(screen, next_bg, next_button_rect)
+        pygame.draw.rect(screen, next_border, next_button_rect, 4 if is_next_selected else 2)
+        next_text = font_small.render("다음", True, next_text_color)
+        next_text_rect = next_text.get_rect(center=next_button_rect.center)
+        screen.blit(next_text, next_text_rect)
     
     # ===== 메시지 표시 =====
     if inventory_state["message"]:
@@ -345,7 +402,7 @@ def get_selected_item(battle_player):
     else:  # consume
         row = inventory_state["selected_row"]
         col = inventory_state["selected_col"]
-        index = row * 6 + col + (inventory_state["consume_page"] * 24)
+        index = row * 6 + col + (inventory_state["consume_page"] * 30)
         if index < len(player_inventory["consumables"]):
             return player_inventory["consumables"][index]
     return None
@@ -368,23 +425,29 @@ def handle_inventory_input(events, battle_player):
             # 엔터: 장착/해제 또는 탭 전환
             elif event.key == pygame.K_RETURN:
                 if inventory_state["selected_area"] == "tabs":
-                    # 탭 전환
+                    # 탭 전환 (선택 영역과 위치 모두 유지)
                     if inventory_state["selected_tab_index"] == 0:
                         inventory_state["current_tab"] = "weapon"
                     else:
                         inventory_state["current_tab"] = "consume"
-                    
-                    # 슬롯 영역으로 이동
-                    inventory_state["selected_area"] = "slots"
-                    if inventory_state["current_tab"] == "weapon":
-                        inventory_state["selected_row"] = 1
-                    else:
-                        inventory_state["selected_row"] = 0
-                    inventory_state["selected_col"] = 0
+                    # selected_area, row, col 모두 그대로 유지
                 elif inventory_state["current_tab"] == "weapon":
                     toggle_equip_weapon(battle_player)
                 elif inventory_state["current_tab"] == "consume":
-                    use_consumable(battle_player)
+                    if inventory_state["selected_area"] == "pages":
+                        # 페이지 버튼 클릭 시
+                        max_pages = max(1, (len(player_inventory["consumables"]) + 29) // 30)
+                        
+                        if inventory_state["selected_col"] == 0:  # 이전 버튼
+                            if inventory_state["consume_page"] > 0:
+                                inventory_state["consume_page"] -= 1
+                                # 선택 위치 유지 (슬롯으로 돌아가지 않음)
+                        elif inventory_state["selected_col"] == 1:  # 다음 버튼
+                            if inventory_state["consume_page"] < max_pages - 1:
+                                inventory_state["consume_page"] += 1
+                                # 선택 위치 유지 (슬롯으로 돌아가지 않음)
+                    else:
+                        use_consumable(battle_player)
 
 
 def move_selection(d_row, d_col):
@@ -400,7 +463,7 @@ def move_selection(d_row, d_col):
         if d_row > 0:
             inventory_state["selected_area"] = "slots"
             if inventory_state["current_tab"] == "weapon":
-                inventory_state["selected_row"] = 1
+                inventory_state["selected_row"] = 0  # 장착템으로 이동
             else:
                 inventory_state["selected_row"] = 0
             inventory_state["selected_col"] = 0
@@ -427,23 +490,46 @@ def move_selection(d_row, d_col):
             inventory_state["selected_col"] = new_col
     
     else:  # consume
-        max_row = 3
-        max_col = 5
+        if inventory_state["selected_area"] == "slots":
+            # 슬롯 영역에서 이동
+            max_row = 4  # 0~4 = 5행
+            max_col = 5  # 0~5 = 6열
+            
+            new_row = inventory_state["selected_row"] + d_row
+            new_col = inventory_state["selected_col"] + d_col
+            
+            # 위로 이동 시 탭으로
+            if new_row < 0:
+                inventory_state["selected_area"] = "tabs"
+                inventory_state["selected_tab_index"] = 1  # 소비 탭
+                return
+            
+            # 아래로 이동 시 페이지 슬롯으로
+            if new_row > max_row:
+                inventory_state["selected_area"] = "pages"
+                inventory_state["selected_col"] = 0
+                return
+            
+            if 0 <= new_row <= max_row:
+                inventory_state["selected_row"] = new_row
+            
+            if 0 <= new_col <= max_col:
+                inventory_state["selected_col"] = new_col
         
-        new_row = inventory_state["selected_row"] + d_row
-        new_col = inventory_state["selected_col"] + d_col
-        
-        # 위로 이동 시 탭으로
-        if new_row < 0:
-            inventory_state["selected_area"] = "tabs"
-            inventory_state["selected_tab_index"] = 1  # 소비 탭
-            return
-        
-        if 0 <= new_row <= max_row:
-            inventory_state["selected_row"] = new_row
-        
-        if 0 <= new_col <= max_col:
-            inventory_state["selected_col"] = new_col
+        elif inventory_state["selected_area"] == "pages":
+            # 페이지 버튼 영역에서 이동 (0=이전, 1=다음)
+            
+            # 위로 이동 시 슬롯으로
+            if d_row < 0:
+                inventory_state["selected_area"] = "slots"
+                inventory_state["selected_row"] = 4  # 마지막 행
+                return
+            
+            # 좌우 이동 (이전/다음 버튼 사이)
+            if d_col != 0:
+                new_col = inventory_state["selected_col"] + d_col
+                if 0 <= new_col <= 1:  # 0=이전, 1=다음
+                    inventory_state["selected_col"] = new_col
 
 
 def toggle_equip_weapon(battle_player):
@@ -519,7 +605,7 @@ def use_consumable(battle_player):
     """소모품 사용"""
     row = inventory_state["selected_row"]
     col = inventory_state["selected_col"]
-    index = row * 6 + col + (inventory_state["consume_page"] * 24)
+    index = row * 6 + col + (inventory_state["consume_page"] * 30)
     
     if index >= len(player_inventory["consumables"]):
         inventory_state["message"] = "아이템이 없습니다!"
