@@ -92,6 +92,40 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
                 desc_text = font_tiny.render(line, True, (180, 180, 180))
                 screen.blit(desc_text, (info_panel_x + 15, y_offset))
                 y_offset += 22
+        
+        # 소모품 정보
+        elif hasattr(selected_item, 'type'):  # Consumable
+            name_text = font_small.render(selected_item.name, True, (255, 255, 255))
+            screen.blit(name_text, (info_panel_x + 15, y_offset))
+            y_offset += 35
+            
+            # 타입 표시
+            type_name = "포션" if selected_item.type == "potion" else "수리 키트"
+            type_text = font_small.render(f"종류: {type_name}", True, (200, 200, 100))
+            screen.blit(type_text, (info_panel_x + 15, y_offset))
+            y_offset += 30
+            
+            # 효과 표시
+            if selected_item.type == "potion":
+                effect_text = font_small.render(
+                    f"회복량: {selected_item.effect_value} HP", 
+                    True, (100, 200, 255)
+                )
+            else:  # repair_kit
+                effect_text = font_small.render(
+                    f"수리량: {selected_item.effect_value}", 
+                    True, (100, 200, 255)
+                )
+            screen.blit(effect_text, (info_panel_x + 15, y_offset))
+            y_offset += 35
+            
+            # 설명
+            y_offset += 8
+            desc_lines = wrap_text(selected_item.description, font_tiny, info_panel_width - 30)
+            for line in desc_lines:
+                desc_text = font_tiny.render(line, True, (180, 180, 180))
+                screen.blit(desc_text, (info_panel_x + 15, y_offset))
+                y_offset += 22
     
     # ===== 탭 버튼 =====
     tab_button_width = 130
@@ -278,10 +312,15 @@ def draw_slot(screen, x, y, size, is_unlocked, is_selected, item):
     if item and is_unlocked:
         try:
             if hasattr(item, 'id'):  # 무기
-                item_img_path = f"resources/png/weapon/{item.id}.png"
-                item_img = pygame.image.load(item_img_path).convert_alpha()
-                item_img = pygame.transform.scale(item_img, (size - 10, size - 10))
-                screen.blit(item_img, (x + 5, y + 5))
+                # image_path가 있으면 사용, 없으면 기본 표시
+                if hasattr(item, 'image_path') and item.image_path:
+                    item_img = pygame.image.load(item.image_path).convert_alpha()
+                    item_img = pygame.transform.scale(item_img, (size - 10, size - 10))
+                    screen.blit(item_img, (x + 5, y + 5))
+                else:
+                    # 이미지 경로가 없으면 기본 표시
+                    pygame.draw.rect(screen, (100, 100, 150), (x + 10, y + 10, size - 20, size - 20))
+
         except:
             # 이미지 로드 실패 시 기본 표시
             pygame.draw.rect(screen, (100, 100, 150), (x + 10, y + 10, size - 20, size - 20))
@@ -344,6 +383,8 @@ def handle_inventory_input(events, battle_player):
                     inventory_state["selected_col"] = 0
                 elif inventory_state["current_tab"] == "weapon":
                     toggle_equip_weapon(battle_player)
+                elif inventory_state["current_tab"] == "consume":
+                    use_consumable(battle_player)
 
 
 def move_selection(d_row, d_col):
@@ -470,6 +511,50 @@ def wrap_text(text, font, max_width):
         lines.append(current_line.strip())
     
     return lines
+
+
+
+
+def use_consumable(battle_player):
+    """소모품 사용"""
+    row = inventory_state["selected_row"]
+    col = inventory_state["selected_col"]
+    index = row * 6 + col + (inventory_state["consume_page"] * 24)
+    
+    if index >= len(player_inventory["consumables"]):
+        inventory_state["message"] = "아이템이 없습니다!"
+        inventory_state["message_timer"] = 0
+        return
+    
+    consumable = player_inventory["consumables"][index]
+    
+    # 소모품 타입에 따라 처리
+    if consumable.type == "potion":
+        # 포션: 플레이어에게 직접 사용
+        success, message = consumable.use(battle_player)
+        if success:
+            # 사용 성공: 인벤토리에서 제거
+            player_inventory["consumables"].pop(index)
+            inventory_state["message"] = message
+        else:
+            inventory_state["message"] = message
+        inventory_state["message_timer"] = 0
+    
+    elif consumable.type == "repair_kit":
+        # 수리 키트: 무기 선택 필요
+        # 일단은 첫 번째 장착 무기에 사용
+        if player_inventory["equipped_weapons"]:
+            weapon = player_inventory["equipped_weapons"][0]
+            success, message = consumable.use(weapon)
+            if success:
+                # 사용 성공: 인벤토리에서 제거
+                player_inventory["consumables"].pop(index)
+                inventory_state["message"] = message
+            else:
+                inventory_state["message"] = message
+        else:
+            inventory_state["message"] = "수리할 무기가 없습니다!"
+        inventory_state["message_timer"] = 0
 
 
 def init_inventory(battle_player):

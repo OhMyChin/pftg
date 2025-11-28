@@ -280,9 +280,11 @@ def execute_battle_action(game_state_ref):
             battle_state["selected_row"] = 0
             battle_state["selected_col"] = 0
         elif selected_button == 1:  # 소비
-            battle_state["current_text"] = "아직 구현되지 않은 기능입니다."
-            battle_state["turn_phase"] = "text"
-            battle_state["waiting_for_click"] = True
+            # 소모품 사용 화면으로 전환
+            from scripts import consume_battle
+            consume_battle.reset_consume_battle_state()
+            game_state_ref["state"] = "consume_battle"
+            return True
         elif selected_button == 2:  # 교체
             from scripts.inventory import player_inventory
             from scripts import weapon_swap

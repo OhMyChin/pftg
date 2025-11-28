@@ -2,7 +2,7 @@ from scripts.skills import ALL_SKILLS
 
 class Weapon:
     """무기 기본 클래스"""
-    def __init__(self, id_, name, grade, max_durability, skill_ids, description=""):
+    def __init__(self, id_, name, grade, max_durability, skill_ids, description="", image_path=""):
         self.id = id_
         self.name = name
         self.grade = grade  # 등급: "일반", "고급", "희귀", "전설" 등
@@ -10,6 +10,7 @@ class Weapon:
         self.durability = max_durability  # 현재 내구도
         self.skill_ids = skill_ids  # 이 무기가 사용할 수 있는 스킬 ID 리스트
         self.description = description
+        self.image_path = image_path  # 무기 이미지 경로
     
     def get_skills(self):
         """무기가 사용 가능한 스킬 객체 리스트 반환"""
@@ -41,7 +42,8 @@ WOODEN_STICK = Weapon(
     grade="일반",
     max_durability=50,
     skill_ids=["swing"],
-    description="평범한 나무 막대기. 기본적인 공격만 가능하다."
+    description="평범한 나무 막대기. 기본적인 공격만 가능하다.",
+    image_path="resources/png/weapon/wooden_stick.png"
 )
 
 IRON_SWORD = Weapon(
@@ -50,7 +52,8 @@ IRON_SWORD = Weapon(
     grade="고급",
     max_durability=100,
     skill_ids=["pierce", "slash"],
-    description="잘 벼려진 철 검. 다양한 공격 기술을 사용할 수 있다."
+    description="잘 벼려진 철 검. 다양한 공격 기술을 사용할 수 있다.",
+    image_path="resources/png/weapon/iron_sword.png"
 )
 
 # ==================== 몬스터 전용 무기 ====================
@@ -60,7 +63,8 @@ SLIME_BODY = Weapon(
     name="슬라임의 몸",
     grade="몬스터",
     max_durability=9999,
-    skill_ids=["body_slam"]
+    skill_ids=["body_slam"],
+    image_path=""
 )
 
 RED_SLIME_BODY = Weapon(
@@ -68,7 +72,8 @@ RED_SLIME_BODY = Weapon(
     name="빨간 슬라임의 몸",
     grade="몬스터",
     max_durability=9999,
-    skill_ids=["red_attack"]
+    skill_ids=["red_attack"],
+    image_path=""
 )
 
 YELLOW_SLIME_BODY = Weapon(
@@ -76,7 +81,8 @@ YELLOW_SLIME_BODY = Weapon(
     name="노란 슬라임의 몸",
     grade="몬스터",
     max_durability=9999,
-    skill_ids=["yellow_attack"]
+    skill_ids=["yellow_attack"],
+    image_path=""
 )
 
 BLUE_SLIME_BODY = Weapon(
@@ -84,7 +90,8 @@ BLUE_SLIME_BODY = Weapon(
     name="파란 슬라임의 몸",
     grade="몬스터",
     max_durability=9999,
-    skill_ids=["blue_attack"]
+    skill_ids=["blue_attack"],
+    image_path=""
 )
 
 BLOOD_SLIME_BODY = Weapon(
@@ -92,7 +99,8 @@ BLOOD_SLIME_BODY = Weapon(
     name="블러드 슬라임의 몸",
     grade="몬스터",
     max_durability=9999,
-    skill_ids=["red_attack", "blood_bite"]
+    skill_ids=["red_attack", "blood_bite"],
+    image_path=""
 )
 
 MAGMA_SLIME_BODY = Weapon(
@@ -100,7 +108,8 @@ MAGMA_SLIME_BODY = Weapon(
     name="마그마 슬라임의 몸",
     grade="몬스터",
     max_durability=9999,
-    skill_ids=["yellow_attack", "magma_shot"]
+    skill_ids=["yellow_attack", "magma_shot"],
+    image_path=""
 )
 
 SWORD_SLIME_BODY = Weapon(
@@ -108,7 +117,8 @@ SWORD_SLIME_BODY = Weapon(
     name="소드 슬라임의 몸",
     grade="몬스터",
     max_durability=9999,
-    skill_ids=["blue_attack", "slime_slash"]
+    skill_ids=["blue_attack", "slime_slash"],
+    image_path=""
 )
 
 # ==================== 향후 확장용 무기 예시 ====================
@@ -119,7 +129,8 @@ RUSTY_DAGGER = Weapon(
     grade="일반",
     max_durability=30,
     skill_ids=["pierce"],
-    description="오래되어 녹슨 단검. 빠른 공격에 특화되어 있다."
+    description="오래되어 녹슨 단검. 빠른 공격에 특화되어 있다.",
+    image_path="resources/png/weapon/rusty_dagger.png"
 )
 
 # 무기 딕셔너리 (ID로 접근 가능)
@@ -147,5 +158,6 @@ def create_weapon(weapon_id):
         grade=template.grade,
         max_durability=template.max_durability,
         skill_ids=template.skill_ids.copy(),
-        description=template.description
+        description=template.description,
+        image_path=template.image_path
     )

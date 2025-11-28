@@ -12,13 +12,19 @@ shop_state = {
 
 # 상점 아이템 정의
 SHOP_ITEMS = [
-    # 페이지 0
+    # 페이지 0 (포션)
     [
-        {"id": "health_potion_small", "name": "작은 체력 물약", "price": 50, "type": "potion", "heal": 30},
-        {"id": "health_potion_medium", "name": "중간 체력 물약", "price": 100, "type": "potion", "heal": 50},
-        {"id": "health_potion_large", "name": "큰 체력 물약", "price": 200, "type": "potion", "heal": 100},
+        {"id": "health_potion_small", "name": "작은 체력 물약", "price": 50, "type": "consumable"},
+        {"id": "health_potion_medium", "name": "중간 체력 물약", "price": 100, "type": "consumable"},
+        {"id": "health_potion_large", "name": "큰 체력 물약", "price": 200, "type": "consumable"},
     ],
-    # 페이지 1 (무기)
+    # 페이지 1 (수리 키트)
+    [
+        {"id": "repair_kit_basic", "name": "초급 수리 키트", "price": 50, "type": "consumable"},
+        {"id": "repair_kit_advanced", "name": "중급 수리 키트", "price": 100, "type": "consumable"},
+        {"id": "repair_kit_master", "name": "고급 수리 키트", "price": 200, "type": "consumable"},
+    ],
+    # 페이지 2 (무기)
     [
         {"id": "iron_sword", "name": "철 검", "price": 300, "type": "weapon"},
         {"id": "rusty_dagger", "name": "녹슨 단검", "price": 150, "type": "weapon"},
@@ -205,28 +211,49 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state):
             # 아이템 이미지 (중앙)
             item_img_y = start_y + 70
             try:
-                if item["type"] == "potion":
-                    # 물약 이미지 (임시로 사각형)
-                    item_size = 80
-                    item_x = slot_x + (slot_width - item_size) // 2
-                    
-                    # 물약 색상 구분
-                    if "small" in item["id"]:
-                        color = (255, 182, 193)  # 연한 핑크
-                    elif "medium" in item["id"]:
-                        color = (255, 105, 180)  # 진한 핑크
+                if item["type"] == "consumable":
+                    # 소모품 이미지 (consume.py에서 경로 가져오기)
+                    from scripts.consume import ALL_CONSUMABLES
+                    consumable_template = ALL_CONSUMABLES.get(item['id'])
+                    if consumable_template and consumable_template.image_path:
+                        consumable_img = pygame.image.load(consumable_template.image_path).convert_alpha()
+                        consumable_img = pygame.transform.scale(consumable_img, (80, 80))
+                        item_x = slot_x + (slot_width - 80) // 2
+                        screen.blit(consumable_img, (item_x, item_img_y))
                     else:
-                        color = (220, 20, 60)  # 빨강
-                    
-                    pygame.draw.rect(screen, color, (item_x, item_img_y, item_size, item_size))
-                    pygame.draw.rect(screen, (255, 255, 255), (item_x, item_img_y, item_size, item_size), 3)
+                        # 이미지 경로가 없으면 기본 표시 (색상 구분)
+                        item_size = 80
+                        item_x = slot_x + (slot_width - item_size) // 2
+                        if "potion" in item["id"]:
+                            if "small" in item["id"]:
+                                color = (255, 182, 193)  # 연한 핑크
+                            elif "medium" in item["id"]:
+                                color = (255, 105, 180)  # 진한 핑크
+                            else:
+                                color = (220, 20, 60)  # 빨강
+                        else:  # repair_kit
+                            if "basic" in item["id"]:
+                                color = (200, 200, 255)  # 연한 파랑
+                            elif "advanced" in item["id"]:
+                                color = (100, 100, 255)  # 진한 파랑
+                            else:
+                                color = (50, 50, 200)  # 어두운 파랑
+                        pygame.draw.rect(screen, color, (item_x, item_img_y, item_size, item_size))
+                        pygame.draw.rect(screen, (255, 255, 255), (item_x, item_img_y, item_size, item_size), 3)
                     
                 elif item["type"] == "weapon":
-                    # 무기 이미지
-                    weapon_img = pygame.image.load(f"resources/png/weapon/{item['id']}.png").convert_alpha()
-                    weapon_img = pygame.transform.scale(weapon_img, (80, 80))
-                    item_x = slot_x + (slot_width - 80) // 2
-                    screen.blit(weapon_img, (item_x, item_img_y))
+                    # 무기 이미지 (weapons.py에서 경로 가져오기)
+                    from scripts.weapons import ALL_WEAPONS
+                    weapon_template = ALL_WEAPONS.get(item['id'])
+                    if weapon_template and weapon_template.image_path:
+                        weapon_img = pygame.image.load(weapon_template.image_path).convert_alpha()
+                        weapon_img = pygame.transform.scale(weapon_img, (80, 80))
+                        item_x = slot_x + (slot_width - 80) // 2
+                        screen.blit(weapon_img, (item_x, item_img_y))
+                    else:
+                        # 이미지 경로가 없으면 기본 표시
+                        pygame.draw.rect(screen, (150, 150, 150), 
+                                       (slot_x + 40, item_img_y, 80, 80))
             except:
                 # 이미지 로드 실패
                 pygame.draw.rect(screen, (150, 150, 150), 
@@ -367,17 +394,15 @@ def handle_shop_input(events, game_state):
                                     # 무기 추가
                                     weapon = create_weapon(item["id"])
                                     if weapon:
-                                        player_inventory["equipped_weapons"].append(weapon)
-                                        game_state["message"] = f"{item['name']}을(를) 구매했습니다!"
-                                elif item["type"] == "potion":
-                                    # 물약 추가 (체력 회복)
-                                    if battle_system.battle_player:
-                                        heal_amount = item.get("heal", 30)
-                                        battle_system.battle_player.hp = min(
-                                            battle_system.battle_player.max_hp,
-                                            battle_system.battle_player.hp + heal_amount
-                                        )
-                                        game_state["message"] = f"{item['name']}을(를) 구매하여 HP {heal_amount} 회복!"
+                                        player_inventory["weapons"].append(weapon)
+                                        game_state["message"] = f"{item['name']}을(를) 구매했습니다! (인벤토리에 추가됨)"
+                                elif item["type"] == "consumable":
+                                    # 소모품 추가
+                                    from scripts.consume import create_consumable
+                                    consumable = create_consumable(item["id"])
+                                    if consumable:
+                                        player_inventory["consumables"].append(consumable)
+                                        game_state["message"] = f"{item['name']}을(를) 구매했습니다! (인벤토리에 추가됨)"
                             else:
                                 game_state["message"] = "골드가 부족합니다!"
                 

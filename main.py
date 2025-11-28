@@ -6,7 +6,7 @@ import os
 import sys
 from scripts import interactions, battle_system, inventory
 from scripts.weapons import create_weapon
-from scripts import weapon_swap
+from scripts import weapon_swap, consume_battle
 
 # --- 기본 설정 ---
 WIDTH, HEIGHT = 800, 600
@@ -16,7 +16,7 @@ pftg_icon = pygame.image.load("resources\\png\\pftg_icon.png")
 game_state = {
     "state": "start",  # start, town, battle등등
     "player_name": "Hero",
-    "gold": 20,  # 초기 골드 추가
+    "gold": 20000,  # 초기 골드 추가
     "message": "",
     "message_timer": 0
 }
@@ -396,7 +396,7 @@ while True:
                     # 무기가 있는지 확인
                     if i < len(player_inventory["equipped_weapons"]):
                         weapon = player_inventory["equipped_weapons"][i]
-                        is_current = (bp.weapon and bp.weapon.id == weapon.id)
+                        is_current = (i == 0)  # 첫 번째 슬롯만 초록색
                         
                         # 배경 및 테두리 (현재 장착 무기는 녹색 테두리)
                         bg_color = (150, 150, 150)  # 배경색은 항상 동일
@@ -406,11 +406,15 @@ while True:
                         pygame.draw.rect(screen, bg_color, icon_rect)
                         pygame.draw.rect(screen, border_color, icon_rect, border_width)
                         
-                        # 무기 아이콘
+                        # 무기 아이콘 (weapon.image_path 사용)
                         try:
-                            weapon_img = pygame.image.load(f"resources/png/weapon/{weapon.id}.png").convert_alpha()
-                            weapon_img = pygame.transform.scale(weapon_img, (icon_size - 10, icon_size - 10))
-                            screen.blit(weapon_img, (icon_x + 5, start_y + 5))
+                            if hasattr(weapon, 'image_path') and weapon.image_path:
+                                weapon_img = pygame.image.load(weapon.image_path).convert_alpha()
+                                weapon_img = pygame.transform.scale(weapon_img, (icon_size - 10, icon_size - 10))
+                                screen.blit(weapon_img, (icon_x + 5, start_y + 5))
+                            else:
+                                # 이미지 경로가 없으면 기본 표시
+                                pygame.draw.rect(screen, (100, 100, 120), (icon_x + 5, start_y + 5, icon_size - 10, icon_size - 10))
                         except:
                             # 이미지 로드 실패 시 기본 사각형
                             pygame.draw.rect(screen, (100, 100, 120), (icon_x + 5, start_y + 5, icon_size - 10, icon_size - 10))
@@ -457,6 +461,17 @@ while True:
             weapon_swap.draw_weapon_swap(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT,
                                         battle_system.battle_player, FONT_PATH)
             weapon_swap.handle_weapon_swap_input(events, battle_system.battle_player, game_state)
+        
+        case "consume_battle":
+            consume_battle.draw_consume_battle(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT,
+                                              battle_system.battle_player)
+            
+            # 전투로 복귀하는 함수
+            def return_to_battle():
+                game_state["state"] = "battle"
+                consume_battle.reset_consume_battle_state()
+            
+            consume_battle.handle_consume_battle_input(events, battle_system.battle_player, return_to_battle)
 
     # --- 화면 업데이트 ---
     pygame.display.flip()

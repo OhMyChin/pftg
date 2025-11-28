@@ -54,10 +54,15 @@ def draw_weapon_swap(screen, font_main, font_small, WIDTH, HEIGHT, battle_player
         
         # 무기 이미지
         try:
-            weapon_img_path = f"resources/png/weapon/{weapon.id}.png"
-            weapon_img = pygame.image.load(weapon_img_path).convert_alpha()
-            weapon_img = pygame.transform.scale(weapon_img, (100, 100))
-            screen.blit(weapon_img, (current_rect.centerx - 50, current_rect.y + 60))
+            # weapon.image_path 사용
+            if hasattr(weapon, 'image_path') and weapon.image_path:
+                weapon_img = pygame.image.load(weapon.image_path).convert_alpha()
+                weapon_img = pygame.transform.scale(weapon_img, (100, 100))
+                screen.blit(weapon_img, (current_rect.centerx - 50, current_rect.y + 60))
+            else:
+                # 이미지가 없으면 기본 표시
+                pygame.draw.rect(screen, (60, 60, 80), 
+                               (current_rect.centerx - 50, current_rect.y + 60, 100, 100))
         except:
             pygame.draw.rect(screen, (60, 60, 80), 
                            (current_rect.centerx - 50, current_rect.y + 60, 100, 100))
@@ -172,10 +177,15 @@ def draw_weapon_swap(screen, font_main, font_small, WIDTH, HEIGHT, battle_player
         if has_weapon:
             # 무기 이미지
             try:
-                weapon_img_path = f"resources/png/weapon/{weapon.id}.png"
-                weapon_img = pygame.image.load(weapon_img_path).convert_alpha()
-                weapon_img = pygame.transform.scale(weapon_img, (70, 70))
-                screen.blit(weapon_img, (slot_rect.x + 10, slot_rect.y + 10))
+                # weapon.image_path 사용
+                if hasattr(weapon, 'image_path') and weapon.image_path:
+                    weapon_img = pygame.image.load(weapon.image_path).convert_alpha()
+                    weapon_img = pygame.transform.scale(weapon_img, (70, 70))
+                    screen.blit(weapon_img, (slot_rect.x + 10, slot_rect.y + 10))
+                else:
+                    # 이미지가 없으면 기본 표시
+                    pygame.draw.rect(screen, (60, 60, 80), 
+                                   (slot_rect.x + 10, slot_rect.y + 10, 70, 70))
             except:
                 pygame.draw.rect(screen, (60, 60, 80), 
                                (slot_rect.x + 10, slot_rect.y + 10, 70, 70))
