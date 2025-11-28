@@ -355,11 +355,9 @@ while True:
             # --- 마을 체력 표시 (텍스트 + 체력바) ---
             if battle_system.battle_player:
                 bp = battle_system.battle_player
-                # 텍스트 표시
-                hp_text = FONT_SMALL.render(
-                    f"{bp.name} HP: {bp.hp}/{bp.max_hp}", True, BLACK
-                )
-                screen.blit(hp_text, (20, 20))
+                # 이름만 표시 (HP는 체력바에 표시)
+                name_text = FONT_SMALL.render(f"{bp.name}", True, BLACK)
+                screen.blit(name_text, (20, 20))
 
                 # 체력바 배경
                 bar_x, bar_y, bar_width, bar_height = 20, 50, 200, 20
@@ -375,14 +373,51 @@ while True:
                     (200, 50, 50),
                     (bar_x, bar_y, int(bar_width * hp_ratio), bar_height)
                 )
+                
+                # 체력바 테두리
+                pygame.draw.rect(screen, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height), 2)
+                
+                # 체력바 안에 HP 수치 표시
+                hp_number_text = FONT_SMALL.render(f"{bp.hp}/{bp.max_hp}", True, (255, 255, 255))
+                hp_number_rect = hp_number_text.get_rect(center=(bar_x + bar_width // 2, bar_y + bar_height // 2))
+                screen.blit(hp_number_text, hp_number_rect)
 
-                # 무기 정보 표시
-                if bp.weapon:
-                    weapon_text = FONT_SMALL.render(
-                        f"무기: {bp.weapon.name} [{bp.weapon.durability}/{bp.weapon.max_durability}]",
-                        True, (100, 50, 0)
-                    )
-                    screen.blit(weapon_text, (20, 80))
+                # 무기 아이콘 표시 (6개)
+                from scripts.inventory import player_inventory
+                icon_size = 50
+                icon_gap = 10
+                start_x = 20
+                start_y = 80
+                
+                for i in range(6):
+                    icon_x = start_x + i * (icon_size + icon_gap)
+                    icon_rect = pygame.Rect(icon_x, start_y, icon_size, icon_size)
+                    
+                    # 무기가 있는지 확인
+                    if i < len(player_inventory["equipped_weapons"]):
+                        weapon = player_inventory["equipped_weapons"][i]
+                        is_current = (bp.weapon and bp.weapon.id == weapon.id)
+                        
+                        # 배경 및 테두리 (현재 장착 무기는 녹색 테두리)
+                        bg_color = (150, 150, 150)  # 배경색은 항상 동일
+                        border_color = (100, 255, 100) if is_current else (100, 100, 100)
+                        border_width = 3 if is_current else 2
+                        
+                        pygame.draw.rect(screen, bg_color, icon_rect)
+                        pygame.draw.rect(screen, border_color, icon_rect, border_width)
+                        
+                        # 무기 아이콘
+                        try:
+                            weapon_img = pygame.image.load(f"resources/png/weapon/{weapon.id}.png").convert_alpha()
+                            weapon_img = pygame.transform.scale(weapon_img, (icon_size - 10, icon_size - 10))
+                            screen.blit(weapon_img, (icon_x + 5, start_y + 5))
+                        except:
+                            # 이미지 로드 실패 시 기본 사각형
+                            pygame.draw.rect(screen, (100, 100, 120), (icon_x + 5, start_y + 5, icon_size - 10, icon_size - 10))
+                    else:
+                        # 빈 슬롯
+                        pygame.draw.rect(screen, (100, 100, 100), icon_rect)
+                        pygame.draw.rect(screen, (80, 80, 80), icon_rect, 1)
 
             # 메시지가 있으면 하단에 출력
             if game_state.get("message"):
@@ -412,12 +447,9 @@ while True:
 
         case "shop":
             from scripts import shop
-            shop.draw_shop(screen, FONT_SMALL, WIDTH, HEIGHT, game_state, battle_system.battle_player, events)
-            
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_ESCAPE]:
-                game_state["state"] = "town"
-        
+            shop.draw_shop(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, game_state)
+            shop.handle_shop_input(events, game_state)
+                    
         case "battle":
             battle_system.update_battle(screen, FONT_SMALL, WIDTH, HEIGHT, game_state, events)
 

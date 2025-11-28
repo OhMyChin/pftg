@@ -144,10 +144,13 @@ def spawn_next_monster():
             from scripts.skills import ALL_SKILLS
             if battle_enemy.weapon:
                 skills = battle_enemy.weapon.get_skills()
+                # 무기가 부서졌거나 내구도가 부족하면 발버둥치기 사용
+                if battle_enemy.weapon.is_broken():
+                    return [ALL_SKILLS["struggle"]]
                 usable = [s for s in skills if battle_enemy.weapon.durability >= s.durability_cost]
                 if not usable:
                     return [ALL_SKILLS["struggle"]]
-                return skills
+                return usable  # skills가 아닌 usable 반환
             else:
                 return [ALL_SKILLS["struggle"]]
         

@@ -277,7 +277,7 @@ def handle_weapon_swap_input(events, battle_player, game_state):
                         if swap_state["selected_index"] < len(player_inventory["equipped_weapons"]):
                             selected_weapon = player_inventory["equipped_weapons"][swap_state["selected_index"]]
                             battle_player.equip_weapon(selected_weapon)
-                            game_state["message"] = f"{selected_weapon.name}(으)로 교체했습니다!"
+                            # 전투 화면으로 돌아가므로 마을 메시지 설정 안 함
                         
                         # 다이얼로그 닫기
                         swap_state["showing_confirm"] = False
@@ -324,8 +324,7 @@ def handle_weapon_swap_input(events, battle_player, game_state):
                         if battle_player.weapon != selected_weapon:
                             swap_state["showing_confirm"] = True
                             swap_state["confirm_selected"] = 0
-                        else:
-                            game_state["message"] = "이미 장착 중인 무기입니다!"
+                        # 이미 장착 중이면 아무 동작도 하지 않음
                 
                 elif event.key == pygame.K_ESCAPE:
                     # 전투로 돌아가기
