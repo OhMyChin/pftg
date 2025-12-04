@@ -30,6 +30,8 @@ battle_state = {
     "text_box_rect": None,
     "selected_row": 0,  # 선택된 행
     "selected_col": 0,  # 선택된 열
+    "consumable_message": "",  # 소모품 사용 메시지
+    "showing_consumable_message": False,  # 소모품 메시지 표시 중
 }
 
 # --- 플레이어 전용 클래스 ---
@@ -78,6 +80,27 @@ def decide_order(player, p_skill, enemy, e_skill):
 def calc_damage(attacker, skill, defender):
     """단순 데미지 계산"""
     return max(1, skill.power)
+
+
+def wrap_battle_text(text, font, max_width):
+    """전투 메시지 텍스트 줄바꿈"""
+    words = text.split()
+    lines = []
+    current_line = ""
+    
+    for word in words:
+        test_line = current_line + (" " if current_line else "") + word
+        if font.size(test_line)[0] <= max_width:
+            current_line = test_line
+        else:
+            if current_line:
+                lines.append(current_line)
+            current_line = word
+    
+    if current_line:
+        lines.append(current_line)
+    
+    return lines
 
 
 def start_battle(game_state_ref, player_name):
@@ -189,6 +212,13 @@ def execute_battle_action(game_state_ref):
     global battle_state, battle_player, battle_enemy
     
     # 텍스트 진행 중이면 텍스트 넘기기
+    # 소모품 메시지 확인
+    if battle_state["showing_consumable_message"] and battle_state["waiting_for_click"]:
+        battle_state["showing_consumable_message"] = False
+        battle_state["waiting_for_click"] = False
+        battle_state["consumable_message"] = ""
+        return False
+    
     if battle_state["turn_phase"] == "text" and battle_state["waiting_for_click"]:
         if battle_state["stage"] == "announce" and battle_state["action_queue"]:
             # announce -> calculate
@@ -677,8 +707,31 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
                 if execute_battle_action(game_state_ref):
                     return  # 도망쳤으면 즉시 종료
 
+    # ---------- 소모품 메시지 박스 렌더 (우선순위) ----------
+    if battle_state["showing_consumable_message"]:
+        text_box = pygame.Rect(50, HEIGHT - 180, WIDTH - 100, 100)
+        battle_state["text_box_rect"] = text_box
+        pygame.draw.rect(screen, (20, 20, 20), text_box)
+        pygame.draw.rect(screen, (255, 255, 255), text_box, 2)
+
+        # 텍스트 줄바꿈 처리
+        max_text_width = text_box.width - 40
+        lines = wrap_battle_text(battle_state["consumable_message"], font, max_text_width)
+        
+        # 여러 줄 렌더링
+        y_offset = text_box.y + 20
+        for line in lines:
+            text_surface = font.render(line, True, (255, 255, 255))
+            screen.blit(text_surface, (text_box.x + 20, y_offset))
+            y_offset += 30
+        
+        # 엔터 대기 화살표
+        if battle_state["waiting_for_click"]:
+            arrow_text = pygame.font.SysFont("consolas", 30).render("▼", True, (255, 255, 255))
+            screen.blit(arrow_text, (text_box.x + text_box.width - 40, text_box.y + text_box.height - 40))
+    
     # ---------- 전투 텍스트 박스 렌더 ----------
-    if battle_state["current_text"] and battle_state["turn_phase"] not in ["end", "floor_clear"]:
+    elif battle_state["current_text"] and battle_state["turn_phase"] not in ["end", "floor_clear"]:
         text_box = pygame.Rect(50, HEIGHT - 180, WIDTH - 100, 100)
         battle_state["text_box_rect"] = text_box
         pygame.draw.rect(screen, (20, 20, 20), text_box)

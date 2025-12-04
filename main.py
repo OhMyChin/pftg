@@ -466,10 +466,15 @@ while True:
             consume_battle.draw_consume_battle(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT,
                                               battle_system.battle_player)
             
-            # 전투로 복귀하는 함수
-            def return_to_battle():
+            # 전투로 복귀하는 함수 (메시지 전달)
+            def return_to_battle(message=""):
                 game_state["state"] = "battle"
                 consume_battle.reset_consume_battle_state()
+                if message:
+                    # 소모품 메시지 설정
+                    battle_system.battle_state["consumable_message"] = message
+                    battle_system.battle_state["showing_consumable_message"] = True
+                    battle_system.battle_state["waiting_for_click"] = True
             
             consume_battle.handle_consume_battle_input(events, battle_system.battle_player, return_to_battle)
 
