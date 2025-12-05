@@ -100,14 +100,31 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
             screen.blit(name_text, (info_panel_x + 15, y_offset))
             y_offset += 35
             
-            grade_text = font_small.render(f"등급: {selected_item.grade}", True, (200, 200, 100))
+            # 등급과 내구도 텍스트 준비
+            grade_str = f"등급: {selected_item.grade}"
+            durability_str = f"내구도: {selected_item.durability}/{selected_item.max_durability}"
+            
+            # 둘 중 더 긴 텍스트에 맞춰 폰트 크기 조절
+            info_font_size = 28
+            if font_path:
+                info_font = pygame.font.Font(font_path, info_font_size)
+            else:
+                info_font = font_small
+            
+            # 둘 다 패널 안에 들어올 때까지 크기 줄이기
+            while (info_font.size(grade_str)[0] > max_name_width or 
+                   info_font.size(durability_str)[0] > max_name_width) and info_font_size > 14:
+                info_font_size -= 2
+                if font_path:
+                    info_font = pygame.font.Font(font_path, info_font_size)
+                else:
+                    info_font = pygame.font.Font(None, info_font_size)
+            
+            grade_text = info_font.render(grade_str, True, (200, 200, 100))
             screen.blit(grade_text, (info_panel_x + 15, y_offset))
             y_offset += 30
             
-            durability_text = font_small.render(
-                f"내구도: {selected_item.durability}/{selected_item.max_durability}", 
-                True, (100, 200, 255)
-            )
+            durability_text = info_font.render(durability_str, True, (100, 200, 255))
             screen.blit(durability_text, (info_panel_x + 15, y_offset))
             y_offset += 35
             

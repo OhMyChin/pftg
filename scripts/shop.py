@@ -30,11 +30,11 @@ SHOP_ITEMS = [
     [
         {"id": "iron_sword", "name": "철 검", "price": 300, "type": "weapon"},
         {"id": "rusty_dagger", "name": "녹슨 단검", "price": 150, "type": "weapon"},
-        None,  # 빈 슬롯
+        {"id": "test_sword", "name": "킹왕짱얼티밋 소드", "price": 2000, "type": "weapon"}
     ],
 ]
 
-def draw_shop(screen, font_main, font_small, WIDTH, HEIGHT, game_state, dt=0):
+def draw_shop(screen, font_main, font_small, WIDTH, HEIGHT, game_state, dt=0, font_path=None):
     """상점 화면 그리기"""
     
     # 메시지 타이머 업데이트
@@ -49,7 +49,7 @@ def draw_shop(screen, font_main, font_small, WIDTH, HEIGHT, game_state, dt=0):
         draw_shop_inside(screen, font_main, font_small, WIDTH, HEIGHT, game_state)
     else:
         # 구매 UI 화면
-        draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state)
+        draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state, font_path)
 
 
 def draw_shop_inside(screen, font_main, font_small, WIDTH, HEIGHT, game_state):
@@ -160,7 +160,7 @@ def draw_shop_inside(screen, font_main, font_small, WIDTH, HEIGHT, game_state):
             screen.blit(button_text, button_text_rect)
 
 
-def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state):
+def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state, font_path=None):
     """구매 UI 화면"""
     
     # 배경 약간 어둡게
@@ -272,14 +272,25 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state):
                 pygame.draw.rect(screen, (150, 150, 150), 
                                (slot_x + 40, item_img_y, 80, 80))
             
-            # 아이템 이름 (하단)
-            name_lines = wrap_text(item["name"], font_small, slot_width - 20)
-            name_y = start_y + 170  # 이름 위치 조정
-            for line in name_lines:
-                name_text = font_small.render(line, True, (0, 0, 0))
-                name_rect = name_text.get_rect(center=(slot_x + slot_width // 2, name_y))
-                screen.blit(name_text, name_rect)
-                name_y += 25
+            # 아이템 이름 (하단) - 글자 크기 자동 조절
+            name_font_size = 28  # 기본 크기
+            if font_path:
+                name_font = pygame.font.Font(font_path, name_font_size)
+            else:
+                name_font = font_small
+            max_name_width = slot_width - 20
+            
+            # 이름이 너무 길면 폰트 크기 줄이기
+            while name_font.size(item["name"])[0] > max_name_width and name_font_size > 14:
+                name_font_size -= 2
+                if font_path:
+                    name_font = pygame.font.Font(font_path, name_font_size)
+                else:
+                    name_font = pygame.font.Font(None, name_font_size)
+            
+            name_text = name_font.render(item["name"], True, (0, 0, 0))
+            name_rect = name_text.get_rect(center=(slot_x + slot_width // 2, start_y + 180))
+            screen.blit(name_text, name_rect)
             
             # 구매 버튼 영역 (하단)
             button_y = start_y + slot_height - 50
@@ -320,8 +331,22 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state):
         msg_rect = pygame.Rect(msg_box_x, msg_box_y, msg_box_width, msg_box_height)
         pygame.draw.rect(screen, (200, 180, 150), msg_rect, 4)
         
-        # 메시지 텍스트
-        msg_text = font_small.render(shop_state["message"], True, (255, 255, 255))
+        # 메시지 텍스트 - 글자 크기 자동 조절
+        msg_font_size = 28
+        if font_path:
+            msg_font = pygame.font.Font(font_path, msg_font_size)
+        else:
+            msg_font = font_small
+        max_msg_width = msg_box_width - 40
+        
+        while msg_font.size(shop_state["message"])[0] > max_msg_width and msg_font_size > 14:
+            msg_font_size -= 2
+            if font_path:
+                msg_font = pygame.font.Font(font_path, msg_font_size)
+            else:
+                msg_font = pygame.font.Font(None, msg_font_size)
+        
+        msg_text = msg_font.render(shop_state["message"], True, (255, 255, 255))
         msg_text_rect = msg_text.get_rect(center=(msg_box_x + msg_box_width // 2, msg_box_y + msg_box_height // 2))
         screen.blit(msg_text, msg_text_rect)
 

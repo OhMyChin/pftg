@@ -36,11 +36,21 @@ class Weapon:
 
 # ==================== 무기 정의 ====================
 
+TESTER_SWORD = Weapon(
+    id_="test_sword",
+    name="킹왕짱얼티밋 소드",
+    grade="일반",
+    max_durability=9999,
+    skill_ids=["test_slash"],
+    description="테스트용 무기입니다.",
+    image_path="resources/png/weapon/test_sword.png"
+)
+
 WOODEN_STICK = Weapon(
     id_="wooden_stick",
     name="나무 막대기",
     grade="일반",
-    max_durability=50,
+    max_durability=20,
     skill_ids=["swing"],
     description="평범한 나무 막대기. 기본적인 공격만 가능하다.",
     image_path="resources/png/weapon/wooden_stick.png"
@@ -159,6 +169,7 @@ KING_SLIME_BODY = Weapon(
 
 # 무기 딕셔너리 (ID로 접근 가능)
 ALL_WEAPONS = {
+    "test_sword": TESTER_SWORD,
     "wooden_stick": WOODEN_STICK,
     "iron_sword": IRON_SWORD,
     "rusty_dagger": RUSTY_DAGGER,

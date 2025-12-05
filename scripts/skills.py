@@ -21,12 +21,21 @@ STRUGGLE = Skill(
 
 # ==================== 무기 스킬 ====================
 
+TEST_SLASH = Skill(
+    id_="test_slash",
+    name="킹왕짱얼티밋베기",
+    power=9999,
+    priority=9999,
+    durability_cost=0,
+    description="강인! 무적! 최강!"
+)
+
 SWING = Skill(
     id_="swing",
     name="휘두르기",
-    power=1000,
+    power=10,
     priority=0,
-    durability_cost=0,
+    durability_cost=10,
     description="무기를 휘둘러 적을 공격한다"
 )
 
@@ -135,6 +144,7 @@ KINGS_SLAM = Skill(
 
 # 스킬 딕셔너리 (ID로 접근 가능)
 ALL_SKILLS = {
+    "test_slash": TEST_SLASH,
     "swing": SWING,
     "struggle": STRUGGLE,
     "body_slam": BODY_SLAM,
