@@ -9,6 +9,8 @@ consume_battle_state = {
     "mode": "select_item",  # "select_item" 또는 "select_weapon"
     "selected_consumable": None,
     "selected_weapon_slot": 0,
+    "message": "",  # 메시지
+    "message_timer": 0,  # 메시지 타이머
 }
 
 def reset_consume_battle_state():
@@ -20,6 +22,8 @@ def reset_consume_battle_state():
     consume_battle_state["mode"] = "select_item"
     consume_battle_state["selected_consumable"] = None
     consume_battle_state["selected_weapon_slot"] = 0
+    consume_battle_state["message"] = ""
+    consume_battle_state["message_timer"] = 0
 
 
 def draw_consume_battle(screen, font_main, font_small, WIDTH, HEIGHT, battle_player):
@@ -36,6 +40,22 @@ def draw_consume_battle(screen, font_main, font_small, WIDTH, HEIGHT, battle_pla
         draw_item_selection(screen, font_main, font_small, WIDTH, HEIGHT, player_inventory)
     elif consume_battle_state["mode"] == "select_weapon":
         draw_weapon_selection(screen, font_main, font_small, WIDTH, HEIGHT, player_inventory)
+    
+    # ===== 메시지 표시 (최상위) =====
+    if consume_battle_state["message"]:
+        # 텍스트 박스
+        box_width = WIDTH - 100
+        box_height = 80
+        box_x = 50
+        box_y = HEIGHT - 130
+        
+        box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
+        pygame.draw.rect(screen, (20, 20, 20), box_rect)
+        pygame.draw.rect(screen, (255, 255, 255), box_rect, 2)
+        
+        # 메시지 텍스트
+        msg_text = font_small.render(consume_battle_state["message"], True, (255, 255, 255))
+        screen.blit(msg_text, (box_x + 20, box_y + 25))
 
 
 def draw_item_selection(screen, font_main, font_small, WIDTH, HEIGHT, player_inventory):
@@ -470,16 +490,20 @@ def handle_consume_battle_input(events, battle_player, return_to_battle_callback
                             item = items[actual_index]
                             
                             if item.type == "potion":
-                                # 포션 사용
-                                success, message = item.use(battle_player)
-                                if success:
-                                    player_inventory["consumables"].remove(item)
-                                    # 스크롤 위치 조정
-                                    if consume_battle_state["scroll_offset"] > 0 and actual_index >= len(items) - 1:
-                                        consume_battle_state["scroll_offset"] -= 1
-                                    
-                                    # 전투로 복귀하면서 메시지 전달
-                                    return_to_battle_callback(f"{item.name}으로 체력을 {item.effect_value} 회복했습니다.")
+                                # 포션 사용 - 체력 최대 체크
+                                if battle_player.hp >= battle_player.max_hp:
+                                    consume_battle_state["message"] = "체력이 이미 최대입니다!"
+                                    consume_battle_state["message_timer"] = 0
+                                else:
+                                    success, message = item.use(battle_player)
+                                    if success:
+                                        player_inventory["consumables"].remove(item)
+                                        # 스크롤 위치 조정
+                                        if consume_battle_state["scroll_offset"] > 0 and actual_index >= len(items) - 1:
+                                            consume_battle_state["scroll_offset"] -= 1
+                                        
+                                        # 전투로 복귀하면서 메시지 전달
+                                        return_to_battle_callback(f"{item.name}으로 체력을 {item.effect_value} 회복했습니다.")
                             else:
                                 # 수리 키트 → 무기 선택 모드로
                                 consume_battle_state["mode"] = "select_weapon"
@@ -500,20 +524,34 @@ def handle_consume_battle_input(events, battle_player, return_to_battle_callback
                     consume_battle_state["selected_weapon_slot"] = min(max_slot, consume_battle_state["selected_weapon_slot"] + 1)
                 
                 elif event.key == pygame.K_RETURN:
-                    # 수리 실행
+                    # 수리 실행 - 내구도 최대 체크
                     slot_index = consume_battle_state["selected_weapon_slot"]
                     if slot_index < len(player_inventory["equipped_weapons"]):
                         weapon = player_inventory["equipped_weapons"][slot_index]
                         item = consume_battle_state["selected_consumable"]
                         
-                        success, message = item.use(weapon)
-                        if success:
-                            player_inventory["consumables"].remove(item)
-                            
-                            # 전투로 복귀하면서 메시지 전달
-                            return_to_battle_callback(f"{item.name}(으)로 {weapon.name}의 내구도를 {item.effect_value} 회복했습니다.")
+                        # 내구도가 이미 최대인지 확인
+                        if weapon.durability >= weapon.max_durability:
+                            consume_battle_state["message"] = "내구도가 이미 최대입니다!"
+                            consume_battle_state["message_timer"] = 0
+                            # 화면 유지
+                        else:
+                            success, message = item.use(weapon)
+                            if success:
+                                player_inventory["consumables"].remove(item)
+                                
+                                # 전투로 복귀하면서 메시지 전달
+                                return_to_battle_callback(f"{item.name}(으)로 {weapon.name}의 내구도를 {item.effect_value} 회복했습니다.")
                 
                 elif event.key == pygame.K_ESCAPE:
                     # 아이템 선택 모드로 복귀
                     consume_battle_state["mode"] = "select_item"
                     consume_battle_state["selected_consumable"] = None
+
+def update_consume_battle_message(dt):
+    """메시지 타이머 업데이트"""
+    if consume_battle_state["message"]:
+        consume_battle_state["message_timer"] += dt
+        if consume_battle_state["message_timer"] > 2:
+            consume_battle_state["message"] = ""
+            consume_battle_state["message_timer"] = 0

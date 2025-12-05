@@ -20,7 +20,7 @@ class Consumable:
                 old_hp = target.hp
                 target.hp = min(target.max_hp, target.hp + self.effect_value)
                 recovered = target.hp - old_hp
-                return (True, f"HP {recovered} 회복! ({old_hp} → {target.hp})")
+                return (True, f"HP {recovered} 회복! ({old_hp} -> {target.hp})")
             else:
                 return (False, "사용할 수 없습니다.")
         
@@ -30,7 +30,7 @@ class Consumable:
                 old_durability = target.durability
                 target.durability = min(target.max_durability, target.durability + self.effect_value)
                 repaired = target.durability - old_durability
-                return (True, f"내구도 {repaired} 수리! ({old_durability} → {target.durability})")
+                return (True, f"내구도 {repaired} 수리! ({old_durability} -> {target.durability})")
             else:
                 return (False, "무기에만 사용할 수 있습니다.")
         

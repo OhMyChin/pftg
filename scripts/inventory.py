@@ -12,7 +12,16 @@ inventory_state = {
     "max_equipped_slots": 2,  # 초기 2칸, 최대 6칸
     "max_inventory_slots": 6,  # 초기 6칸, 최대 36칸
     "message": "",
-    "message_timer": 0
+    "message_timer": 0,
+    "action_menu_open": False,  # 액션 메뉴 표시 여부
+    "action_menu_selected": 0,  # 선택된 액션 (0: 장착/해제, 1: 스킬, 2: 취소)
+    "action_menu_item": None,  # 액션 메뉴가 열린 아이템
+    "action_menu_is_equipped": False,  # 장착된 아이템인지 여부
+    "info_screen_open": False,  # 정보 화면 표시 여부
+    "info_screen_item": None,  # 정보 화면에 표시할 아이템
+    "weapon_select_open": False,  # 무기 선택 화면 표시 여부
+    "weapon_select_index": 0,  # 선택된 무기 인덱스
+    "weapon_select_consumable": None,  # 사용할 소모품
 }
 
 # 플레이어 인벤토리 데이터
@@ -212,51 +221,6 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
         if inventory_state["max_inventory_slots"] > 18:
             page_text = font_small.render(f"페이지: {inventory_state['weapon_page'] + 1}/2", True, (200, 200, 200))
             screen.blit(page_text, (tab_area_x, inventory_area_y + 3 * (slot_size + slot_gap) + 10))
-        
-        # ===== 스킬 버튼 영역 (인벤토리 슬롯 아래) =====
-        # 인벤토리 전체 가로 길이
-        inventory_total_width = 6 * slot_size + 5 * slot_gap
-        
-        skill_button_gap = 10
-        # 2x2 배치에서 각 버튼의 가로 크기
-        skill_button_width = (inventory_total_width - skill_button_gap) // 2
-        skill_button_height = 55
-        
-        skill_start_x = tab_area_x
-        skill_start_y = inventory_area_y + 3 * (slot_size + slot_gap) + 10
-        
-        # 선택된 아이템의 스킬 가져오기
-        selected_weapon = get_selected_item(battle_player)
-        available_skills = []
-        if selected_weapon and hasattr(selected_weapon, 'durability'):
-            available_skills = selected_weapon.get_skills()
-        
-        # 항상 2x2 (4칸) 표시
-        for i in range(4):
-            row = i // 2
-            col = i % 2
-            
-            skill_rect = pygame.Rect(
-                skill_start_x + col * (skill_button_width + skill_button_gap),
-                skill_start_y + row * (skill_button_height + skill_button_gap),
-                skill_button_width,
-                skill_button_height
-            )
-            
-            if i < len(available_skills):
-                skill = available_skills[i]
-                # 스킬이 있는 경우
-                pygame.draw.rect(screen, (70, 80, 90), skill_rect)
-                pygame.draw.rect(screen, (150, 150, 250), skill_rect, 2)
-                
-                # 스킬 이름 (중앙)
-                skill_name_text = font_small.render(skill.name, True, (255, 255, 255))
-                skill_name_rect = skill_name_text.get_rect(center=skill_rect.center)
-                screen.blit(skill_name_text, skill_name_rect)
-            else:
-                # 빈 슬롯
-                pygame.draw.rect(screen, (40, 40, 50), skill_rect)
-                pygame.draw.rect(screen, (80, 80, 100), skill_rect, 2)
     
     else:  # consume 탭
         consume_area_y = slots_start_y
@@ -337,16 +301,317 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
         next_text_rect = next_text.get_rect(center=next_button_rect.center)
         screen.blit(next_text, next_text_rect)
     
-    # ===== 메시지 표시 =====
+    # ===== 정보 화면 표시 (최우선) =====
+    if inventory_state["info_screen_open"]:
+        draw_info_screen(screen, font_main, font_small, WIDTH, HEIGHT)
+    
+    # ===== 무기 선택 화면 표시 =====
+    if inventory_state["weapon_select_open"]:
+        draw_weapon_select_screen(screen, font_main, font_small, WIDTH, HEIGHT)
+    
+    # ===== 액션 메뉴 표시 =====
+    if inventory_state["action_menu_open"]:
+        draw_action_menu(screen, font_small, WIDTH, HEIGHT)
+    
+    # ===== 메시지 표시 (최최상위 - 모든 화면 위에) =====
     if inventory_state["message"]:
-        msg_text = font_small.render(inventory_state["message"], True, (255, 100, 100))
-        msg_rect = msg_text.get_rect(center=(WIDTH // 2, HEIGHT - 40))
-        screen.blit(msg_text, msg_rect)
+        # 텍스트 박스
+        box_width = WIDTH - 100
+        box_height = 80
+        box_x = 50
+        box_y = HEIGHT - 130
+        
+        box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
+        pygame.draw.rect(screen, (20, 20, 20), box_rect)
+        pygame.draw.rect(screen, (255, 255, 255), box_rect, 2)
+        
+        # 메시지 텍스트
+        msg_text = font_small.render(inventory_state["message"], True, (255, 255, 255))
+        screen.blit(msg_text, (box_x + 20, box_y + 25))
         
         inventory_state["message_timer"] += dt
         if inventory_state["message_timer"] > 2:
             inventory_state["message"] = ""
             inventory_state["message_timer"] = 0
+
+
+def draw_info_screen(screen, font_main, font_small, WIDTH, HEIGHT):
+    """무기 정보 상세 화면"""
+    item = inventory_state["info_screen_item"]
+    if not item:
+        return
+    
+    # 배경 (어두운 반투명)
+    overlay = pygame.Surface((WIDTH, HEIGHT))
+    overlay.set_alpha(240)
+    overlay.fill((20, 20, 30))
+    screen.blit(overlay, (0, 0))
+    
+    # 스탯용 작은 폰트 생성 (font_small보다 작게)
+    import os
+    FONT_PATH = os.path.join("resources", "font", "DOSGothic.ttf")
+    font_stat = pygame.font.Font(FONT_PATH, 20)
+    
+    # 4등분 사각형 크기 및 위치 - 간격 = 여백으로 통일
+    margin = 25
+    gap = 25  # 박스 간격 = 여백과 동일
+    box_width = (WIDTH - 2 * margin - gap) // 2
+    box_height = (HEIGHT - 2 * margin - gap) // 2
+    
+    # 4개 사각형 위치
+    positions = [
+        (margin, margin),  # 좌상
+        (margin + box_width + gap, margin),  # 우상
+        (margin, margin + box_height + gap),  # 좌하
+        (margin + box_width + gap, margin + box_height + gap)  # 우하
+    ]
+    
+    # 무기 스킬 가져오기 (skill_ids 사용)
+    weapon_skills = []
+    if hasattr(item, 'skill_ids'):  # 무기인 경우
+        from scripts.skills import ALL_SKILLS
+        for skill_id in item.skill_ids:
+            if skill_id in ALL_SKILLS:
+                weapon_skills.append(ALL_SKILLS[skill_id])
+    
+    # 4개 박스 그리기
+    for i, pos in enumerate(positions):
+        box_rect = pygame.Rect(pos[0], pos[1], box_width, box_height)
+        
+        # 배경
+        pygame.draw.rect(screen, (40, 40, 50), box_rect)
+        pygame.draw.rect(screen, (100, 100, 120), box_rect, 4)
+        
+        # 스킬 정보 표시
+        if i < len(weapon_skills):
+            skill = weapon_skills[i]
+            
+            # 스킬 이름 (작은 폰트 사용)
+            skill_name_text = font_small.render(skill.name, True, (255, 255, 100))
+            skill_name_rect = skill_name_text.get_rect(centerx=pos[0] + box_width // 2, y=pos[1] + 20)
+            screen.blit(skill_name_text, skill_name_rect)
+            
+            # 구분선
+            line_y = pos[1] + 55
+            pygame.draw.line(screen, (100, 100, 120), 
+                           (pos[0] + 20, line_y), 
+                           (pos[0] + box_width - 20, line_y), 2)
+            
+            # 스킬 정보 (왼쪽 정렬, 작은 폰트)
+            info_x = pos[0] + 30
+            info_y = line_y + 20
+            
+            # 공격력 (작은 폰트)
+            power_text = font_stat.render(f"공격력: {skill.power}", True, (255, 100, 100))
+            screen.blit(power_text, (info_x, info_y))
+            info_y += 25
+            
+            # 우선도 (작은 폰트)
+            priority_text = font_stat.render(f"우선도: {skill.priority}", True, (100, 200, 255))
+            screen.blit(priority_text, (info_x, info_y))
+            info_y += 25
+            
+            # 소모량 (작은 폰트)
+            durability_text = font_stat.render(f"소모량: {skill.durability_cost}", True, (255, 200, 100))
+            screen.blit(durability_text, (info_x, info_y))
+            info_y += 35
+            
+            # 설명 (줄바꿈, font_stat 사용)
+            desc_lines = wrap_info_text(skill.description, font_stat, box_width - 60)
+            for line in desc_lines:
+                desc_text = font_stat.render(line, True, (180, 180, 180))
+                screen.blit(desc_text, (info_x, info_y))
+                info_y += 28
+        else:
+            # 빈 슬롯
+            empty_text = font_small.render("스킬 없음", True, (100, 100, 100))
+            empty_rect = empty_text.get_rect(center=box_rect.center)
+            screen.blit(empty_text, empty_rect)
+
+
+def wrap_info_text(text, font, max_width):
+    """정보 화면용 텍스트 줄바꿈"""
+    words = text.split()
+    lines = []
+    current_line = ""
+    
+    for word in words:
+        test_line = current_line + (" " if current_line else "") + word
+        if font.size(test_line)[0] <= max_width:
+            current_line = test_line
+        else:
+            if current_line:
+                lines.append(current_line)
+            current_line = word
+    
+    if current_line:
+        lines.append(current_line)
+    
+    return lines
+
+
+
+
+def draw_weapon_select_screen(screen, font_main, font_small, WIDTH, HEIGHT):
+    """무기 선택 화면 (수리 키트 사용 시) - 장착무기만 표시"""
+    # 배경 (어두운 반투명)
+    overlay = pygame.Surface((WIDTH, HEIGHT))
+    overlay.set_alpha(240)
+    overlay.fill((20, 20, 30))
+    screen.blit(overlay, (0, 0))
+    
+    # 중앙 패널
+    panel_width = 600
+    panel_height = 520
+    panel_x = (WIDTH - panel_width) // 2
+    panel_y = (HEIGHT - panel_height) // 2
+    
+    panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+    pygame.draw.rect(screen, (40, 40, 50), panel_rect)
+    pygame.draw.rect(screen, (100, 100, 120), panel_rect, 4)
+    
+    # 제목
+    title_text = font_main.render("수리할 무기 선택", True, (255, 255, 255))
+    title_rect = title_text.get_rect(centerx=WIDTH // 2, y=panel_y + 20)
+    screen.blit(title_text, title_rect)
+    
+    # 선택된 수리 키트 정보
+    item = inventory_state["weapon_select_consumable"]
+    if item:
+        item_info = font_small.render(f"사용: {item.name} (수리량: +{item.effect_value})", True, (100, 200, 255))
+        item_info_rect = item_info.get_rect(centerx=WIDTH // 2, y=panel_y + 80)
+        screen.blit(item_info, item_info_rect)
+    
+    # 장착 무기 목록만 사용 (항상 6개 슬롯 표시)
+    weapons = player_inventory["equipped_weapons"]
+    
+    slot_width = 520
+    slot_height = 55
+    slot_gap = 8
+    start_y = panel_y + 125
+    
+    import os
+    FONT_PATH = os.path.join("resources", "font", "DOSGothic.ttf")
+    font_stat = pygame.font.Font(FONT_PATH, 20)
+    
+    for i in range(6):
+        slot_y = start_y + i * (slot_height + slot_gap)
+        slot_x = panel_x + (panel_width - slot_width) // 2
+        slot_rect = pygame.Rect(slot_x, slot_y, slot_width, slot_height)
+        
+        is_selected = (inventory_state["weapon_select_index"] == i)
+        
+        # 무기가 있는지 확인
+        has_weapon = i < len(weapons)
+        
+        if has_weapon:
+            weapon = weapons[i]
+            bg_color = (70, 80, 90)
+            border_color = (150, 150, 250) if is_selected else (180, 180, 200)
+        else:
+            bg_color = (40, 40, 50)
+            border_color = (80, 80, 100)
+        
+        border_width = 4 if is_selected else 2
+        
+        pygame.draw.rect(screen, bg_color, slot_rect)
+        pygame.draw.rect(screen, border_color, slot_rect, border_width)
+        
+        if has_weapon:
+            weapon = weapons[i]
+            
+            # 무기 이미지
+            img_size = 45
+            img_x = slot_x + 8
+            img_y = slot_y + 5
+            
+            try:
+                if hasattr(weapon, 'image_path') and weapon.image_path:
+                    weapon_img = pygame.image.load(weapon.image_path).convert_alpha()
+                    weapon_img = pygame.transform.scale(weapon_img, (img_size, img_size))
+                    screen.blit(weapon_img, (img_x, img_y))
+                else:
+                    pygame.draw.rect(screen, (100, 100, 100), (img_x, img_y, img_size, img_size))
+            except:
+                pygame.draw.rect(screen, (100, 100, 100), (img_x, img_y, img_size, img_size))
+            
+            # 무기 이름 (왼쪽)
+            info_x = img_x + img_size + 12
+            info_y = slot_y + (slot_height // 2) - 10
+            
+            name_text = font_small.render(weapon.name, True, (255, 255, 255))
+            screen.blit(name_text, (info_x, info_y))
+            
+            # 내구도 (오른쪽 정렬)
+            durability_str = f"{weapon.durability}/{weapon.max_durability}"
+            durability_text = font_small.render(durability_str, True, (100, 200, 255))
+            durability_x = slot_x + slot_width - durability_text.get_width() - 10
+            screen.blit(durability_text, (durability_x, info_y))
+        else:
+            # 빈 슬롯 표시
+            empty_text = font_small.render("빈 슬롯", True, (100, 100, 100))
+            empty_rect = empty_text.get_rect(center=slot_rect.center)
+            screen.blit(empty_text, empty_rect)
+
+
+def draw_action_menu(screen, font_small, WIDTH, HEIGHT):
+    """액션 메뉴 그리기"""
+    # 메뉴 크기 및 위치
+    menu_width = 200
+    menu_height = 150
+    menu_x = (WIDTH - menu_width) // 2
+    menu_y = (HEIGHT - menu_height) // 2
+    
+    # 배경
+    menu_rect = pygame.Rect(menu_x, menu_y, menu_width, menu_height)
+    border_width = 4
+    pygame.draw.rect(screen, (40, 40, 50), menu_rect)
+    pygame.draw.rect(screen, (100, 100, 120), menu_rect, border_width)
+    
+    # 버튼 옵션
+    is_equipped = inventory_state["action_menu_is_equipped"]
+    if is_equipped:
+        options = ["해제", "스킬", "취소"]
+    else:
+        options = ["장착", "스킬", "취소"]
+    
+    button_height = 35
+    button_gap = 10
+    side_margin = 20  # 좌우 여백
+    
+    # 전체 버튼 높이 계산
+    total_buttons_height = len(options) * button_height + (len(options) - 1) * button_gap
+    
+    # 사용 가능한 세로 공간 (테두리 제외)
+    available_height = menu_height - 2 * border_width
+    
+    # 중앙 정렬 (위아래 간격 동일)
+    top_margin = (available_height - total_buttons_height) // 2
+    start_y = menu_y + border_width + top_margin
+    
+    for i, option in enumerate(options):
+        button_y = start_y + i * (button_height + button_gap)
+        button_rect = pygame.Rect(menu_x + side_margin, button_y, menu_width - 2 * side_margin, button_height)
+        
+        # 선택된 버튼
+        is_selected = (inventory_state["action_menu_selected"] == i)
+        
+        if is_selected:
+            bg_color = (70, 80, 90)
+            border_color = (150, 150, 250)
+            btn_border_width = 4
+        else:
+            bg_color = (50, 50, 60)
+            border_color = (100, 100, 120)
+            btn_border_width = 2
+        
+        pygame.draw.rect(screen, bg_color, button_rect)
+        pygame.draw.rect(screen, border_color, button_rect, btn_border_width)
+        
+        # 텍스트
+        text_surface = font_small.render(option, True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=button_rect.center)
+        screen.blit(text_surface, text_rect)
 
 
 def draw_slot(screen, x, y, size, is_unlocked, is_selected, item):
@@ -409,9 +674,109 @@ def get_selected_item(battle_player):
 
 
 def handle_inventory_input(events, battle_player):
-    """인벤토리 입력 처리"""
+    """인벤토리 입력 처리
+    
+    Returns:
+        bool: 이벤트가 완전히 처리되었는지 여부 (True면 main.py에서 추가 처리 안 함)
+    """
     for event in events:
         if event.type == pygame.KEYDOWN:
+            # 무기 선택 화면이 열려있을 때
+            if inventory_state["weapon_select_open"]:
+                # 장착 무기만 사용
+                equipped_weapons = player_inventory["equipped_weapons"]
+                
+                if event.key == pygame.K_w:
+                    # 위로 이동
+                    inventory_state["weapon_select_index"] = max(0, inventory_state["weapon_select_index"] - 1)
+                elif event.key == pygame.K_s:
+                    # 아래로 이동 (장착무기 수 -1 또는 최대 5)
+                    max_index = min(len(equipped_weapons) - 1, 5)
+                    inventory_state["weapon_select_index"] = min(max_index, inventory_state["weapon_select_index"] + 1)
+                elif event.key == pygame.K_RETURN:
+                    # 무기 선택
+                    if equipped_weapons and inventory_state["weapon_select_index"] < len(equipped_weapons):
+                        selected_weapon = equipped_weapons[inventory_state["weapon_select_index"]]
+                        consumable = inventory_state["weapon_select_consumable"]
+                        
+                        # 내구도가 이미 최대인지 확인
+                        if selected_weapon.durability >= selected_weapon.max_durability:
+                            inventory_state["message"] = "내구도가 이미 최대입니다!"
+                            inventory_state["message_timer"] = 0
+                            # 화면은 유지 (닫지 않음)
+                        elif consumable:
+                            success, message = consumable.use(selected_weapon)
+                            if success:
+                                # 소모품 제거
+                                if consumable in player_inventory["consumables"]:
+                                    player_inventory["consumables"].remove(consumable)
+                            inventory_state["message"] = message
+                            inventory_state["message_timer"] = 0
+                            
+                            # 사용 성공 시 무기 선택 화면 닫기
+                            inventory_state["weapon_select_open"] = False
+                            inventory_state["weapon_select_index"] = 0
+                            inventory_state["weapon_select_consumable"] = None
+                    return True
+                
+                elif event.key == pygame.K_ESCAPE:
+                    # 무기 선택 취소
+                    inventory_state["weapon_select_open"] = False
+                    inventory_state["weapon_select_index"] = 0
+                    inventory_state["weapon_select_consumable"] = None
+                    return True
+                
+                return True  # 다른 입력 무시
+            
+            # 정보 화면이 열려있을 때
+            if inventory_state["info_screen_open"]:
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                    # ESC 또는 Enter로 정보 화면 닫기
+                    inventory_state["info_screen_open"] = False
+                    inventory_state["info_screen_item"] = None
+                    return True  # 이벤트 완전히 처리됨
+                # 정보 화면이 열려있으면 다른 입력 무시
+                return True  # 이벤트 완전히 처리됨
+            
+            # 액션 메뉴가 열려있을 때
+            if inventory_state["action_menu_open"]:
+                if event.key == pygame.K_w:
+                    # 위로 이동
+                    inventory_state["action_menu_selected"] = max(0, inventory_state["action_menu_selected"] - 1)
+                elif event.key == pygame.K_s:
+                    # 아래로 이동
+                    inventory_state["action_menu_selected"] = min(2, inventory_state["action_menu_selected"] + 1)
+                elif event.key == pygame.K_RETURN:
+                    # 선택 실행
+                    selected_option = inventory_state["action_menu_selected"]
+                    
+                    if selected_option == 0:  # 장착/해제
+                        if inventory_state["action_menu_is_equipped"]:
+                            # 해제
+                            unequip_weapon(battle_player)
+                        else:
+                            # 장착
+                            equip_weapon(battle_player)
+                    elif selected_option == 1:  # 정보
+                        show_item_info()
+                    elif selected_option == 2:  # 취소
+                        pass  # 아무것도 하지 않음
+                    
+                    # 메뉴 닫기
+                    inventory_state["action_menu_open"] = False
+                    inventory_state["action_menu_selected"] = 0
+                    inventory_state["action_menu_item"] = None
+                
+                elif event.key == pygame.K_ESCAPE:
+                    # ESC로 메뉴 닫기
+                    inventory_state["action_menu_open"] = False
+                    inventory_state["action_menu_selected"] = 0
+                    inventory_state["action_menu_item"] = None
+                
+                # 액션 메뉴가 열려있으면 다른 입력 무시
+                continue
+            
+            # 일반 입력 처리 (액션 메뉴가 닫혀있을 때)
             # WASD로 슬롯 이동
             if event.key == pygame.K_w:
                 move_selection(-1, 0)
@@ -422,7 +787,7 @@ def handle_inventory_input(events, battle_player):
             elif event.key == pygame.K_d:
                 move_selection(0, 1)
             
-            # 엔터: 장착/해제 또는 탭 전환
+            # 엔터: 액션 메뉴 열기 또는 탭 전환
             elif event.key == pygame.K_RETURN:
                 if inventory_state["selected_area"] == "tabs":
                     # 탭 전환 (선택 영역과 위치 모두 유지)
@@ -432,7 +797,13 @@ def handle_inventory_input(events, battle_player):
                         inventory_state["current_tab"] = "consume"
                     # selected_area, row, col 모두 그대로 유지
                 elif inventory_state["current_tab"] == "weapon":
-                    toggle_equip_weapon(battle_player)
+                    # 무기 탭: 액션 메뉴 열기
+                    item = get_selected_item(battle_player)
+                    if item:
+                        inventory_state["action_menu_open"] = True
+                        inventory_state["action_menu_selected"] = 0
+                        inventory_state["action_menu_item"] = item
+                        inventory_state["action_menu_is_equipped"] = (inventory_state["selected_row"] == 0)
                 elif inventory_state["current_tab"] == "consume":
                     if inventory_state["selected_area"] == "pages":
                         # 페이지 버튼 클릭 시
@@ -448,6 +819,8 @@ def handle_inventory_input(events, battle_player):
                                 # 선택 위치 유지 (슬롯으로 돌아가지 않음)
                     else:
                         use_consumable(battle_player)
+    
+    return False  # 이벤트가 처리되지 않음 (main.py에서 추가 처리 가능)
 
 
 def move_selection(d_row, d_col):
@@ -530,6 +903,62 @@ def move_selection(d_row, d_col):
                 new_col = inventory_state["selected_col"] + d_col
                 if 0 <= new_col <= 1:  # 0=이전, 1=다음
                     inventory_state["selected_col"] = new_col
+
+
+def equip_weapon(battle_player):
+    """무기 장착"""
+    row = inventory_state["selected_row"] - 1
+    col = inventory_state["selected_col"]
+    index = row * 6 + col + (inventory_state["weapon_page"] * 18)
+    
+    if index < len(player_inventory["weapons"]):
+        weapon = player_inventory["weapons"][index]
+        
+        # 장착 공간 체크
+        if len(player_inventory["equipped_weapons"]) >= inventory_state["max_equipped_slots"]:
+            inventory_state["message"] = "장착한 무기가 너무 많습니다!"
+            return
+        
+        # 장착 처리
+        player_inventory["weapons"].pop(index)
+        player_inventory["equipped_weapons"].append(weapon)
+        
+        # battle_player 무기 업데이트 (첫 번째 장착 무기 사용)
+        battle_player.equip_weapon(player_inventory["equipped_weapons"][0])
+        inventory_state["message"] = f"{weapon.name} 장착!"
+
+
+def unequip_weapon(battle_player):
+    """무기 해제"""
+    col = inventory_state["selected_col"]
+    if col < len(player_inventory["equipped_weapons"]):
+        weapon = player_inventory["equipped_weapons"][col]
+        
+        # 인벤토리 공간 체크
+        if len(player_inventory["weapons"]) >= inventory_state["max_inventory_slots"]:
+            inventory_state["message"] = "인벤토리 공간이 부족합니다!"
+            return
+        
+        # 해제 처리
+        player_inventory["equipped_weapons"].pop(col)
+        player_inventory["weapons"].insert(0, weapon)  # 맨 앞에 추가
+        
+        # battle_player 무기 업데이트
+        if battle_player.weapon == weapon:
+            if player_inventory["equipped_weapons"]:
+                battle_player.equip_weapon(player_inventory["equipped_weapons"][0])
+            else:
+                battle_player.weapon = None
+        
+        inventory_state["message"] = f"{weapon.name} 해제!"
+
+
+def show_item_info():
+    """아이템 정보 표시"""
+    item = inventory_state["action_menu_item"]
+    if item:
+        inventory_state["info_screen_open"] = True
+        inventory_state["info_screen_item"] = item
 
 
 def toggle_equip_weapon(battle_player):
@@ -616,7 +1045,13 @@ def use_consumable(battle_player):
     
     # 소모품 타입에 따라 처리
     if consumable.type == "potion":
-        # 포션: 플레이어에게 직접 사용
+        # 포션: 체력이 최대인지 확인
+        if battle_player.hp >= battle_player.max_hp:
+            inventory_state["message"] = "체력이 이미 최대입니다!"
+            inventory_state["message_timer"] = 0
+            return
+        
+        # 플레이어에게 직접 사용
         success, message = consumable.use(battle_player)
         if success:
             # 사용 성공: 인벤토리에서 제거
@@ -627,20 +1062,17 @@ def use_consumable(battle_player):
         inventory_state["message_timer"] = 0
     
     elif consumable.type == "repair_kit":
-        # 수리 키트: 무기 선택 필요
-        # 일단은 첫 번째 장착 무기에 사용
-        if player_inventory["equipped_weapons"]:
-            weapon = player_inventory["equipped_weapons"][0]
-            success, message = consumable.use(weapon)
-            if success:
-                # 사용 성공: 인벤토리에서 제거
-                player_inventory["consumables"].pop(index)
-                inventory_state["message"] = message
-            else:
-                inventory_state["message"] = message
+        # 수리 키트: 무기 선택 화면 열기 (장착무기만)
+        equipped_weapons = player_inventory["equipped_weapons"]
+        
+        if equipped_weapons:
+            # 무기 선택 화면 열기
+            inventory_state["weapon_select_open"] = True
+            inventory_state["weapon_select_index"] = 0
+            inventory_state["weapon_select_consumable"] = consumable
         else:
             inventory_state["message"] = "수리할 무기가 없습니다!"
-        inventory_state["message_timer"] = 0
+            inventory_state["message_timer"] = 0
 
 
 def init_inventory(battle_player):
@@ -648,3 +1080,18 @@ def init_inventory(battle_player):
     # 초기 무기를 장착템에 추가
     if battle_player.weapon:
         player_inventory["equipped_weapons"].append(battle_player.weapon)
+
+
+def is_info_screen_open():
+    """정보 화면이 열려있는지 확인"""
+    return inventory_state["info_screen_open"]
+
+
+def is_action_menu_open():
+    """액션 메뉴가 열려있는지 확인"""
+    return inventory_state["action_menu_open"]
+
+
+def is_weapon_select_open():
+    """무기 선택 화면이 열려있는지 확인"""
+    return inventory_state["weapon_select_open"]

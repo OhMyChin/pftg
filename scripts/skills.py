@@ -4,7 +4,7 @@ class Skill:
         self.id = id_ # 스킬 ID
         self.name = name # 스킬 이름
         self.power = power # 스킬 위력
-        self.priority = priority # 스킬 우선 순위
+        self.priority = priority # 스킬 우선도
         self.durability_cost = durability_cost  # 내구도 소모량
         self.description = description # 스킬 설명
 
@@ -106,17 +106,32 @@ SLIME_SLASH = Skill(
     durability_cost=12,
     description="슬라임의 완력으로 적을 베어버린다"
 )
-
+RAINBOW_ATTACK = Skill(
+    id_="rainbow_attack",
+    name="무지개 어택",
+    power=7,
+    priority=7,
+    durability_cost=7,
+    description="무지개의 힘으로 매우 빠르게 공격한다."
+)
+KINGS_SLAM = Skill(
+    id_="kings_slam",
+    name="왕의 몸통박치기",
+    power=30,
+    priority=0,
+    durability_cost=20,
+    description="왕의 몸으로 적에게 강하게 부딪친다"
+)
 # ==================== 향후 확장용 스킬 예시 ====================
 
-QUICK_STRIKE = Skill(
-    id_="quick_strike",
-    name="빠른 일격",
-    power=6,
-    priority=0,
-    durability_cost=5,
-    description="빠르게 공격하여 선제권을 잡는다"
-)
+# QUICK_STRIKE = Skill(
+#     id_="quick_strike",
+#     name="빠른 일격",
+#     power=6,
+#     priority=0,
+#     durability_cost=5,
+#     description="빠르게 공격하여 선제권을 잡는다"
+# )
 
 # 스킬 딕셔너리 (ID로 접근 가능)
 ALL_SKILLS = {
@@ -131,6 +146,8 @@ ALL_SKILLS = {
     "slime_slash": SLIME_SLASH,
     "pierce": PIERCE,
     "slash": SLASH,
-    "quick_strike": QUICK_STRIKE,
+    # "quick_strike": QUICK_STRIKE,
+    "rainbow_attack": RAINBOW_ATTACK,
+    "kings_slam": KINGS_SLAM
     
 }

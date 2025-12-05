@@ -223,7 +223,7 @@ buildings.add(forge)
 all_sprites.add(forge)
 
 dungeon = Building(
-    "던전", 600, 150, 120, 200, "resources\\png\\building\\dungeon.png",
+    "던전", 600, 150, 128, 192, "resources\\png\\building\\dungeon.png",
     on_interact=lambda: interactions.enter_dungeon(
         battle_system.start_battle, game_state, game_state["player_name"]
     )
@@ -437,17 +437,20 @@ while True:
         case "inventory":
             inventory.draw_inventory(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, 
                                     battle_system.battle_player, dt, FONT_PATH, game_state)
-            inventory.handle_inventory_input(events, battle_system.battle_player)
             
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_ESCAPE]:
-                game_state["state"] = "town"
-            elif keys[pygame.K_i]:
-                if not i_key_pressed:
-                    game_state["state"] = "town"
-                    i_key_pressed = True
-            else:
-                i_key_pressed = False
+            # 인벤토리 입력 처리 (True 반환 시 이벤트 완전히 소비됨)
+            event_consumed = inventory.handle_inventory_input(events, battle_system.battle_player)
+            
+            # 이벤트가 소비되지 않았을 때만 ESC/I 키 처리
+            if not event_consumed:
+                for event in events:
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            if not inventory.is_info_screen_open() and not inventory.is_action_menu_open() and not inventory.is_weapon_select_open():
+                                game_state["state"] = "town"
+                        elif event.key == pygame.K_i:
+                            if not inventory.is_info_screen_open() and not inventory.is_action_menu_open() and not inventory.is_weapon_select_open():
+                                game_state["state"] = "town"
 
         case "shop":
             from scripts import shop

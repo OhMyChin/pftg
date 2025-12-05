@@ -46,6 +46,16 @@ WOODEN_STICK = Weapon(
     image_path="resources/png/weapon/wooden_stick.png"
 )
 
+RUSTY_DAGGER = Weapon(
+    id_="rusty_dagger",
+    name="녹슨 단검",
+    grade="일반",
+    max_durability=30,
+    skill_ids=["pierce"],
+    description="오래되어 녹슨 단검. 빠른 공격에 특화되어 있다.",
+    image_path="resources/png/weapon/rusty_dagger.png"
+)
+
 IRON_SWORD = Weapon(
     id_="iron_sword",
     name="철 검",
@@ -120,30 +130,37 @@ SWORD_SLIME_BODY = Weapon(
     skill_ids=["blue_attack", "slime_slash"],
     image_path=""
 )
-
-# ==================== 향후 확장용 무기 예시 ====================
-
-RUSTY_DAGGER = Weapon(
-    id_="rusty_dagger",
-    name="녹슨 단검",
-    grade="일반",
-    max_durability=30,
-    skill_ids=["pierce"],
-    description="오래되어 녹슨 단검. 빠른 공격에 특화되어 있다.",
-    image_path="resources/png/weapon/rusty_dagger.png"
+RAINBOW_SLIME_BODY = Weapon(
+    id_="slime8",
+    name="무지개 슬라임의 몸",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["rainbow_attack"],
+    image_path=""
+)
+KING_SLIME_BODY = Weapon(
+    id_="slime9",
+    name="킹 슬라임의 몸",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["body_slam", "kings_slam"],
+    image_path=""
 )
 
 # 무기 딕셔너리 (ID로 접근 가능)
 ALL_WEAPONS = {
     "wooden_stick": WOODEN_STICK,
+    "iron_sword": IRON_SWORD,
+    "rusty_dagger": RUSTY_DAGGER,
     "slime1": SLIME_BODY,
     "slime2": RED_SLIME_BODY,
     "slime3": YELLOW_SLIME_BODY,
     "slime4": BLUE_SLIME_BODY,
-    "slime5": MAGMA_SLIME_BODY,
-    "slime6": SWORD_SLIME_BODY,
-    "iron_sword": IRON_SWORD,
-    "rusty_dagger": RUSTY_DAGGER,
+    "slime5": BLOOD_SLIME_BODY,
+    "slime6": MAGMA_SLIME_BODY,
+    "slime7": SWORD_SLIME_BODY,
+    "slime8": RAINBOW_SLIME_BODY,
+    "slime8": KING_SLIME_BODY
 }
 
 def create_weapon(weapon_id):
