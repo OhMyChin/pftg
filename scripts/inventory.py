@@ -77,10 +77,26 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
     selected_item = get_selected_item(battle_player)
     if selected_item:
         y_offset = info_panel_y + 20
+        max_name_width = info_panel_width - 30  # 패널 내 최대 너비
         
         # 무기 정보
         if hasattr(selected_item, 'durability'):
-            name_text = font_small.render(selected_item.name, True, (255, 255, 255))
+            # 이름 글자 크기 자동 조절
+            name_font_size = 28  # font_small 기본 크기 (추정)
+            if font_path:
+                name_font = pygame.font.Font(font_path, name_font_size)
+            else:
+                name_font = font_small
+            
+            # 텍스트가 너무 길면 폰트 크기 줄이기
+            while name_font.size(selected_item.name)[0] > max_name_width and name_font_size > 14:
+                name_font_size -= 2
+                if font_path:
+                    name_font = pygame.font.Font(font_path, name_font_size)
+                else:
+                    name_font = pygame.font.Font(None, name_font_size)
+            
+            name_text = name_font.render(selected_item.name, True, (255, 255, 255))
             screen.blit(name_text, (info_panel_x + 15, y_offset))
             y_offset += 35
             
@@ -104,7 +120,21 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
         
         # 소모품 정보
         elif hasattr(selected_item, 'type'):  # Consumable
-            name_text = font_small.render(selected_item.name, True, (255, 255, 255))
+            # 이름 글자 크기 자동 조절
+            name_font_size = 28
+            if font_path:
+                name_font = pygame.font.Font(font_path, name_font_size)
+            else:
+                name_font = font_small
+            
+            while name_font.size(selected_item.name)[0] > max_name_width and name_font_size > 14:
+                name_font_size -= 2
+                if font_path:
+                    name_font = pygame.font.Font(font_path, name_font_size)
+                else:
+                    name_font = pygame.font.Font(None, name_font_size)
+            
+            name_text = name_font.render(selected_item.name, True, (255, 255, 255))
             screen.blit(name_text, (info_panel_x + 15, y_offset))
             y_offset += 35
             

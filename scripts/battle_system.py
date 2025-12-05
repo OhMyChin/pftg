@@ -18,6 +18,7 @@ selected_skill_index = None
 current_floor = 1
 floor_monsters = []
 current_monster_index = 0
+current_monster_data = None  # 현재 몬스터 데이터 (드롭용)
 
 # --- 전투 상태 제어 ---
 battle_state = {
@@ -32,6 +33,8 @@ battle_state = {
     "selected_col": 0,  # 선택된 열
     "consumable_message": "",  # 소모품 사용 메시지
     "showing_consumable_message": False,  # 소모품 메시지 표시 중
+    "drop_message": "",  # 드롭 메시지
+    "showing_drop": False,  # 드롭 표시 중
 }
 
 # --- 플레이어 전용 클래스 ---
@@ -139,10 +142,11 @@ def start_battle(game_state_ref, player_name):
 
 def spawn_next_monster():
     """다음 몬스터 생성 - floor.py의 MonsterData를 복사해서 사용"""
-    global battle_enemy, floor_monsters, current_monster_index
+    global battle_enemy, floor_monsters, current_monster_index, current_monster_data
     
     if current_monster_index < len(floor_monsters):
         monster_data = floor_monsters[current_monster_index]
+        current_monster_data = monster_data  # 드롭 계산용 저장
         
         class Monster:
             pass
@@ -273,6 +277,30 @@ def execute_battle_action(game_state_ref):
             battle_state["action_queue"].clear()
         
         elif battle_state["stage"] == "enemy_defeat":
+            # 드롭 처리
+            if current_monster_data and not battle_state["showing_drop"]:
+                drops = current_monster_data.get_drops()
+                drop_msgs = []
+                
+                for drop in drops:
+                    if drop["type"] == "gold":
+                        game_state_ref["gold"] = game_state_ref.get("gold", 0) + drop["amount"]
+                        drop_msgs.append(f"{drop['amount']}G")
+                    elif drop["type"] == "weapon":
+                        from scripts.inventory import player_inventory
+                        player_inventory["weapons"].append(drop["item"])
+                        drop_msgs.append(f"[{drop['item'].grade}] {drop['item'].name}")
+                
+                if drop_msgs:
+                    battle_state["drop_message"] = "획득: " + ", ".join(drop_msgs)
+                    battle_state["showing_drop"] = True
+                    battle_state["current_text"] = battle_state["drop_message"]
+                    return False
+            
+            # 드롭 메시지 확인 후 다음 진행
+            battle_state["showing_drop"] = False
+            battle_state["drop_message"] = ""
+            
             if current_monster_index < len(floor_monsters):
                 spawn_next_monster()
                 battle_state["current_text"] = f"{battle_enemy.name}(이)가 나타났다!"
@@ -393,8 +421,11 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
     screen.blit(floor_info_text, (20, 20))
 
     if battle_enemy and battle_enemy.image:
-        # 체력바 설정
-        hp_bar_width = 200
+        # 몬스터 이미지 크기 가져오기
+        enemy_image_width = battle_enemy.image.get_width()
+        
+        # 체력바 설정 (이미지 가로 길이에 맞춤)
+        hp_bar_width = enemy_image_width
         hp_bar_height = 25
         name_hp_gap = 5  # 이름과 체력바 사이 간격
         hp_image_gap = 5  # 체력바와 이미지 사이 간격
@@ -431,8 +462,11 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
     player_y = HEIGHT - 360
 
     if battle_player and battle_player.image:
-        # 체력바 설정
-        hp_bar_width_p = 200
+        # 플레이어 이미지 크기 가져오기
+        player_image_width = battle_player.image.get_width()
+        
+        # 체력바 설정 (이미지 가로 길이에 맞춤)
+        hp_bar_width_p = player_image_width
         hp_bar_height_p = 25
         name_hp_gap_p = 5  # 이름과 체력바 사이 간격
         hp_image_gap_p = 5  # 체력바와 이미지 사이 간격
@@ -735,14 +769,29 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
         text_box = pygame.Rect(50, HEIGHT - 180, WIDTH - 100, 100)
         battle_state["text_box_rect"] = text_box
         pygame.draw.rect(screen, (20, 20, 20), text_box)
-        pygame.draw.rect(screen, (255, 255, 255), text_box, 2)
+        
+        # 드롭 메시지면 금색 테두리
+        if battle_state["showing_drop"]:
+            pygame.draw.rect(screen, (255, 215, 0), text_box, 2)
+            text_color = (255, 215, 0)
+        else:
+            pygame.draw.rect(screen, (255, 255, 255), text_box, 2)
+            text_color = (255, 255, 255)
 
-        text_surface = font.render(battle_state["current_text"], True, (255, 255, 255))
-        screen.blit(text_surface, (text_box.x + 20, text_box.y + 30))
+        # 텍스트 줄바꿈 처리
+        max_text_width = text_box.width - 40
+        lines = wrap_battle_text(battle_state["current_text"], font, max_text_width)
+        
+        # 여러 줄 렌더링
+        y_offset = text_box.y + 20
+        for line in lines:
+            text_surface = font.render(line, True, text_color)
+            screen.blit(text_surface, (text_box.x + 20, y_offset))
+            y_offset += 30
         
         # 클릭 안내 화살표
         if battle_state["waiting_for_click"]:
-            arrow_text = pygame.font.SysFont("consolas", 30).render("▼", True, (255, 255, 255))
+            arrow_text = pygame.font.SysFont("consolas", 30).render("▼", True, text_color)
             screen.blit(arrow_text, (text_box.x + text_box.width - 40, text_box.y + text_box.height - 40))
     else:
         battle_state["text_box_rect"] = None

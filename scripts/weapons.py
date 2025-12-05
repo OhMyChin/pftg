@@ -5,7 +5,7 @@ class Weapon:
     def __init__(self, id_, name, grade, max_durability, skill_ids, description="", image_path=""):
         self.id = id_
         self.name = name
-        self.grade = grade  # 등급: "일반", "고급", "희귀", "전설" 등
+        self.grade = grade  # 등급: "일반", "희귀", "영웅", "전설" 등
         self.max_durability = max_durability
         self.durability = max_durability  # 현재 내구도
         self.skill_ids = skill_ids  # 이 무기가 사용할 수 있는 스킬 ID 리스트
@@ -59,11 +59,21 @@ RUSTY_DAGGER = Weapon(
 IRON_SWORD = Weapon(
     id_="iron_sword",
     name="철 검",
-    grade="고급",
+    grade="희귀",
     max_durability=100,
     skill_ids=["pierce", "slash"],
     description="잘 벼려진 철 검. 다양한 공격 기술을 사용할 수 있다.",
     image_path="resources/png/weapon/iron_sword.png"
+)
+
+SLIME_WAND = Weapon(
+    id_="slime_wand",
+    name="킹 슬라임의 지팡이",
+    grade="영웅",
+    max_durability=300,
+    skill_ids=["blood_bite", "magma_shot", "slime_slash"],
+    description="킹 슬라임의 힘이 깃든 지팡이. 상위 슬라임들의 기술을 사용할 수 있다.",
+    image_path="resources/png/weapon/slime_wand.png"
 )
 
 # ==================== 몬스터 전용 무기 ====================
@@ -152,6 +162,7 @@ ALL_WEAPONS = {
     "wooden_stick": WOODEN_STICK,
     "iron_sword": IRON_SWORD,
     "rusty_dagger": RUSTY_DAGGER,
+    "slime_wand": SLIME_WAND,
     "slime1": SLIME_BODY,
     "slime2": RED_SLIME_BODY,
     "slime3": YELLOW_SLIME_BODY,
@@ -160,7 +171,7 @@ ALL_WEAPONS = {
     "slime6": MAGMA_SLIME_BODY,
     "slime7": SWORD_SLIME_BODY,
     "slime8": RAINBOW_SLIME_BODY,
-    "slime8": KING_SLIME_BODY
+    "slime9": KING_SLIME_BODY
 }
 
 def create_weapon(weapon_id):
