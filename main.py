@@ -7,6 +7,7 @@ import sys
 from scripts import interactions, battle_system, inventory
 from scripts.weapons import create_weapon
 from scripts import weapon_swap, consume_battle
+from scripts import blacksmith
 
 # --- 기본 설정 ---
 WIDTH, HEIGHT = 800, 600
@@ -335,6 +336,7 @@ all_sprites.add(shop)
 # 히트박스: 건물 하단부
 # 상호작용: 히트박스 바로 아래
 forge = Building("대장간", 678, 81, 175, 175, "resources\\png\\building\\blacksmith.png",
+    on_interact=lambda: interactions.enter_blacksmith(game_state),
     hitbox=(15, 125, 145, 30),
     interact_area=(60, 155, 60, 20)
 )
@@ -661,6 +663,10 @@ while True:
             from scripts import shop
             shop.draw_shop(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, game_state, dt, FONT_PATH)
             shop.handle_shop_input(events, game_state)
+        
+        case "blacksmith":
+            blacksmith.draw_blacksmith(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, game_state, dt, FONT_PATH)
+            blacksmith.handle_blacksmith_input(events, game_state)
                     
         case "battle":
             battle_system.update_battle(screen, FONT_SMALL, WIDTH, HEIGHT, game_state, events)

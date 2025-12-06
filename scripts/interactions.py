@@ -39,6 +39,10 @@ def enter_shop(game_state_ref):
     print("상점에 들어갑니다...")
     game_state_ref["state"] = "shop"
 
+def enter_blacksmith(game_state):
+    """대장간 진입"""
+    game_state["state"] = "blacksmith"
+
 def get_easter(game_state_ref):
     """이스터에그 상호작용 - 테스트 무기 지급"""
     from scripts.weapons import create_weapon

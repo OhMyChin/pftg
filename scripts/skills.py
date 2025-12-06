@@ -57,6 +57,44 @@ SLASH = Skill(
     description="강력하게 베어 큰 피해를 준다"
 )
 
+# ==================== 초월 스킬 ====================
+
+POWER_STRIKE = Skill(
+    id_="power_strike",
+    name="★강타",
+    power=25,
+    priority=0,
+    durability_cost=20,
+    description="[초월] 온 힘을 실어 강하게 내리친다"
+)
+
+RAPID_STAB = Skill(
+    id_="rapid_stab",
+    name="★연속 찌르기",
+    power=18,
+    priority=2,
+    durability_cost=15,
+    description="[초월] 빠르게 연속으로 찌른다"
+)
+
+SPIN_SLASH = Skill(
+    id_="spin_slash",
+    name="★회전 베기",
+    power=20,
+    priority=0,
+    durability_cost=25,
+    description="[초월] 몸을 회전하며 주변을 베어버린다"
+)
+
+SLIME_BURST = Skill(
+    id_="slime_burst",
+    name="★슬라임 폭발",
+    power=35,
+    priority=0,
+    durability_cost=30,
+    description="[초월] 슬라임의 힘을 폭발시켜 강력한 피해를 입힌다"
+)
+
 # ==================== 몬스터 전용 스킬 ====================
 
 BODY_SLAM = Skill(
@@ -131,16 +169,6 @@ KINGS_SLAM = Skill(
     durability_cost=20,
     description="왕의 몸으로 적에게 강하게 부딪친다"
 )
-# ==================== 향후 확장용 스킬 예시 ====================
-
-# QUICK_STRIKE = Skill(
-#     id_="quick_strike",
-#     name="빠른 일격",
-#     power=6,
-#     priority=0,
-#     durability_cost=5,
-#     description="빠르게 공격하여 선제권을 잡는다"
-# )
 
 # 스킬 딕셔너리 (ID로 접근 가능)
 ALL_SKILLS = {
@@ -151,13 +179,16 @@ ALL_SKILLS = {
     "red_attack": RED_ATTACK,
     "yellow_attack": YELLOW_ATTACK,
     "blue_attack": BLUE_ATTACK,
-    "blood_bite" : BLOOD_BITE,
+    "blood_bite": BLOOD_BITE,
     "magma_shot": MAGMA_SHOT,
     "slime_slash": SLIME_SLASH,
     "pierce": PIERCE,
     "slash": SLASH,
-    # "quick_strike": QUICK_STRIKE,
     "rainbow_attack": RAINBOW_ATTACK,
-    "kings_slam": KINGS_SLAM
-    
+    "kings_slam": KINGS_SLAM,
+    # 초월 스킬
+    "power_strike": POWER_STRIKE,
+    "rapid_stab": RAPID_STAB,
+    "spin_slash": SPIN_SLASH,
+    "slime_burst": SLIME_BURST,
 }
