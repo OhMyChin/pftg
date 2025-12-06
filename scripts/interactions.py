@@ -38,3 +38,25 @@ def enter_shop(game_state_ref):
     """상점 진입"""
     print("상점에 들어갑니다...")
     game_state_ref["state"] = "shop"
+
+def get_easter(game_state_ref):
+    """이스터에그 상호작용 - 테스트 무기 지급"""
+    from scripts.weapons import create_weapon
+    from scripts.inventory import player_inventory
+    
+    # 이미 받았는지 확인
+    if game_state_ref.get("easter_claimed", False):
+        game_state_ref["message"] = "이미 보물을 획득했습니다!"
+        return
+    
+    # 테스트 무기 지급
+    weapon_id = "test_sword"
+    new_weapon = create_weapon(weapon_id)
+    
+    if new_weapon:
+        player_inventory["weapons"].append(new_weapon)
+        game_state_ref["easter_claimed"] = True
+        game_state_ref["message"] = f"축하합니다! {new_weapon.name}을(를) 발견했습니다!"
+        print(f"이스터에그: {new_weapon.name} 획득!")
+    else:
+        game_state_ref["message"] = "이스터에그를 발견했습니다!"

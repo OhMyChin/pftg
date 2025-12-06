@@ -6,33 +6,92 @@ shop_state = {
     "selected_button": 0,  # 상점 내부에서 선택된 버튼 (0: 구매, 1: 대화, 2: 나가기)
     "is_talking": False,  # 대화 중인지 여부
     "dialog_index": 0,  # 현재 대사 인덱스
-    "page": 0,  # 현재 페이지
+    "current_tab": 0,  # 현재 탭 (0: 포션, 1: 키트, 2: 무기, 3: 기타)
     "selected_slot": 0,  # 선택된 상품 슬롯 (0-2)
     "message": "",  # 구매 메시지
     "message_timer": 0,  # 메시지 타이머
 }
 
-# 상점 아이템 정의
-SHOP_ITEMS = [
-    # 페이지 0 (포션)
-    [
+# 탭 이름
+TAB_NAMES = ["포션", "키트", "무기", "기타"]
+
+# 상점 아이템 정의 (탭별)
+SHOP_ITEMS = {
+    # 탭 0: 포션
+    0: [
         {"id": "health_potion_small", "name": "작은 체력 물약", "price": 50, "type": "consumable"},
         {"id": "health_potion_medium", "name": "중간 체력 물약", "price": 100, "type": "consumable"},
         {"id": "health_potion_large", "name": "큰 체력 물약", "price": 200, "type": "consumable"},
     ],
-    # 페이지 1 (수리 키트)
-    [
+    # 탭 1: 수리 키트
+    1: [
         {"id": "repair_kit_basic", "name": "초급 수리 키트", "price": 50, "type": "consumable"},
         {"id": "repair_kit_advanced", "name": "중급 수리 키트", "price": 100, "type": "consumable"},
         {"id": "repair_kit_master", "name": "고급 수리 키트", "price": 200, "type": "consumable"},
     ],
-    # 페이지 2 (무기)
-    [
+    # 탭 2: 무기
+    2: [
         {"id": "iron_sword", "name": "철 검", "price": 300, "type": "weapon"},
         {"id": "rusty_dagger", "name": "녹슨 단검", "price": 150, "type": "weapon"},
-        {"id": "test_sword", "name": "킹왕짱얼티밋 소드", "price": 2000, "type": "weapon"}
+        None
     ],
-]
+    # 탭 3: 기타 (가방 등) - 동적으로 현재 레벨에 맞는 가방만 표시
+    3: [
+        {"id": "bag", "type": "bag"},  # 동적으로 정보가 채워짐
+        None,
+        None,
+    ],
+}
+
+# 가방 레벨별 데이터
+# 기본: 장착 2칸, 보유 6칸 (1줄)
+# 레벨당 장착 +1칸, 보유 +12칸 (2줄)
+BAG_LEVELS = {
+    1: {"name": "가방(Lv.1)", "price": 300, "equipped_slots": 3, "inventory_slots": 18,
+        "description": "장착 3칸, 보유 18칸으로 확장"},
+    2: {"name": "가방(Lv.2)", "price": 1000, "equipped_slots": 4, "inventory_slots": 30,
+        "description": "장착 4칸, 보유 30칸으로 확장"},
+    3: {"name": "가방(Lv.3)", "price": 3000, "equipped_slots": 5, "inventory_slots": 42,
+        "description": "장착 5칸, 보유 42칸으로 확장"},
+    4: {"name": "가방(Lv.4)", "price": 10000, "equipped_slots": 6, "inventory_slots": 54,
+        "description": "장착 6칸, 보유 54칸으로 확장 (최대)"},
+}
+
+def get_current_bag_level():
+    """현재 가방 레벨 반환 (0: 기본, 1~4: 레벨)"""
+    from scripts.inventory import inventory_state
+    equipped = inventory_state["max_equipped_slots"]
+    
+    if equipped >= 6:
+        return 4
+    elif equipped >= 5:
+        return 3
+    elif equipped >= 4:
+        return 2
+    elif equipped >= 3:
+        return 1
+    else:
+        return 0  # 기본 가방
+
+def get_next_bag_item():
+    """다음 레벨 가방 정보 반환"""
+    current_level = get_current_bag_level()
+    next_level = current_level + 1
+    
+    if next_level > 4:
+        return None  # 최대 레벨 도달
+    
+    bag_data = BAG_LEVELS[next_level]
+    return {
+        "id": f"bag_lv{next_level}",
+        "name": bag_data["name"],
+        "price": bag_data["price"],
+        "type": "bag",
+        "equipped_slots": bag_data["equipped_slots"],
+        "inventory_slots": bag_data["inventory_slots"],
+        "description": bag_data["description"],
+        "level": next_level,
+    }
 
 def draw_shop(screen, font_main, font_small, WIDTH, HEIGHT, game_state, dt=0, font_path=None):
     """상점 화면 그리기"""
@@ -163,8 +222,19 @@ def draw_shop_inside(screen, font_main, font_small, WIDTH, HEIGHT, game_state):
 def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state, font_path=None):
     """구매 UI 화면"""
     
-    # 배경 약간 어둡게
-    screen.fill((50, 50, 50))
+    # 먼저 상점 내부 배경 그리기
+    try:
+        shop_bg = pygame.image.load("resources/png/building/shop_inside.png").convert()
+        shop_bg = pygame.transform.scale(shop_bg, (WIDTH, HEIGHT))
+        screen.blit(shop_bg, (0, 0))
+    except:
+        screen.fill((100, 150, 100))
+    
+    # 반투명 어두운 오버레이
+    overlay = pygame.Surface((WIDTH, HEIGHT))
+    overlay.set_alpha(150)
+    overlay.fill((0, 0, 0))
+    screen.blit(overlay, (0, 0))
     
     # 구매 UI 이미지 로드
     try:
@@ -189,40 +259,127 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state, f
         pygame.draw.rect(screen, (220, 200, 150), (ui_x, ui_y, ui_width, ui_height))
         pygame.draw.rect(screen, (100, 80, 50), (ui_x, ui_y, ui_width, ui_height), 4)
     
-    # 현재 페이지의 아이템들
-    current_page = shop_state["page"]
-    if current_page < len(SHOP_ITEMS):
-        items = SHOP_ITEMS[current_page]
+    # 현재 탭의 아이템들
+    current_tab = shop_state["current_tab"]
+    if current_tab in SHOP_ITEMS:
+        items = SHOP_ITEMS[current_tab].copy()  # 복사본 사용
+        
+        # 기타 탭이면 동적으로 다음 레벨 가방 정보 가져오기
+        if current_tab == 3:  # 기타 탭
+            next_bag = get_next_bag_item()
+            if next_bag:
+                items[0] = next_bag
+            else:
+                items[0] = {"id": "bag_max", "name": "최대 레벨!", "price": 0, "type": "none",
+                           "description": "이미 최대 레벨 가방을 보유중입니다."}
     else:
         items = []
     
-    # 3개의 상품 슬롯 그리기
-    slot_width = 160
-    slot_height = 280
-    slot_gap = 30
+    # 3개의 상품 슬롯 그리기 (전체 화면 중앙 기준)
+    slot_width = 200
+    slot_height = 350
+    slot_gap = 20
     total_width = slot_width * 3 + slot_gap * 2
-    start_x = ui_x + (ui_width - total_width) // 2
-    start_y = ui_y + 50
+    start_x = (WIDTH - total_width) // 2
+    start_y = (HEIGHT - slot_height) // 2
+    
+    # ===== 탭 그리기 (두루마리 스타일 - 양쪽 막대, 가운데 종이) =====
+    tab_width = 160
+    tab_height = 20
+    tab_gap = 8
+    
+    # 색상
+    scroll_color = (222, 212, 146)  # 베이지색 (종이)
+    scroll_border = (176, 166, 100)  # 베이지 테두리 (명암)
+    wood_color = (117, 64, 38)  # 갈색 (나무 막대)
+    wood_border = (92, 53, 32)  # 갈색 테두리 (명암)
+    
+    # 탭 배치 계산 (현재 탭 기준 위/아래 배치)
+    other_tabs = [i for i in range(4) if i != current_tab]
+    top_tabs = other_tabs[:current_tab]  # 현재 탭보다 앞에 있는 탭들
+    bottom_tabs = other_tabs[current_tab:]  # 현재 탭보다 뒤에 있는 탭들
+    
+    # 탭용 폰트
+    if font_path:
+        tab_font = pygame.font.Font(font_path, 18)
+    else:
+        tab_font = pygame.font.Font(None, 18)
+    
+    def draw_scroll_tab(x, y, width, height, text):
+        """두루마리 탭 그리기 - 양쪽 나무 막대, 가운데 종이"""
+        rod_width = 12
+        paper_width = width - rod_width * 2
+        
+        # 왼쪽 나무 막대 (먼저 그리기)
+        pygame.draw.rect(screen, wood_color, (x, y + 1, rod_width, height - 2))
+        pygame.draw.rect(screen, wood_border, (x, y + 1, rod_width, height - 2), 3)
+        
+        # 오른쪽 나무 막대 (먼저 그리기)
+        right_rod_x = x + width - rod_width
+        pygame.draw.rect(screen, wood_color, (right_rod_x, y + 1, rod_width, height - 2))
+        pygame.draw.rect(screen, wood_border, (right_rod_x, y + 1, rod_width, height - 2), 3)
+        
+        # 종이 부분 (가운데) - 나무 막대 위에 그리기
+        paper_x = x + rod_width
+        paper_extend = 3
+        pygame.draw.rect(screen, scroll_color, 
+                        (paper_x, y - paper_extend, paper_width, height + paper_extend * 2))
+        pygame.draw.rect(screen, scroll_border, 
+                        (paper_x, y - paper_extend, paper_width, height + paper_extend * 2), 3)
+        
+        # 텍스트 (볼드 효과 - 살짝만)
+        text_color = (60, 40, 20)
+        center_x = x + width // 2
+        center_y = y + height // 2
+        
+        tab_text = tab_font.render(text, True, text_color)
+        tab_text_rect = tab_text.get_rect(center=(center_x, center_y))
+        
+        # 살짝 오프셋으로 볼드 효과 (덜 두껍게)
+        screen.blit(tab_text, tab_text_rect)
+        screen.blit(tab_text, (tab_text_rect.x + 1, tab_text_rect.y))
+    
+    # 위쪽 탭 그리기 (세로로 쌓기)
+    if top_tabs:
+        top_x = (WIDTH - tab_width) // 2
+        
+        for idx, tab_idx in enumerate(top_tabs):
+            tab_y = start_y - 12 - (len(top_tabs) - idx) * (tab_height + tab_gap)
+            draw_scroll_tab(top_x, tab_y, tab_width, tab_height, TAB_NAMES[tab_idx])
+    
+    # 아래쪽 탭 그리기 (세로로 쌓기)
+    if bottom_tabs:
+        bottom_x = (WIDTH - tab_width) // 2
+        
+        for idx, tab_idx in enumerate(bottom_tabs):
+            tab_y = start_y + slot_height + 19 + idx * (tab_height + tab_gap)
+            draw_scroll_tab(bottom_x, tab_y, tab_width, tab_height, TAB_NAMES[tab_idx])
     
     for i in range(3):
         slot_x = start_x + i * (slot_width + slot_gap)
         slot_rect = pygame.Rect(slot_x, start_y, slot_width, slot_height)
         
-        # 선택된 슬롯 강조
+        # 선택된 슬롯 강조 (크기 키우고 두께도 키움)
         if shop_state["selected_slot"] == i:
-            pygame.draw.rect(screen, (255, 215, 0), slot_rect, 4)
+            select_rect = pygame.Rect(slot_x - 3, start_y - 3, slot_width + 6, slot_height + 6)
+            pygame.draw.rect(screen, (255, 215, 0), select_rect, 9)
         
         # 아이템이 있으면 표시
         if i < len(items) and items[i] is not None:
             item = items[i]
             
-            # 가격 표시 (상단)
-            price_text = font_small.render(f"{item['price']}G", True, (0, 0, 0))
-            price_rect = price_text.get_rect(center=(slot_x + slot_width // 2, start_y + 30))
+            # 가격 표시 (상단 노란 바에 맞춤) - 큰 폰트 사용
+            if font_path:
+                price_font = pygame.font.Font(font_path, 32)
+            else:
+                price_font = pygame.font.Font(None, 32)
+            price_text = price_font.render(f"{item['price']}G", True, (0, 0, 0))
+            price_rect = price_text.get_rect(center=(slot_x + slot_width // 2, start_y + 37))
             screen.blit(price_text, price_rect)
             
             # 아이템 이미지 (중앙)
-            item_img_y = start_y + 60  # 이미지 위치 조정
+            item_img_y = start_y + 110
+            item_size = 110
             try:
                 if item["type"] == "consumable":
                     # 소모품 이미지 (consume.py에서 경로 가져오기)
@@ -230,12 +387,11 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state, f
                     consumable_template = ALL_CONSUMABLES.get(item['id'])
                     if consumable_template and consumable_template.image_path:
                         consumable_img = pygame.image.load(consumable_template.image_path).convert_alpha()
-                        consumable_img = pygame.transform.scale(consumable_img, (80, 80))
-                        item_x = slot_x + (slot_width - 80) // 2
+                        consumable_img = pygame.transform.scale(consumable_img, (item_size, item_size))
+                        item_x = slot_x + (slot_width - item_size) // 2
                         screen.blit(consumable_img, (item_x, item_img_y))
                     else:
                         # 이미지 경로가 없으면 기본 표시 (색상 구분)
-                        item_size = 80
                         item_x = slot_x + (slot_width - item_size) // 2
                         if "potion" in item["id"]:
                             if "small" in item["id"]:
@@ -260,17 +416,48 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state, f
                     weapon_template = ALL_WEAPONS.get(item['id'])
                     if weapon_template and weapon_template.image_path:
                         weapon_img = pygame.image.load(weapon_template.image_path).convert_alpha()
-                        weapon_img = pygame.transform.scale(weapon_img, (80, 80))
-                        item_x = slot_x + (slot_width - 80) // 2
+                        weapon_img = pygame.transform.scale(weapon_img, (item_size, item_size))
+                        item_x = slot_x + (slot_width - item_size) // 2
                         screen.blit(weapon_img, (item_x, item_img_y))
                     else:
                         # 이미지 경로가 없으면 기본 표시
+                        item_x = slot_x + (slot_width - item_size) // 2
                         pygame.draw.rect(screen, (150, 150, 150), 
-                                       (slot_x + 40, item_img_y, 80, 80))
+                                       (item_x, item_img_y, item_size, item_size))
+                
+                elif item["type"] == "bag":
+                    # 가방 이미지 (기본 표시)
+                    item_x = slot_x + (slot_width - item_size) // 2
+                    # 가방 레벨에 따른 색상
+                    level = item.get("level", 1)
+                    if level == 1:
+                        color = (139, 90, 43)  # 갈색
+                    elif level == 2:
+                        color = (192, 192, 192)  # 은색
+                    elif level == 3:
+                        color = (255, 215, 0)  # 금색
+                    else:  # level 4
+                        color = (147, 112, 219)  # 보라색 (최대)
+                    pygame.draw.rect(screen, color, (item_x, item_img_y, item_size, item_size))
+                    pygame.draw.rect(screen, (255, 255, 255), (item_x, item_img_y, item_size, item_size), 3)
+                    # 가방 아이콘 텍스트
+                    bag_icon = font_small.render("BAG", True, (0, 0, 0))
+                    bag_icon_rect = bag_icon.get_rect(center=(item_x + item_size // 2, item_img_y + item_size // 2))
+                    screen.blit(bag_icon, bag_icon_rect)
+                
+                elif item["type"] == "none":
+                    # 최대 레벨 표시
+                    item_x = slot_x + (slot_width - item_size) // 2
+                    pygame.draw.rect(screen, (100, 100, 100), (item_x, item_img_y, item_size, item_size))
+                    pygame.draw.rect(screen, (150, 150, 150), (item_x, item_img_y, item_size, item_size), 3)
+                    max_icon = font_small.render("MAX", True, (255, 215, 0))
+                    max_icon_rect = max_icon.get_rect(center=(item_x + item_size // 2, item_img_y + item_size // 2))
+                    screen.blit(max_icon, max_icon_rect)
             except:
                 # 이미지 로드 실패
+                item_x = slot_x + (slot_width - item_size) // 2
                 pygame.draw.rect(screen, (150, 150, 150), 
-                               (slot_x + 40, item_img_y, 80, 80))
+                               (item_x, item_img_y, item_size, item_size))
             
             # 아이템 이름 (하단) - 글자 크기 자동 조절
             name_font_size = 28  # 기본 크기
@@ -278,7 +465,7 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state, f
                 name_font = pygame.font.Font(font_path, name_font_size)
             else:
                 name_font = font_small
-            max_name_width = slot_width - 20
+            max_name_width = slot_width - 40  # 여백 더 줌
             
             # 이름이 너무 길면 폰트 크기 줄이기
             while name_font.size(item["name"])[0] > max_name_width and name_font_size > 14:
@@ -289,18 +476,14 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state, f
                     name_font = pygame.font.Font(None, name_font_size)
             
             name_text = name_font.render(item["name"], True, (0, 0, 0))
-            name_rect = name_text.get_rect(center=(slot_x + slot_width // 2, start_y + 180))
+            name_rect = name_text.get_rect(center=(slot_x + slot_width // 2, start_y + 240))
             screen.blit(name_text, name_rect)
             
-            # 구매 버튼 영역 (하단)
-            button_y = start_y + slot_height - 50
+            # 구매 버튼 영역 (하단 노란 바에 맞춤)
+            button_y = start_y + 313
             buy_text = font_small.render("구매", True, (0, 0, 0))
             buy_rect = buy_text.get_rect(center=(slot_x + slot_width // 2, button_y))
             screen.blit(buy_text, buy_rect)
-    
-    # 페이지 표시
-    page_text = font_small.render(f"페이지 {current_page + 1}/{len(SHOP_ITEMS)}", True, (255, 255, 255))
-    screen.blit(page_text, (WIDTH // 2 - page_text.get_width() // 2, ui_y + ui_height + 20))
     
     # 현재 골드 표시 (인벤토리 스타일)
     gold_text = font_small.render(f"골드: {game_state.get('gold', 0)}G", True, (255, 215, 0))
@@ -396,7 +579,7 @@ def handle_shop_input(events, game_state):
                         elif selected == 2:  # 나가기
                             game_state["state"] = "town"
                             shop_state["stage"] = "inside"
-                            shop_state["page"] = 0
+                            shop_state["current_tab"] = 0
                             shop_state["selected_slot"] = 0
                             shop_state["selected_button"] = 0
                             shop_state["is_talking"] = False
@@ -405,7 +588,7 @@ def handle_shop_input(events, game_state):
                     elif event.key == pygame.K_ESCAPE:
                         game_state["state"] = "town"
                         shop_state["stage"] = "inside"
-                        shop_state["page"] = 0
+                        shop_state["current_tab"] = 0
                         shop_state["selected_slot"] = 0
                         shop_state["selected_button"] = 0
                         shop_state["is_talking"] = False
@@ -420,23 +603,40 @@ def handle_shop_input(events, game_state):
                     shop_state["selected_slot"] = min(2, shop_state["selected_slot"] + 1)
                 
                 elif event.key == pygame.K_w:
-                    # 페이지 올리기
-                    shop_state["page"] = max(0, shop_state["page"] - 1)
+                    # 이전 탭
+                    shop_state["current_tab"] = max(0, shop_state["current_tab"] - 1)
                     shop_state["selected_slot"] = 0
                 elif event.key == pygame.K_s:
-                    # 페이지 내리기
-                    shop_state["page"] = min(len(SHOP_ITEMS) - 1, shop_state["page"] + 1)
+                    # 다음 탭
+                    shop_state["current_tab"] = min(3, shop_state["current_tab"] + 1)
                     shop_state["selected_slot"] = 0
                 
                 elif event.key == pygame.K_RETURN:
                     # 구매
-                    current_page = shop_state["page"]
+                    current_tab = shop_state["current_tab"]
                     selected_slot = shop_state["selected_slot"]
                     
-                    if current_page < len(SHOP_ITEMS):
-                        items = SHOP_ITEMS[current_page]
+                    if current_tab in SHOP_ITEMS:
+                        # 기타 탭이면 동적으로 아이템 가져오기
+                        if current_tab == 3:  # 기타 탭
+                            items = SHOP_ITEMS[current_tab].copy()
+                            next_bag = get_next_bag_item()
+                            if next_bag:
+                                items[0] = next_bag
+                            else:
+                                items[0] = None
+                        else:
+                            items = SHOP_ITEMS[current_tab]
+                        
                         if selected_slot < len(items) and items[selected_slot] is not None:
                             item = items[selected_slot]
+                            
+                            # none 타입은 구매 불가
+                            if item.get("type") == "none":
+                                shop_state["message"] = "이미 최대 레벨입니다!"
+                                shop_state["message_timer"] = 0
+                                continue
+                            
                             player_gold = game_state.get("gold", 0)
                             
                             # 골드가 충분한지 확인
@@ -460,6 +660,18 @@ def handle_shop_input(events, game_state):
                                         player_inventory["consumables"].append(consumable)
                                         shop_state["message"] = f"{item['name']}을(를) 구매했습니다!"
                                         shop_state["message_timer"] = 0
+                                elif item["type"] == "bag":
+                                    # 가방 구매 - 인벤토리 확장
+                                    from scripts.inventory import inventory_state
+                                    
+                                    new_equipped = item["equipped_slots"]
+                                    new_inventory = item["inventory_slots"]
+                                    
+                                    # 인벤토리 확장
+                                    inventory_state["max_equipped_slots"] = new_equipped
+                                    inventory_state["max_inventory_slots"] = new_inventory
+                                    shop_state["message"] = f"{item['name']} 구매! 인벤토리가 확장되었습니다!"
+                                    shop_state["message_timer"] = 0
                             else:
                                 shop_state["message"] = "골드가 부족합니다!"
                                 shop_state["message_timer"] = 0

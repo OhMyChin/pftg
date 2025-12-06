@@ -12,6 +12,32 @@ from scripts import weapon_swap, consume_battle
 WIDTH, HEIGHT = 800, 600
 FPS = 60
 PLAYER_SPEED = 5
+
+# --- 텍스트 줄바꿈 함수 ---
+def wrap_text(text, font, max_width):
+    """텍스트 줄바꿈"""
+    words = text.split()
+    lines = []
+    current_line = ""
+    
+    for word in words:
+        test_line = current_line + (" " if current_line else "") + word
+        if font.size(test_line)[0] <= max_width:
+            current_line = test_line
+        else:
+            if current_line:
+                lines.append(current_line)
+            current_line = word
+    
+    if current_line:
+        lines.append(current_line)
+    
+    return lines
+
+# --- 맵 설정 ---
+MAP_WIDTH = 1024
+MAP_HEIGHT = 1024
+
 pftg_icon = pygame.image.load("resources\\png\\pftg_icon.png")
 game_state = {
     "state": "start",  # start, town, battle등등
@@ -38,10 +64,49 @@ pygame.display.set_caption("PFTG")
 pygame.display.set_icon(pftg_icon)
 clock = pygame.time.Clock()
 
+# --- 배경 이미지 로드 (화면 설정 후) ---
+try:
+    town_bg = pygame.image.load("resources\\png\\town_bg.png").convert()
+    town_bg = pygame.transform.scale(town_bg, (MAP_WIDTH, MAP_HEIGHT))
+    print("배경 이미지 로드 성공!")
+except Exception as e:
+    print(f"배경 이미지 로드 실패: {e}")
+    town_bg = None
+
+# --- 배경 오버레이 이미지 로드 (건물 위, 플레이어 아래에 그려짐) ---
+try:
+    town_overlay = pygame.image.load("resources\\png\\town_bg_1.png").convert_alpha()
+    town_overlay = pygame.transform.scale(town_overlay, (MAP_WIDTH, MAP_HEIGHT))
+    print("오버레이 이미지 로드 성공!")
+except Exception as e:
+    print(f"오버레이 이미지 로드 실패: {e}")
+    town_overlay = None
+
 # --- 색상 정의 ---
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 BLACK = (0, 0, 0)
+
+# --- 히트박스 전용 오브젝트 클래스 (이미지 선택 가능) ---
+class HitboxObject(pygame.sprite.Sprite):
+    def __init__(self, x, y, width, height, image=None, image_offset=(0, 0)):
+        """
+        image: 이미지 경로 (None이면 이미지 없음)
+        image_offset: 히트박스 기준 이미지 오프셋 (x, y)
+        """
+        super().__init__()
+        self.rect = pygame.Rect(x, y, width, height)
+        
+        # 이미지 설정
+        if image:
+            self.image = pygame.image.load(image).convert_alpha()
+            # 이미지 위치 계산 (히트박스 기준 오프셋)
+            img_x = x + image_offset[0]
+            img_y = y + image_offset[1]
+            self.image_rect = self.image.get_rect(topleft=(img_x, img_y))
+        else:
+            self.image = None
+            self.image_rect = None
 
 # --- 플레이어 클래스 ---
 class Player(pygame.sprite.Sprite):
@@ -151,7 +216,15 @@ class Player(pygame.sprite.Sprite):
 
 # --- 건물 클래스 ---
 class Building(pygame.sprite.Sprite):
-    def __init__(self, name, x, y, width, height, image=None, on_interact=None):
+    def __init__(self, name, x, y, width, height, image=None, on_interact=None, hitbox=None, interact_area=None):
+        """
+        hitbox: (offset_x, offset_y, width, height) 튜플
+                offset_x, offset_y는 이미지 좌상단 기준 오프셋
+                None이면 이미지 하단 기준 자동 생성
+        interact_area: (offset_x, offset_y, width, height) 튜플
+                       offset_x, offset_y는 이미지 좌상단 기준 오프셋
+                       None이면 이미지 하단 중앙에 자동 생성
+        """
         super().__init__()
         self.name = name
         self.on_interact = on_interact
@@ -163,14 +236,35 @@ class Building(pygame.sprite.Sprite):
             self.image = pygame.Surface((width, height))
             self.image.fill((150, 150, 150))
 
-        self.rect = self.image.get_rect(topleft=(x, y))
+        self.image_rect = self.image.get_rect(topleft=(x, y))
+        
+        # 히트박스 설정
+        if hitbox:
+            hb_offset_x, hb_offset_y, hb_width, hb_height = hitbox
+            hb_x = x + hb_offset_x
+            hb_y = y + hb_offset_y
+        else:
+            # 기본값: 이미지 하단 중앙, 너비 80%, 높이 20px
+            hb_width = int(width * 0.8)
+            hb_height = 20
+            hb_x = x + (width - hb_width) // 2
+            hb_y = y + height - hb_height
+        
+        self.rect = pygame.Rect(hb_x, hb_y, hb_width, hb_height)  # 충돌 판정용
 
-        # 상호작용 영역 생성 (건물 아래 중앙)
-        interact_width = 60
-        interact_height = 30
-        interact_x = x + (width - interact_width) // 2
-        interact_y = y + height - interact_height // 2
-        self.interact_rect = pygame.Rect(interact_x, interact_y, interact_width, interact_height)
+        # 상호작용 영역 설정
+        if interact_area:
+            ia_offset_x, ia_offset_y, ia_width, ia_height = interact_area
+            ia_x = x + ia_offset_x
+            ia_y = y + ia_offset_y
+        else:
+            # 기본값: 이미지 하단 중앙
+            ia_width = 60
+            ia_height = 30
+            ia_x = x + (width - ia_width) // 2
+            ia_y = y + height - ia_height // 2
+        
+        self.interact_rect = pygame.Rect(ia_x, ia_y, ia_width, ia_height)
 
     def interact(self):
         if self.on_interact:
@@ -182,8 +276,8 @@ class Building(pygame.sprite.Sprite):
 all_sprites = pygame.sprite.Group()
 buildings = pygame.sprite.Group()
 
-# --- 플레이어 생성 ---
-player = Player(400, 300)
+# --- 플레이어 생성 (맵 중앙에서 시작) ---
+player = Player(MAP_WIDTH // 2, MAP_HEIGHT // 2)
 all_sprites.add(player)
 
 # 전투 시스템 플레이어 초기화
@@ -204,32 +298,80 @@ if battle_system.battle_player is None:
 # 인벤토리 초기화
 inventory.init_inventory(battle_system.battle_player)
 
-# --- 예시 건물 생성 ---
-house = Building("집", 100, -100, 125, 125, "resources\\png\\building\\pretty_house.png",
-    on_interact=lambda: interactions.home_interact(game_state)
+easter_egg = Building(
+    "이스터에그", 705, 576, 128, 192, "resources\\png\\building\\easter_egg.png",
+    on_interact=lambda: interactions.get_easter(game_state),
+    hitbox=(0, 0, 0, 0),
+    interact_area=(53, 47, 23, 23)
+)
+buildings.add(easter_egg)
+all_sprites.add(easter_egg)
+
+# --- 건물 생성 (1024x1024 맵 기준) ---
+# 위쪽 중앙 - 집 (165x165)
+# 히트박스: 건물 하단부, 가로 중앙
+# 상호작용: 히트박스 바로 아래
+house = Building("집", 430, 91, 165, 165, "resources\\png\\building\\pretty_house.png",
+    on_interact=lambda: interactions.home_interact(game_state),
+    hitbox=(8, 90, 150, 50),
+    interact_area=(50, 140, 65, 25)
 )
 buildings.add(house)
 all_sprites.add(house)
 
+# 위쪽 왼쪽 - 상점 (125x125)
+# 히트박스: 건물 하단부
+# 상호작용: 히트박스 바로 아래
 shop = Building(
-    "상점", 300, -100, 125, 125, "resources\\png\\building\\shop.png",
-    on_interact=lambda: interactions.enter_shop(game_state)
+    "상점", 180, 101, 155, 155, "resources\\png\\building\\shop.png",
+    on_interact=lambda: interactions.enter_shop(game_state),
+    hitbox=(6, 80, 143, 50),
+    interact_area=(45, 131, 64, 24)
 )
 buildings.add(shop)
 all_sprites.add(shop)
 
-forge = Building("대장간", 500, -150, 175, 175, "resources\\png\\building\\blacksmith.png")
+# 위쪽 오른쪽 - 대장간 (175x175)
+# 히트박스: 건물 하단부
+# 상호작용: 히트박스 바로 아래
+forge = Building("대장간", 678, 81, 175, 175, "resources\\png\\building\\blacksmith.png",
+    hitbox=(15, 125, 145, 30),
+    interact_area=(60, 155, 60, 20)
+)
 buildings.add(forge)
 all_sprites.add(forge)
 
+# 왼쪽 밝은 길 끝 - 교회 (이미지 준비되면 주석 해제)
+# church = Building("교회", 50, 420, 125, 125, "resources\\png\\building\\church.png",
+#     hitbox=(10, 95, 105, 25),
+#     interact_area=(30, 120, 65, 30)
+# )
+# buildings.add(church)
+# all_sprites.add(church)
+
+# 아래쪽 보라색 영역 - 던전 (128x192)
+# 히트박스: 건물 하단부 (던전은 세로로 길어서 아래쪽에)
+# 상호작용: 히트박스 바로 아래
 dungeon = Building(
-    "던전", 600, 150, 128, 192, "resources\\png\\building\\dungeon.png",
+    "던전", 705, 576, 128, 192, "resources\\png\\building\\dungeon.png",
     on_interact=lambda: interactions.enter_dungeon(
         battle_system.start_battle, game_state, game_state["player_name"]
-    )
+    ),
+    hitbox=(0, 125, 128, 65),
+    interact_area=(30, 190, 68, 20)
 )
 buildings.add(dungeon)
 all_sprites.add(dungeon)
+
+# --- 히트박스 전용 오브젝트 (배경에 이미지 포함됨) ---
+# 나무 그루터기 - town_bg_2.png
+# 히트박스 위치: (280, 890), 크기: 90x25
+# 이미지 오프셋: 히트박스 기준으로 이미지가 위에 그려지도록 조정
+stump = HitboxObject(280, 890, 90, 25, 
+    image="resources\\png\\town_bg_2.png",
+    image_offset=(-280, -890)  # 이미지가 히트박스 위쪽에 그려지도록 (조정 필요)
+)
+buildings.add(stump)
 
 # --- 카메라 오프셋 ---
 camera_offset = pygame.Vector2(0, 0)
@@ -312,6 +454,9 @@ while True:
             if keys[pygame.K_e]:
                 if not e_key_pressed:
                     for building in buildings:
+                        # HitboxObject는 상호작용 없음
+                        if isinstance(building, HitboxObject):
+                            continue
                         if player.rect.colliderect(building.interact_rect):
                             building.interact()
                     e_key_pressed = True
@@ -327,23 +472,70 @@ while True:
                 i_key_pressed = False
 
             # --- 화면 그리기 ---
-            screen.fill(WHITE)
+            screen.fill((50, 50, 50))  # 맵 밖 영역은 어두운 색
+            
+            # --- 배경 이미지 그리기 ---
+            if town_bg:
+                screen.blit(town_bg, (-camera_offset.x, -camera_offset.y))
 
-            # --- 건물 그리기 (카메라 오프셋 적용) ---
+            # --- 플레이어와 건물을 Y좌표(히트박스 하단) 기준으로 정렬해서 그리기 ---
+            # 플레이어 정보 준비
+            player_depth = player.hitbox.bottom  # 플레이어 히트박스 하단 Y
+            player_image_bottom_y = HEIGHT // 2 + player.hitbox.height // 2
+            player_image_top_y = player_image_bottom_y - player.image_height
+            player_image_rect = player.display_image.get_rect(centerx=WIDTH // 2, top=player_image_top_y)
+            
+            # 그릴 대상 리스트 만들기 (depth, type, data)
+            render_list = []
+            
+            # 건물 추가
             for building in buildings:
-                screen.blit(building.image, building.rect.topleft - camera_offset)
+                render_list.append((building.rect.bottom, "building", building))
+            
+            # 플레이어 추가
+            render_list.append((player_depth, "player", None))
+            
+            # Y좌표(depth) 기준 정렬 (작은 값이 먼저 = 뒤에 그려짐)
+            render_list.sort(key=lambda x: x[0])
+            
+            # 정렬된 순서대로 그리기
+            for depth, obj_type, obj in render_list:
+                if obj_type == "building":
+                    # HitboxObject 처리
+                    if isinstance(obj, HitboxObject):
+                        # 이미지가 있으면 그리기
+                        if obj.image:
+                            screen.blit(obj.image, obj.image_rect.topleft - camera_offset)
+                        continue
+                    
+                    # 건물 이미지 그리기
+                    screen.blit(obj.image, obj.image_rect.topleft - camera_offset)
+                    
+                elif obj_type == "player":
+                    # 오버레이 이미지 그리기 (플레이어 아래에)
+                    if town_overlay:
+                        screen.blit(town_overlay, (-camera_offset.x, -camera_offset.y))
+                    
+                    # 플레이어 그리기
+                    screen.blit(player.display_image, player_image_rect)
 
-                # 디버깅용: 상호작용 영역 시각화 (빨간색 테두리)
-                debug_rect = building.interact_rect.move(-camera_offset)
-                pygame.draw.rect(screen, (255, 0, 0), debug_rect, 1)
+            # --- 디버깅용 테두리 (플레이어 위에 표시) ---
+            # 건물 히트박스 및 상호작용 영역
+            for building in buildings:
+                if isinstance(building, HitboxObject):
+                    # 히트박스 전용 오브젝트 (노란색 테두리)
+                    hitbox_debug = building.rect.move(-camera_offset.x, -camera_offset.y)
+                    pygame.draw.rect(screen, (255, 255, 0), hitbox_debug, 2)
+                else:
+                    # 건물 히트박스 (파란색 테두리)
+                    hitbox_debug = building.rect.move(-camera_offset.x, -camera_offset.y)
+                    pygame.draw.rect(screen, (0, 100, 255), hitbox_debug, 2)
+                    
+                    # 상호작용 영역 (빨간색 테두리)
+                    debug_rect = building.interact_rect.move(-camera_offset)
+                    pygame.draw.rect(screen, (255, 0, 0), debug_rect, 1)
 
-            # --- 플레이어 그리기 (항상 화면 중앙에 위치) ---
-            image_bottom_y = HEIGHT // 2 + player.hitbox.height // 2
-            image_top_y = image_bottom_y - player.image_height
-            image_rect = player.display_image.get_rect(centerx=WIDTH // 2, top=image_top_y)
-            screen.blit(player.display_image, image_rect)
-
-            # 히트박스 시각화 (초록색 테두리)
+            # 플레이어 히트박스 (초록색 테두리)
             hitbox_screen = pygame.Rect(
                 WIDTH // 2 - player.hitbox.width // 2,
                 HEIGHT // 2 - player.hitbox.height // 2,
@@ -423,12 +615,25 @@ while True:
                         pygame.draw.rect(screen, (100, 100, 100), icon_rect)
                         pygame.draw.rect(screen, (80, 80, 80), icon_rect, 1)
 
-            # 메시지가 있으면 하단에 출력
+            # 메시지가 있으면 하단에 텍스트박스로 출력 (전투 스타일)
             if game_state.get("message"):
-                msg_text = FONT_SMALL.render(game_state["message"], True, (100, 0, 0))
-                msg_rect = msg_text.get_rect(center=(WIDTH // 2, HEIGHT - 40))
-                screen.blit(msg_text, msg_rect)
-
+                # 메시지 박스 (인벤토리와 동일한 스타일)
+                text_box = pygame.Rect(50, HEIGHT - 150, WIDTH - 100, 100)
+                pygame.draw.rect(screen, (20, 20, 20), text_box)
+                pygame.draw.rect(screen, (255, 255, 255), text_box, 2)
+                
+                # 텍스트 줄바꿈 처리
+                max_text_width = text_box.width - 40
+                lines = wrap_text(game_state["message"], FONT_SMALL, max_text_width)
+                
+                # 여러 줄 렌더링
+                y_offset = text_box.y + 20
+                for line in lines:
+                    text_surface = FONT_SMALL.render(line, True, (255, 255, 255))
+                    screen.blit(text_surface, (text_box.x + 20, y_offset))
+                    y_offset += 30
+                
+                # 타이머
                 game_state["message_timer"] += dt
                 if game_state["message_timer"] > 3:
                     game_state["message"] = ""
