@@ -635,7 +635,7 @@ while True:
                 
                 # 타이머
                 game_state["message_timer"] += dt
-                if game_state["message_timer"] > 3:
+                if game_state["message_timer"] > 1.5:
                     game_state["message"] = ""
                     game_state["message_timer"] = 0
 
