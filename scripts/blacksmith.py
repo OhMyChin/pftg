@@ -165,6 +165,60 @@ def draw_compose(screen, font_main, font_small, WIDTH, HEIGHT, game_state, font_
         pygame.draw.rect(screen, (150, 100, 80), btn_rect, 2)
     screen.blit(font_small.render("합성!", True, (255, 255, 255)), font_small.render("합성!", True, (255, 255, 255)).get_rect(center=btn_rect.center))
     
+    # 확률 안내 (두 슬롯 모두 채워졌을 때)
+    w1 = blacksmith_state["compose_slots"][0]
+    w2 = blacksmith_state["compose_slots"][1]
+    if w1 and w2 and not blacksmith_state["weapon_select_open"] and not blacksmith_state["animating"] and not blacksmith_state["showing_result"]:
+        if w1.grade == w2.grade:
+            grade = w1.grade
+            # 등급별 성공률 (일반 50%, 희귀 25%, 영웅 10%)
+            rates = {"일반": 50, "희귀": 25, "영웅": 10}
+            rate = rates.get(grade, 10)
+            next_grades = {"일반": "희귀", "희귀": "영웅", "영웅": "전설"}
+            next_grade = next_grades.get(grade, "???")
+            
+            # 등급별 색상
+            grade_colors = {
+                "희귀": (100, 150, 255),    # 파란색
+                "영웅": (200, 100, 255),    # 보라색
+                "전설": (255, 200, 100),    # 금색
+            }
+            next_grade_color = grade_colors.get(next_grade, (255, 255, 255))
+            
+            # 안내 텍스트 (글씨 크기 키움)
+            if font_path:
+                info_font = pygame.font.Font(font_path, 26)
+            else:
+                info_font = pygame.font.Font(None, 26)
+            
+            info_y = 355
+            
+            # 성공 확률
+            text1 = info_font.render(f"성공 확률: {rate}%", True, (100, 255, 100))
+            screen.blit(text1, (WIDTH // 2 - text1.get_width() // 2, info_y))
+            
+            # 성공 시 [등급] 등급 무기 획득 - 등급 부분만 색상 다르게
+            part1 = info_font.render("성공 시 [", True, (255, 230, 200))
+            part2 = info_font.render(next_grade, True, next_grade_color)
+            part3 = info_font.render("] 등급 무기 획득", True, (255, 230, 200))
+            total_width = part1.get_width() + part2.get_width() + part3.get_width()
+            start_x = WIDTH // 2 - total_width // 2
+            screen.blit(part1, (start_x, info_y + 35))
+            screen.blit(part2, (start_x + part1.get_width(), info_y + 35))
+            screen.blit(part3, (start_x + part1.get_width() + part2.get_width(), info_y + 35))
+            
+            # 실패 시
+            text3 = info_font.render("실패 시 무기 1개 반환", True, (255, 150, 150))
+            screen.blit(text3, (WIDTH // 2 - text3.get_width() // 2, info_y + 70))
+        else:
+            # 등급 다를 때
+            if font_path:
+                info_font = pygame.font.Font(font_path, 26)
+            else:
+                info_font = pygame.font.Font(None, 26)
+            warn_text = info_font.render("같은 등급 무기만 합성 가능!", True, (255, 100, 100))
+            screen.blit(warn_text, (WIDTH // 2 - warn_text.get_width() // 2, 380))
+    
     # 결과 표시 (오른쪽 슬롯 + 텍스트 박스) - 버튼 위에 그려짐
     if blacksmith_state["showing_result"] and blacksmith_state["anim_type"] == "compose":
         result = blacksmith_state["anim_result"]
@@ -241,6 +295,54 @@ def draw_decompose(screen, font_main, font_small, WIDTH, HEIGHT, game_state, fon
         pygame.draw.rect(screen, (100, 60, 30), btn_rect)
         pygame.draw.rect(screen, (150, 100, 80), btn_rect, 2)
     screen.blit(font_small.render("분해!", True, (255, 255, 255)), font_small.render("분해!", True, (255, 255, 255)).get_rect(center=btn_rect.center))
+    
+    # 분해 결과 안내 (슬롯에 무기가 있을 때)
+    w = blacksmith_state["decompose_slot"]
+    if w and not blacksmith_state["weapon_select_open"] and not blacksmith_state["animating"] and not blacksmith_state["showing_result"]:
+        grade = w.grade
+        
+        if font_path:
+            info_font = pygame.font.Font(font_path, 26)
+        else:
+            info_font = pygame.font.Font(None, 26)
+        
+        info_y = 345
+        
+        # 재료 색상 (GRADE_COLORS 기준)
+        normal_color = (255, 255, 255)  # 흰색 - 철광석
+        rare_color = (100, 150, 255)    # 파란색 - 미스릴
+        hero_color = (200, 100, 255)    # 보라색 - 오리하르콘
+        legend_color = (255, 200, 100)  # 금색 - 아다만티움
+        
+        # 등급별 예상 보상 (하위 등급 3~5개 50%, 동일 등급 1~2개 50%)
+        text1 = info_font.render(f"예상 골드: {['10~30', '30~60', '60~120', '150~300'][['일반', '희귀', '영웅', '전설'].index(grade) if grade in ['일반', '희귀', '영웅', '전설'] else 0]}G", True, (255, 215, 0))
+        screen.blit(text1, (WIDTH // 2 - text1.get_width() // 2, info_y))
+        
+        if grade == "일반":
+            # 철광석: 1개(30%) 2개(20%) - 일반은 동일 등급만
+            mat_text = info_font.render("철광석: 1개(60%) 2개(40%)", True, normal_color)
+            screen.blit(mat_text, (WIDTH // 2 - mat_text.get_width() // 2, info_y + 35))
+        elif grade == "희귀":
+            # 철광석: 1개(15%) 2개(20%) 3개(15%)
+            mat_text1 = info_font.render("철광석: 1개(15%) 2개(20%) 3개(15%)", True, normal_color)
+            # 미스릴: 1개(30%) 2개(20%)
+            mat_text2 = info_font.render("미스릴: 1개(30%) 2개(20%)", True, rare_color)
+            screen.blit(mat_text1, (WIDTH // 2 - mat_text1.get_width() // 2, info_y + 35))
+            screen.blit(mat_text2, (WIDTH // 2 - mat_text2.get_width() // 2, info_y + 70))
+        elif grade == "영웅":
+            # 미스릴: 1개(15%) 2개(20%) 3개(15%)
+            mat_text1 = info_font.render("미스릴: 1개(15%) 2개(20%) 3개(15%)", True, rare_color)
+            # 오리하르콘: 1개(30%) 2개(20%)
+            mat_text2 = info_font.render("오리하르콘: 1개(30%) 2개(20%)", True, hero_color)
+            screen.blit(mat_text1, (WIDTH // 2 - mat_text1.get_width() // 2, info_y + 35))
+            screen.blit(mat_text2, (WIDTH // 2 - mat_text2.get_width() // 2, info_y + 70))
+        elif grade == "전설":
+            # 오리하르콘: 1개(15%) 2개(20%) 3개(15%)
+            mat_text1 = info_font.render("오리하르콘: 1개(15%) 2개(20%) 3개(15%)", True, hero_color)
+            # 아다만티움: 1개(30%) 2개(20%)
+            mat_text2 = info_font.render("아다만티움: 1개(30%) 2개(20%)", True, legend_color)
+            screen.blit(mat_text1, (WIDTH // 2 - mat_text1.get_width() // 2, info_y + 35))
+            screen.blit(mat_text2, (WIDTH // 2 - mat_text2.get_width() // 2, info_y + 70))
     
     # 결과 표시: 골드 (왼쪽), 재료 (오른쪽 - 원래 슬롯 위치)
     if blacksmith_state["showing_result"] and blacksmith_state["anim_type"] == "decompose":
@@ -579,14 +681,18 @@ def do_compose(w1, w2):
     if g_idx >= len(GRADE_ORDER) - 1:
         return None, "전설 등급은 합성 불가!"
     
-    # 등급별 성공률: 일반 30%, 희귀 20%, 영웅 10%
-    rates = {"일반": 0.30, "희귀": 0.20, "영웅": 0.10}
+    # 등급별 성공률: 일반 50%, 희귀 25%, 영웅 10%
+    rates = {"일반": 0.50, "희귀": 0.25, "영웅": 0.10}
     rate = rates.get(g, 0.10)
     
     if random.random() < rate:
         from scripts.weapons import ALL_WEAPONS, create_weapon
         next_grade = GRADE_ORDER[g_idx + 1]
-        avail = [wid for wid, wp in ALL_WEAPONS.items() if wp.grade == next_grade and wp.grade != "몬스터"]
+        # 보스 무기 제외 (is_boss_drop 속성이 True인 무기 제외)
+        avail = [wid for wid, wp in ALL_WEAPONS.items() 
+                 if wp.grade == next_grade 
+                 and wp.grade != "몬스터" 
+                 and not getattr(wp, 'is_boss_drop', False)]
         if avail:
             return create_weapon(random.choice(avail)), f"합성 성공! {next_grade} 등급 획득!"
     return random.choice([w1, w2]), "합성 실패... 무기 하나 반환"
@@ -595,16 +701,55 @@ def do_decompose(w):
     g = w.grade
     gold, mats = 0, {}
     if g == "일반":
-        gold, mats["normal"] = random.randint(10, 30), random.randint(2, 3)
+        gold = random.randint(10, 30)
+        # 철광석: 1개(60%) 2개(40%)
+        roll = random.random()
+        if roll < 0.6:
+            mats["normal"] = 1
+        else:
+            mats["normal"] = 2
     elif g == "희귀":
         gold = random.randint(30, 60)
-        mats["normal" if random.random() < 0.5 else "rare"] = random.randint(4, 5) if random.random() < 0.5 else random.randint(2, 3)
+        # 철광석: 1개(15%) 2개(20%) 3개(15%) / 미스릴: 1개(30%) 2개(20%)
+        roll = random.random()
+        if roll < 0.15:
+            mats["normal"] = 1
+        elif roll < 0.35:
+            mats["normal"] = 2
+        elif roll < 0.50:
+            mats["normal"] = 3
+        elif roll < 0.80:
+            mats["rare"] = 1
+        else:
+            mats["rare"] = 2
     elif g == "영웅":
         gold = random.randint(60, 120)
-        mats["rare" if random.random() < 0.5 else "hero"] = random.randint(4, 5) if random.random() < 0.5 else random.randint(2, 3)
+        # 미스릴: 1개(15%) 2개(20%) 3개(15%) / 오리하르콘: 1개(30%) 2개(20%)
+        roll = random.random()
+        if roll < 0.15:
+            mats["rare"] = 1
+        elif roll < 0.35:
+            mats["rare"] = 2
+        elif roll < 0.50:
+            mats["rare"] = 3
+        elif roll < 0.80:
+            mats["hero"] = 1
+        else:
+            mats["hero"] = 2
     elif g == "전설":
         gold = random.randint(150, 300)
-        mats["hero"], mats["legend"] = random.randint(4, 5), random.randint(2, 3)
+        # 오리하르콘: 1개(15%) 2개(20%) 3개(15%) / 아다만티움: 1개(30%) 2개(20%)
+        roll = random.random()
+        if roll < 0.15:
+            mats["hero"] = 1
+        elif roll < 0.35:
+            mats["hero"] = 2
+        elif roll < 0.50:
+            mats["hero"] = 3
+        elif roll < 0.80:
+            mats["legend"] = 1
+        else:
+            mats["legend"] = 2
     return gold, mats
 
 def do_upgrade(w):

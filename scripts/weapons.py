@@ -59,14 +59,6 @@ class Weapon:
             name = f"[초월] {name}"
         return name
 
-# ==================== 초월 스킬 정의 ====================
-# (skills.py에 추가해야 할 스킬들의 ID)
-
-# wooden_stick 초월: 강타
-# rusty_dagger 초월: 연속 찌르기
-# iron_sword 초월: 회전 베기
-# slime_wand 초월: 슬라임 폭발
-
 # ==================== 무기 정의 ====================
 
 TESTER_SWORD = Weapon(
@@ -99,7 +91,7 @@ RUSTY_DAGGER = Weapon(
     skill_ids=["pierce"],
     description="오래되어 녹슨 단검. 빠른 공격에 특화되어 있다.",
     image_path="resources/png/weapon/rusty_dagger.png",
-    transcend_skill="deep_wound"  # 초월: 연속 찌르기
+    transcend_skill="deep_wound"  # 초월: 깊은 상처
 )
 
 IRON_SWORD = Weapon(
@@ -123,6 +115,54 @@ RAPIER = Weapon(
     image_path="resources/png/weapon/rapier.png",
     transcend_skill="fast_pierce"  # 초월: 초고속 찌르기
 )
+
+# ==================== 영웅 무기 ====================
+
+SWORD_OF_FIRE = Weapon(
+    id_="sword_of_fire",
+    name="불의 검",
+    grade="영웅",
+    max_durability=180,
+    skill_ids=["slash1", "flame_slash", "burning_blade"],
+    description="불꽃의 정령이 깃든 검. 타오르는 화염으로 적을 불태운다.",
+    image_path="resources/png/weapon/sword_of_fire.png",
+    transcend_skill="inferno"  # 초월: 인페르노
+)
+
+BOW_OF_WIND = Weapon(
+    id_="bow_of_wind",
+    name="바람의 활",
+    grade="영웅",
+    max_durability=150,
+    skill_ids=["precise_shot", "wind_arrow", "gale_shot"],
+    description="바람의 정령이 깃든 활. 질풍처럼 빠른 화살을 쏜다.",
+    image_path="resources/png/weapon/bow_of_wind.png",
+    transcend_skill="storm_arrow"  # 초월: 폭풍의 화살
+)
+
+STAFF_OF_WATER = Weapon(
+    id_="staff_of_water",
+    name="물의 지팡이",
+    grade="영웅",
+    max_durability=160,
+    skill_ids=["magic_bolt", "aqua_burst", "tidal_wave"],
+    description="물의 정령이 깃든 지팡이. 파도의 힘으로 적을 휩쓴다.",
+    image_path="resources/png/weapon/staff_of_water.png",
+    transcend_skill="tsunami"  # 초월: 쓰나미
+)
+
+POLEARM_OF_EARTH = Weapon(
+    id_="polearm_of_earth",
+    name="대지의 폴암",
+    grade="영웅",
+    max_durability=200,
+    skill_ids=["sweep", "earth_thrust", "quake_strike"],
+    description="대지의 정령이 깃든 폴암. 땅을 흔드는 강력한 일격을 가한다.",
+    image_path="resources/png/weapon/polearm_of_earth.png",
+    transcend_skill="continental_crush"  # 초월: 대륙 분쇄
+)
+
+# ==================== 보스 드롭 무기 ====================
 
 SLIME_WAND = Weapon(
     id_="slime_wand",
@@ -226,7 +266,14 @@ ALL_WEAPONS = {
     "iron_sword": IRON_SWORD,
     "rapier": RAPIER,
     "rusty_dagger": RUSTY_DAGGER,
+    # 영웅 무기
+    "sword_of_fire": SWORD_OF_FIRE,
+    "bow_of_wind": BOW_OF_WIND,
+    "staff_of_water": STAFF_OF_WATER,
+    "polearm_of_earth": POLEARM_OF_EARTH,
+    # 보스 드롭
     "slime_wand": SLIME_WAND,
+    # 몬스터 무기
     "slime1": SLIME_BODY,
     "slime2": RED_SLIME_BODY,
     "slime3": YELLOW_SLIME_BODY,

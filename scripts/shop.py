@@ -31,9 +31,9 @@ SHOP_ITEMS = {
     ],
     # 탭 2: 무기
     2: [
-        {"id": "iron_sword", "name": "철 검", "price": 300, "type": "weapon"},
+        {"id": "random_box", "name": "랜덤 박스", "price": 250, "type": "random_box"},
         {"id": "rusty_dagger", "name": "녹슨 단검", "price": 150, "type": "weapon"},
-        None
+        {"id": "iron_sword", "name": "철 검", "price": 300, "type": "weapon"},
     ],
     # 탭 3: 기타 (가방 등) - 동적으로 현재 레벨에 맞는 가방만 표시
     3: [
@@ -453,6 +453,21 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state, f
                     max_icon = font_small.render("MAX", True, (255, 215, 0))
                     max_icon_rect = max_icon.get_rect(center=(item_x + item_size // 2, item_img_y + item_size // 2))
                     screen.blit(max_icon, max_icon_rect)
+                
+                elif item["type"] == "random_box":
+                    # 랜덤 박스 이미지
+                    item_x = slot_x + (slot_width - item_size) // 2
+                    try:
+                        box_img = pygame.image.load("resources/png/random_box.png").convert_alpha()
+                        box_img = pygame.transform.scale(box_img, (item_size, item_size))
+                        screen.blit(box_img, (item_x, item_img_y))
+                    except:
+                        # 이미지 없으면 기본 표시
+                        pygame.draw.rect(screen, (255, 200, 100), (item_x, item_img_y, item_size, item_size))
+                        pygame.draw.rect(screen, (200, 150, 50), (item_x, item_img_y, item_size, item_size), 3)
+                        box_icon = font_small.render("?", True, (100, 50, 0))
+                        box_icon_rect = box_icon.get_rect(center=(item_x + item_size // 2, item_img_y + item_size // 2))
+                        screen.blit(box_icon, box_icon_rect)
             except:
                 # 이미지 로드 실패
                 item_x = slot_x + (slot_width - item_size) // 2
@@ -672,6 +687,41 @@ def handle_shop_input(events, game_state):
                                     inventory_state["max_inventory_slots"] = new_inventory
                                     shop_state["message"] = f"{item['name']} 구매! 인벤토리가 확장되었습니다!"
                                     shop_state["message_timer"] = 0
+                                elif item["type"] == "random_box":
+                                    # 랜덤 박스 - 즉시 무기 획득
+                                    import random
+                                    from scripts.weapons import ALL_WEAPONS
+                                    
+                                    # 확률: 일반 50%, 희귀 49%, 영웅 1%
+                                    roll = random.random()
+                                    if roll < 0.50:
+                                        target_grade = "일반"
+                                    elif roll < 0.99:
+                                        target_grade = "희귀"
+                                    else:
+                                        target_grade = "영웅"
+                                    
+                                    # 해당 등급 무기 중 랜덤 선택 (보스 드롭, 테스트 무기 제외)
+                                    available_weapons = [
+                                        wid for wid, wp in ALL_WEAPONS.items()
+                                        if wp.grade == target_grade
+                                        and wp.grade != "몬스터"
+                                        and not getattr(wp, 'is_boss_drop', False)
+                                        and "test" not in wid
+                                    ]
+                                    
+                                    if available_weapons:
+                                        weapon_id = random.choice(available_weapons)
+                                        weapon = create_weapon(weapon_id)
+                                        if weapon:
+                                            player_inventory["weapons"].append(weapon)
+                                            # 등급별 색상 지정
+                                            grade_color = {"일반": "흰색", "희귀": "파란색", "영웅": "보라색"}
+                                            shop_state["message"] = f"[{target_grade}] {weapon.name} 획득!"
+                                            shop_state["message_timer"] = 0
+                                    else:
+                                        shop_state["message"] = "랜덤 박스 오류!"
+                                        shop_state["message_timer"] = 0
                             else:
                                 shop_state["message"] = "골드가 부족합니다!"
                                 shop_state["message_timer"] = 0

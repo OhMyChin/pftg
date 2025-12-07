@@ -169,7 +169,23 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
             if is_transcended and transcend_skill:
                 from scripts.skills import ALL_SKILLS
                 skill_name = ALL_SKILLS[transcend_skill].name if transcend_skill in ALL_SKILLS else transcend_skill
-                transcend_text = info_font.render(f"초월: {skill_name}", True, (255, 100, 255))
+                transcend_str = f"초월: {skill_name}"
+                
+                # 초월 스킬 이름 폰트 크기 조절
+                transcend_font_size = 28
+                if font_path:
+                    transcend_font = pygame.font.Font(font_path, transcend_font_size)
+                else:
+                    transcend_font = info_font
+                
+                while transcend_font.size(transcend_str)[0] > max_name_width and transcend_font_size > 14:
+                    transcend_font_size -= 2
+                    if font_path:
+                        transcend_font = pygame.font.Font(font_path, transcend_font_size)
+                    else:
+                        transcend_font = pygame.font.Font(None, transcend_font_size)
+                
+                transcend_text = transcend_font.render(transcend_str, True, (255, 100, 255))
                 screen.blit(transcend_text, (info_panel_x + 15, y_offset))
                 y_offset += 30
             elif transcend_skill and not is_transcended:

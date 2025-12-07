@@ -75,6 +75,111 @@ RAPID_STAB = Skill(
     description="연속으로 찌른다"
 )
 
+PRECISE_SHOT = Skill(
+    id_="precise_shot",
+    name="정밀 사격",
+    power=18,
+    priority=1,
+    durability_cost=15,
+    description="정확하게 조준하여 급소를 노린다"
+)
+
+MAGIC_BOLT = Skill(
+    id_="magic_bolt",
+    name="마력탄",
+    power=16,
+    priority=0,
+    durability_cost=12,
+    description="마력을 응축하여 발사한다"
+)
+
+SWEEP = Skill(
+    id_="sweep",
+    name="휩쓸기",
+    power=20,
+    priority=0,
+    durability_cost=18,
+    description="긴 창으로 넓게 휩쓴다"
+)
+
+# ==================== 영웅 무기 스킬 ====================
+
+# 불의 검 스킬
+FLAME_SLASH = Skill(
+    id_="flame_slash",
+    name="화염 베기",
+    power=25,
+    priority=0,
+    durability_cost=20,
+    description="불꽃을 두른 검으로 적을 베어버린다"
+)
+
+BURNING_BLADE = Skill(
+    id_="burning_blade",
+    name="작열의 칼날",
+    power=30,
+    priority=0,
+    durability_cost=25,
+    description="타오르는 칼날로 적을 불태운다"
+)
+
+# 바람의 활 스킬
+WIND_ARROW = Skill(
+    id_="wind_arrow",
+    name="바람 화살",
+    power=20,
+    priority=2,
+    durability_cost=15,
+    description="바람을 실은 화살로 빠르게 사격한다"
+)
+
+GALE_SHOT = Skill(
+    id_="gale_shot",
+    name="질풍 사격",
+    power=28,
+    priority=1,
+    durability_cost=22,
+    description="강풍을 일으키며 화살을 연사한다"
+)
+
+# 물의 지팡이 스킬
+AQUA_BURST = Skill(
+    id_="aqua_burst",
+    name="물의 폭발",
+    power=22,
+    priority=0,
+    durability_cost=18,
+    description="물의 힘을 집중시켜 폭발시킨다"
+)
+
+TIDAL_WAVE = Skill(
+    id_="tidal_wave",
+    name="해일",
+    power=32,
+    priority=0,
+    durability_cost=28,
+    description="거대한 파도를 일으켜 적을 덮친다"
+)
+
+# 대지의 창 스킬
+EARTH_THRUST = Skill(
+    id_="earth_thrust",
+    name="대지 찌르기",
+    power=24,
+    priority=0,
+    durability_cost=20,
+    description="대지의 힘을 담아 강하게 찌른다"
+)
+
+QUAKE_STRIKE = Skill(
+    id_="quake_strike",
+    name="지진 강타",
+    power=35,
+    priority=-1,
+    durability_cost=30,
+    description="땅을 흔드는 강력한 일격을 가한다"
+)
+
 # ==================== 초월 스킬 ====================
 
 POWER_STRIKE = Skill(
@@ -120,6 +225,43 @@ SLIME_BURST = Skill(
     priority=0,
     durability_cost=30,
     description="[초월] 슬라임의 힘을 폭발시켜 강력한 피해를 입힌다"
+)
+
+# 영웅 무기 초월 스킬
+INFERNO = Skill(
+    id_="inferno",
+    name="인페르노",
+    power=55,
+    priority=0,
+    durability_cost=35,
+    description="[초월] 지옥의 불꽃으로 모든 것을 태워버린다"
+)
+
+STORM_ARROW = Skill(
+    id_="storm_arrow",
+    name="폭풍의 화살",
+    power=45,
+    priority=3,
+    durability_cost=30,
+    description="[초월] 폭풍을 관통하는 궁극의 화살"
+)
+
+TSUNAMI = Skill(
+    id_="tsunami",
+    name="쓰나미",
+    power=50,
+    priority=0,
+    durability_cost=35,
+    description="[초월] 모든 것을 집어삼키는 거대한 파도"
+)
+
+CONTINENTAL_CRUSH = Skill(
+    id_="continental_crush",
+    name="대륙 분쇄",
+    power=60,
+    priority=-2,
+    durability_cost=40,
+    description="[초월] 대륙을 가를 듯한 궁극의 일격"
 )
 
 # ==================== 몬스터 전용 스킬 ====================
@@ -215,10 +357,27 @@ ALL_SKILLS = {
     "slash2": SLASH2,
     "rainbow_attack": RAINBOW_ATTACK,
     "kings_slam": KINGS_SLAM,
+    # 영웅 무기 기본 스킬
+    "precise_shot": PRECISE_SHOT,
+    "magic_bolt": MAGIC_BOLT,
+    "sweep": SWEEP,
+    # 영웅 무기 스킬
+    "flame_slash": FLAME_SLASH,
+    "burning_blade": BURNING_BLADE,
+    "wind_arrow": WIND_ARROW,
+    "gale_shot": GALE_SHOT,
+    "aqua_burst": AQUA_BURST,
+    "tidal_wave": TIDAL_WAVE,
+    "earth_thrust": EARTH_THRUST,
+    "quake_strike": QUAKE_STRIKE,
     # 초월 스킬
-    "deep_wound":DEEP_WOUND,
+    "deep_wound": DEEP_WOUND,
     "power_strike": POWER_STRIKE,
     "spin_slash": SPIN_SLASH,
     "fast_pierce": FAST_PIERCE,
     "slime_burst": SLIME_BURST,
+    "inferno": INFERNO,
+    "storm_arrow": STORM_ARROW,
+    "tsunami": TSUNAMI,
+    "continental_crush": CONTINENTAL_CRUSH,
 }
