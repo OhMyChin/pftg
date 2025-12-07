@@ -24,6 +24,10 @@ blacksmith_state = {
     "anim_timer": 0,
     "anim_result": None,
     "showing_result": False,
+    # 텍스트 박스 관련
+    "textbox_message": "",
+    "textbox_timer": 0,
+    "textbox_needs_enter": False,  # True면 Enter 대기, False면 1.5초 후 자동 닫힘
 }
 
 # 애니메이션 프레임
@@ -38,6 +42,14 @@ GRADE_COLORS = {"일반": (200, 200, 200), "희귀": (100, 150, 255), "영웅": 
 
 
 def draw_blacksmith(screen, font_main, font_small, WIDTH, HEIGHT, game_state, dt=0, font_path=None):
+    # 텍스트박스 타이머 (Enter 불필요시 1.5초 후 자동 닫힘)
+    if blacksmith_state["textbox_message"] and not blacksmith_state["textbox_needs_enter"] and dt > 0:
+        blacksmith_state["textbox_timer"] += dt
+        if blacksmith_state["textbox_timer"] > 1.5:
+            blacksmith_state["textbox_message"] = ""
+            blacksmith_state["textbox_timer"] = 0
+    
+    # 메시지 타이머 (기존)
     if blacksmith_state["message"] and dt > 0:
         blacksmith_state["message_timer"] += dt
         if blacksmith_state["message_timer"] > 2.5:
@@ -119,14 +131,18 @@ def draw_compose(screen, font_main, font_small, WIDTH, HEIGHT, game_state, font_
     # 왼쪽 슬롯들 그리기
     for sx, sy, i in left_slots:
         rect = pygame.Rect(sx, sy, slot_size_w, slot_size_h)
+        w = blacksmith_state["compose_slots"][i]
+        
+        # 선택 테두리 (무기 있어도 표시)
         if not blacksmith_state["weapon_select_open"] and not blacksmith_state["animating"] and not blacksmith_state["showing_result"]:
             if blacksmith_state["compose_selected"] == i:
-                pygame.draw.rect(screen, (255, 255, 100), rect.inflate(16, 16), 10)
-        w = blacksmith_state["compose_slots"][i]
+                pygame.draw.rect(screen, (255, 255, 100), rect.inflate(16, 16), 8)
+        
+        # 무기 아이콘
         if w:
             draw_weapon_icon(screen, w, rect, font_small)
     
-    # 애니메이션 프레임 그리기 (화살표 위치에)
+    # 애니메이션 프레임 그리기
     if blacksmith_state["animating"] and blacksmith_state["anim_type"] == "compose":
         frame_idx = min(blacksmith_state["anim_frame"], len(COMPOSE_FRAMES) - 1)
         try:
@@ -135,26 +151,7 @@ def draw_compose(screen, font_main, font_small, WIDTH, HEIGHT, game_state, font_
         except Exception as e:
             print(f"Frame load error: {e}")
     
-    # 결과 표시 (오른쪽 슬롯)
-    if blacksmith_state["showing_result"] and blacksmith_state["anim_type"] == "compose":
-        result = blacksmith_state["anim_result"]
-        weapon = result.get("weapon") if result else None
-        if weapon:
-            # 결과 슬롯 하이라이트
-            grade_color = GRADE_COLORS.get(weapon.grade, (200, 200, 200))
-            pygame.draw.rect(screen, grade_color, right_slot_rect.inflate(16, 16), 10)
-            draw_weapon_icon(screen, weapon, right_slot_rect, font_small)
-        
-        # 결과 메시지 (슬롯 아래)
-        msg = result.get("message", "") if result else ""
-        msg_text = font_small.render(msg, True, (255, 255, 100))
-        screen.blit(msg_text, (right_slot_rect.centerx - msg_text.get_width() // 2, right_slot_rect.bottom + 15))
-        
-        # Enter 안내
-        hint = font_small.render("Enter로 확인", True, (180, 180, 180))
-        screen.blit(hint, (right_slot_rect.centerx - hint.get_width() // 2, right_slot_rect.bottom + 45))
-    
-    # 합성 버튼
+    # 합성 버튼 (텍스트 박스보다 먼저 그림)
     btn_rect = pygame.Rect(WIDTH // 2 - 60, 530, 120, 40)
     if not blacksmith_state["weapon_select_open"] and not blacksmith_state["animating"] and not blacksmith_state["showing_result"]:
         if blacksmith_state["compose_selected"] == 2:
@@ -168,8 +165,23 @@ def draw_compose(screen, font_main, font_small, WIDTH, HEIGHT, game_state, font_
         pygame.draw.rect(screen, (150, 100, 80), btn_rect, 2)
     screen.blit(font_small.render("합성!", True, (255, 255, 255)), font_small.render("합성!", True, (255, 255, 255)).get_rect(center=btn_rect.center))
     
+    # 결과 표시 (오른쪽 슬롯 + 텍스트 박스) - 버튼 위에 그려짐
+    if blacksmith_state["showing_result"] and blacksmith_state["anim_type"] == "compose":
+        result = blacksmith_state["anim_result"]
+        weapon = result.get("weapon") if result else None
+        msg = result.get("message", "") if result else ""
+        
+        if weapon:
+            draw_weapon_icon(screen, weapon, right_slot_rect, font_small)
+        
+        # 텍스트 박스 (버튼 위에 그려짐)
+        if msg:
+            draw_text_box(screen, font_small, WIDTH, HEIGHT, msg, need_enter=True)
+    
     if blacksmith_state["weapon_select_open"]:
-        draw_weapon_select(screen, font_small, WIDTH, HEIGHT, [w for w in player_inventory["weapons"] if can_compose(w)])
+        # 합성 가능한 모든 무기 표시 (등급 필터 없음)
+        ws = [w for w in player_inventory["weapons"] if can_compose(w)]
+        draw_weapon_select(screen, font_small, WIDTH, HEIGHT, ws)
     if blacksmith_state["message"]:
         draw_message(screen, font_small, WIDTH, HEIGHT)
 
@@ -187,18 +199,25 @@ def draw_decompose(screen, font_main, font_small, WIDTH, HEIGHT, game_state, fon
     
     screen.blit(font_main.render("무기 분해", True, (255, 200, 150)), (WIDTH // 2 - font_main.size("무기 분해")[0] // 2, 15))
     
-    # 슬롯 위치
+    # 슬롯 위치 (원래대로 - 재료 슬롯은 오른쪽 끝)
     slot_size_w = 185
     slot_size_h = 185
-    slot_rect = pygame.Rect(27, 147, slot_size_w, slot_size_h)  # 왼쪽 슬롯
-    right_slot_rect = pygame.Rect(WIDTH - 27 - slot_size_w, 147, slot_size_w, slot_size_h)  # 오른쪽 결과 슬롯
+    input_slot_rect = pygame.Rect(27, 147, slot_size_w, slot_size_h)  # 분해할 무기 (화살표 왼쪽)
+    result_right_rect = pygame.Rect(WIDTH - 27 - slot_size_w, 147, slot_size_w, slot_size_h)  # 결과: 재료 (원래 위치)
+    result_left_rect = pygame.Rect(WIDTH - 27 - slot_size_w * 2 - 35, 147, slot_size_w, slot_size_h)  # 결과: 골드 (재료 왼쪽)
     
-    # 왼쪽 슬롯 그리기
-    if not blacksmith_state["weapon_select_open"] and not blacksmith_state["animating"] and not blacksmith_state["showing_result"]:
-        if blacksmith_state["decompose_selected"] == 0:
-            pygame.draw.rect(screen, (255, 255, 100), slot_rect.inflate(16, 16), 10)
-    if blacksmith_state["decompose_slot"]:
-        draw_weapon_icon(screen, blacksmith_state["decompose_slot"], slot_rect, font_small)
+    # 결과 표시 중이 아닐 때 - 입력 슬롯에 무기 표시
+    if not blacksmith_state["showing_result"]:
+        w = blacksmith_state["decompose_slot"]
+        
+        # 선택 테두리 (무기 있어도 표시)
+        if not blacksmith_state["weapon_select_open"] and not blacksmith_state["animating"]:
+            if blacksmith_state["decompose_selected"] == 0:
+                pygame.draw.rect(screen, (255, 255, 100), input_slot_rect.inflate(16, 16), 8)
+        
+        # 무기 아이콘
+        if w:
+            draw_weapon_icon(screen, w, input_slot_rect, font_small)
     
     # 애니메이션 프레임 그리기
     if blacksmith_state["animating"] and blacksmith_state["anim_type"] == "decompose":
@@ -209,36 +228,7 @@ def draw_decompose(screen, font_main, font_small, WIDTH, HEIGHT, game_state, fon
         except Exception as e:
             print(f"Frame load error: {e}")
     
-    # 결과 표시 (오른쪽 슬롯 영역)
-    if blacksmith_state["showing_result"] and blacksmith_state["anim_type"] == "decompose":
-        result = blacksmith_state["anim_result"]
-        if result:
-            # 결과 박스 (오른쪽 슬롯 위치)
-            pygame.draw.rect(screen, (50, 45, 40), right_slot_rect)
-            pygame.draw.rect(screen, (255, 215, 0), right_slot_rect, 4)
-            
-            # 골드 표시
-            gold = result.get("gold", 0)
-            gold_text = font_small.render(f"+{gold}G", True, (255, 215, 0))
-            screen.blit(gold_text, (right_slot_rect.centerx - gold_text.get_width() // 2, right_slot_rect.y + 30))
-            
-            # 재료 표시
-            mats = result.get("materials", {})
-            y_offset = right_slot_rect.y + 70
-            for mat_type, amount in mats.items():
-                if amount > 0:
-                    mat_name = MATERIAL_NAMES.get(mat_type, mat_type)
-                    grade_idx = ["normal", "rare", "hero", "legend"].index(mat_type) if mat_type in ["normal", "rare", "hero", "legend"] else 0
-                    color = GRADE_COLORS[GRADE_ORDER[grade_idx]]
-                    mat_text = font_small.render(f"+{amount} {mat_name}", True, color)
-                    screen.blit(mat_text, (right_slot_rect.centerx - mat_text.get_width() // 2, y_offset))
-                    y_offset += 28
-            
-            # Enter 안내
-            hint = font_small.render("Enter로 확인", True, (180, 180, 180))
-            screen.blit(hint, (right_slot_rect.centerx - hint.get_width() // 2, right_slot_rect.bottom + 15))
-    
-    # 분해 버튼
+    # 분해 버튼 (텍스트 박스보다 먼저 그림)
     btn_rect = pygame.Rect(WIDTH // 2 - 60, 530, 120, 40)
     if not blacksmith_state["weapon_select_open"] and not blacksmith_state["animating"] and not blacksmith_state["showing_result"]:
         if blacksmith_state["decompose_selected"] == 1:
@@ -252,20 +242,38 @@ def draw_decompose(screen, font_main, font_small, WIDTH, HEIGHT, game_state, fon
         pygame.draw.rect(screen, (150, 100, 80), btn_rect, 2)
     screen.blit(font_small.render("분해!", True, (255, 255, 255)), font_small.render("분해!", True, (255, 255, 255)).get_rect(center=btn_rect.center))
     
-    if blacksmith_state["weapon_select_open"]:
-        draw_weapon_select(screen, font_small, WIDTH, HEIGHT, [w for w in player_inventory["weapons"] if can_decompose(w)])
-    if blacksmith_state["message"]:
-        draw_message(screen, font_small, WIDTH, HEIGHT)
-    
-    # 분해 버튼
-    btn_rect = pygame.Rect(WIDTH // 2 - 60, 530, 120, 40)
-    if not blacksmith_state["weapon_select_open"] and blacksmith_state["decompose_selected"] == 1:
-        pygame.draw.rect(screen, (180, 100, 50), btn_rect)
-        pygame.draw.rect(screen, (255, 200, 100), btn_rect, 3)
-    else:
-        pygame.draw.rect(screen, (100, 60, 30), btn_rect)
-        pygame.draw.rect(screen, (150, 100, 80), btn_rect, 2)
-    screen.blit(font_small.render("분해!", True, (255, 255, 255)), font_small.render("분해!", True, (255, 255, 255)).get_rect(center=btn_rect.center))
+    # 결과 표시: 골드 (왼쪽), 재료 (오른쪽 - 원래 슬롯 위치)
+    if blacksmith_state["showing_result"] and blacksmith_state["anim_type"] == "decompose":
+        result = blacksmith_state["anim_result"]
+        if result:
+            gold = result.get("gold", 0)
+            mats = result.get("materials", {})
+            
+            # 골드 슬롯 (재료 왼쪽)
+            pygame.draw.rect(screen, (80, 60, 20), result_left_rect)
+            pygame.draw.rect(screen, (255, 215, 0), result_left_rect, 3)
+            gold_text = font_main.render(f"+{gold}G", True, (255, 215, 0))
+            screen.blit(gold_text, (result_left_rect.centerx - gold_text.get_width() // 2, result_left_rect.centery - gold_text.get_height() // 2))
+            
+            # 재료 슬롯 (원래 오른쪽 위치)
+            pygame.draw.rect(screen, (30, 50, 70), result_right_rect)
+            pygame.draw.rect(screen, (150, 200, 255), result_right_rect, 3)
+            
+            # 재료 텍스트를 수직 중앙에 정렬
+            mat_lines = [(mat_type, amount) for mat_type, amount in mats.items() if amount > 0]
+            total_height = len(mat_lines) * 32
+            y_offset = result_right_rect.centery - total_height // 2
+            
+            for mat_type, amount in mat_lines:
+                mat_name = MATERIAL_NAMES.get(mat_type, mat_type)
+                grade_idx = ["normal", "rare", "hero", "legend"].index(mat_type) if mat_type in ["normal", "rare", "hero", "legend"] else 0
+                color = GRADE_COLORS[GRADE_ORDER[grade_idx]]
+                mat_text = font_small.render(f"+{amount} {mat_name}", True, color)
+                screen.blit(mat_text, (result_right_rect.centerx - mat_text.get_width() // 2, y_offset))
+                y_offset += 32
+            
+            # 텍스트 박스 (버튼 위에 그려짐)
+            draw_text_box(screen, font_small, WIDTH, HEIGHT, "분해 완료!", need_enter=True)
     
     if blacksmith_state["weapon_select_open"]:
         draw_weapon_select(screen, font_small, WIDTH, HEIGHT, [w for w in player_inventory["weapons"] if can_decompose(w)])
@@ -345,8 +353,8 @@ def draw_bg_overlay_light(screen, WIDTH, HEIGHT):
     except:
         screen.fill((80, 60, 50))
     overlay = pygame.Surface((WIDTH, HEIGHT))
-    overlay.set_alpha(80)
-    overlay.fill((30, 20, 15))
+    overlay.set_alpha(150)  # 더 어둡게 (80 → 150)
+    overlay.fill((20, 15, 10))
     screen.blit(overlay, (0, 0))
 
 
@@ -379,57 +387,172 @@ def draw_materials_right(screen, font_small, x, y, slot_size):
 
 
 def draw_weapon_icon(screen, weapon, rect, font_small):
-    pygame.draw.rect(screen, GRADE_COLORS.get(weapon.grade, (150, 150, 150)), rect, 3)
+    """무기 아이콘 그리기 - 배경색이 등급색"""
+    grade_color = GRADE_COLORS.get(weapon.grade, (150, 150, 150))
+    
+    # 배경을 등급 색상으로 (어둡게)
+    dark_grade = (grade_color[0] // 3, grade_color[1] // 3, grade_color[2] // 3)
+    pygame.draw.rect(screen, dark_grade, rect)
+    pygame.draw.rect(screen, grade_color, rect, 3)
+    
+    # 무기 이미지
     if weapon.image_path:
         try:
             img = pygame.image.load(weapon.image_path).convert_alpha()
             screen.blit(pygame.transform.scale(img, (rect.width - 10, rect.height - 10)), (rect.x + 5, rect.y + 5))
         except:
             pass
+    
+    # 강화 레벨
     level = getattr(weapon, 'upgrade_level', 0)
     if level > 0:
         screen.blit(font_small.render(f"+{level}", True, (255, 255, 100)), (rect.x + 5, rect.y + 5))
 
 
 def draw_weapon_select(screen, font_small, WIDTH, HEIGHT, weapons):
-    pw, ph = 450, 350
+    pw, ph = 450, 400  # 높이 늘림 (350 → 400)
     px, py = (WIDTH - pw) // 2, (HEIGHT - ph) // 2
     pygame.draw.rect(screen, (50, 40, 35), (px, py, pw, ph))
     pygame.draw.rect(screen, (200, 150, 100), (px, py, pw, ph), 3)
     screen.blit(font_small.render("무기 선택", True, (255, 200, 150)), (px + 20, py + 15))
     
     if not weapons:
-        screen.blit(font_small.render("사용 가능한 무기가 없습니다", True, (180, 180, 180)), (px + pw // 2 - 100, py + ph // 2))
+        # 중앙 정렬
+        no_weapon_text = font_small.render("사용 가능한 무기가 없습니다", True, (180, 180, 180))
+        screen.blit(no_weapon_text, (px + pw // 2 - no_weapon_text.get_width() // 2, py + ph // 2 - no_weapon_text.get_height() // 2))
         return
     
-    ly = py + 50
+    # 위쪽 화살표 영역
+    arrow_x = px + pw // 2
+    arrow_up_y = py + 45
+    
+    # 위쪽 화살표
+    if scroll_offset > 0 if 'scroll_offset' in dir() else False:
+        pass  # 아래에서 그림
+    
+    ly = py + 65  # 화살표 공간 확보 (50 → 65)
     visible = 7
-    start = max(0, blacksmith_state["weapon_select_index"] - visible // 2)
-    for i, w in enumerate(weapons[start:start + visible]):
-        idx = start + i
+    selected_slot = 3  # 선택 슬롯 고정 (가운데)
+    
+    # 스크롤 오프셋 계산 (선택된 아이템이 가운데 오도록)
+    scroll_offset = max(0, min(blacksmith_state["weapon_select_index"] - selected_slot, len(weapons) - visible))
+    
+    for i in range(visible):
+        idx = scroll_offset + i
         ir = pygame.Rect(px + 15, ly, pw - 30, 38)
-        if idx == blacksmith_state["weapon_select_index"]:
-            pygame.draw.rect(screen, (100, 80, 60), ir)
-            pygame.draw.rect(screen, (255, 200, 100), ir, 2)
-        color = GRADE_COLORS.get(w.grade, (200, 200, 200))
-        level = getattr(w, 'upgrade_level', 0)
-        name = f"+{level} {w.name}" if level > 0 else w.name
-        screen.blit(font_small.render(name, True, color), (ir.x + 10, ir.y + 8))
-        screen.blit(font_small.render(f"[{w.grade}]", True, color), (ir.right - 80, ir.y + 8))
+        
+        if idx < len(weapons):
+            w = weapons[idx]
+            # 선택된 아이템
+            if idx == blacksmith_state["weapon_select_index"]:
+                pygame.draw.rect(screen, (100, 80, 60), ir)
+                pygame.draw.rect(screen, (255, 200, 100), ir, 2)
+            
+            color = GRADE_COLORS.get(w.grade, (200, 200, 200))
+            level = getattr(w, 'upgrade_level', 0)
+            name = f"+{level} {w.name}" if level > 0 else w.name
+            screen.blit(font_small.render(name, True, color), (ir.x + 10, ir.y + 8))
+            screen.blit(font_small.render(f"[{w.grade}]", True, color), (ir.right - 80, ir.y + 8))
+        
         ly += 42
+    
+    # 위/아래 화살표 (스크롤 인디케이터)
+    # 위쪽 화살표
+    if scroll_offset > 0:
+        pygame.draw.polygon(screen, (255, 200, 150), [
+            (arrow_x, arrow_up_y),
+            (arrow_x - 10, arrow_up_y + 12),
+            (arrow_x + 10, arrow_up_y + 12)
+        ])
+    
+    # 아래쪽 화살표 (리스트 끝 아래에 여유 공간)
+    if scroll_offset + visible < len(weapons):
+        arrow_down_y = py + ph - 25  # 더 아래로
+        pygame.draw.polygon(screen, (255, 200, 150), [
+            (arrow_x, arrow_down_y + 12),
+            (arrow_x - 10, arrow_down_y),
+            (arrow_x + 10, arrow_down_y)
+        ])
+
+
+def wrap_text(text, font, max_width):
+    """텍스트 줄바꿈"""
+    words = text.split()
+    lines = []
+    current_line = ""
+    
+    for word in words:
+        test_line = current_line + (" " if current_line else "") + word
+        if font.size(test_line)[0] <= max_width:
+            current_line = test_line
+        else:
+            if current_line:
+                lines.append(current_line)
+            current_line = word
+    
+    if current_line:
+        lines.append(current_line)
+    
+    return lines if lines else [text]
+
+
+def draw_text_box(screen, font_small, WIDTH, HEIGHT, message, need_enter=True):
+    """대장간 스타일 텍스트 박스 - 버튼 위에 그려짐"""
+    mw, mh = WIDTH - 100, 140  # 세로 길이 40 더 늘림
+    mx, my = 50, HEIGHT - 210  # 위로 40 더 올림
+    
+    # 대장간 스타일 배경
+    pygame.draw.rect(screen, (40, 30, 20), (mx, my, mw, mh))
+    pygame.draw.rect(screen, (200, 150, 100), (mx, my, mw, mh), 3)
+    
+    # 줄바꿈 처리
+    lines = wrap_text(message, font_small, mw - 60)
+    y_offset = my + 20
+    for line in lines:
+        t = font_small.render(line, True, (255, 230, 200))
+        screen.blit(t, (mx + 20, y_offset))
+        y_offset += 28
+    
+    # Enter 대기 시 화살표 표시 (배틀 시스템 스타일)
+    if need_enter:
+        arrow_text = pygame.font.SysFont("consolas", 30).render("▼", True, (255, 200, 150))
+        screen.blit(arrow_text, (mx + mw - 40, my + mh - 35))
+
+
+def draw_textbox(screen, font_small, WIDTH, HEIGHT):
+    """상태 기반 텍스트 박스 (호환용)"""
+    if not blacksmith_state["textbox_message"]:
+        return
+    draw_text_box(screen, font_small, WIDTH, HEIGHT, 
+                  blacksmith_state["textbox_message"], 
+                  blacksmith_state["textbox_needs_enter"])
 
 
 def draw_message(screen, font_small, WIDTH, HEIGHT):
-    mw, mh = WIDTH - 100, 100
-    mx, my = 50, HEIGHT - 130
-    pygame.draw.rect(screen, (20, 20, 20), (mx, my, mw, mh))
-    pygame.draw.rect(screen, (255, 255, 255), (mx, my, mw, mh), 2)
-    t = font_small.render(blacksmith_state["message"], True, (255, 255, 255))
-    screen.blit(t, (mx + 20, my + mh // 2 - t.get_height() // 2))
+    """기존 메시지 - 대장간 스타일"""
+    mw, mh = WIDTH - 100, 140
+    mx, my = 50, HEIGHT - 210
+    
+    # 대장간 스타일 배경
+    pygame.draw.rect(screen, (40, 30, 20), (mx, my, mw, mh))
+    pygame.draw.rect(screen, (200, 150, 100), (mx, my, mw, mh), 3)
+    
+    lines = wrap_text(blacksmith_state["message"], font_small, mw - 60)
+    y_offset = my + 20
+    for line in lines:
+        t = font_small.render(line, True, (255, 230, 200))
+        screen.blit(t, (mx + 20, y_offset))
+        y_offset += 28
 
 
 def can_compose(w):
     return w and w.grade not in ["전설", "몬스터"] and not getattr(w, 'is_boss_drop', False)
+
+def can_compose_together(w1, w2):
+    """두 무기가 합성 가능한지 (같은 등급 불가)"""
+    if not w1 or not w2:
+        return False
+    return w1.grade != w2.grade
 
 def can_decompose(w):
     return w and w.grade != "몬스터"
@@ -446,18 +569,26 @@ def can_afford_upgrade(w):
     return all(player_materials.get(m, 0) >= a for m, a in get_upgrade_cost(w).items())
 
 def do_compose(w1, w2):
+    """같은 등급 무기 2개를 합성하여 상위 등급 획득 시도"""
     if w1.grade != w2.grade:
         return None, "같은 등급만 합성 가능!"
+    
     g = w1.grade
-    ni = GRADE_ORDER.index(g) + 1
-    if ni >= len(GRADE_ORDER):
-        return None, "더 이상 합성 불가!"
-    rate = 0.10 if g == "영웅" else 0.30
+    g_idx = GRADE_ORDER.index(g) if g in GRADE_ORDER else 0
+    
+    if g_idx >= len(GRADE_ORDER) - 1:
+        return None, "전설 등급은 합성 불가!"
+    
+    # 등급별 성공률: 일반 30%, 희귀 20%, 영웅 10%
+    rates = {"일반": 0.30, "희귀": 0.20, "영웅": 0.10}
+    rate = rates.get(g, 0.10)
+    
     if random.random() < rate:
         from scripts.weapons import ALL_WEAPONS, create_weapon
-        avail = [wid for wid, wp in ALL_WEAPONS.items() if wp.grade == GRADE_ORDER[ni] and wp.grade != "몬스터"]
+        next_grade = GRADE_ORDER[g_idx + 1]
+        avail = [wid for wid, wp in ALL_WEAPONS.items() if wp.grade == next_grade and wp.grade != "몬스터"]
         if avail:
-            return create_weapon(random.choice(avail)), f"합성 성공! {GRADE_ORDER[ni]} 등급 획득!"
+            return create_weapon(random.choice(avail)), f"합성 성공! {next_grade} 등급 획득!"
     return random.choice([w1, w2]), "합성 실패... 무기 하나 반환"
 
 def do_decompose(w):
@@ -483,22 +614,24 @@ def do_upgrade(w):
         player_materials[m] -= a
     if not hasattr(w, 'upgrade_level'):
         w.upgrade_level = 0
+    if not hasattr(w, 'bonus_power'):
+        w.bonus_power = 0
+    
     w.upgrade_level += 1
+    w.bonus_power += 1  # 강화당 추가 공격력 +1
+    
+    # 내구도 보너스
     bonus = random.randint(5, 15)
     w.max_durability += bonus
     w.durability = w.max_durability
-    sb = 1 if random.random() < 0.6 else 2 if random.random() < 0.9 else 3
-    if w.skill_ids:
-        sid = random.choice(w.skill_ids)
-        if not hasattr(w, 'skill_upgrades'):
-            w.skill_upgrades = {}
-        w.skill_upgrades[sid] = w.skill_upgrades.get(sid, 0) + sb
+    
+    # 초월 체크
     if w.upgrade_level >= 5 and not getattr(w, 'is_transcended', False):
         w.is_transcended = True
         if hasattr(w, 'transcend_skill') and w.transcend_skill and w.transcend_skill not in w.skill_ids:
             w.skill_ids.append(w.transcend_skill)
             return True, f"+5 강화! 초월 달성! 새 스킬 해금!"
-    return True, f"+{w.upgrade_level} 강화! 내구도+{bonus}, 스킬+{sb}"
+    return True, f"+{w.upgrade_level} 강화! 공격력+1, 내구도+{bonus}"
 
 
 def handle_blacksmith_input(events, game_state):
@@ -562,7 +695,9 @@ def handle_compose(e, inv):
         return
     
     if blacksmith_state["weapon_select_open"]:
+        # 합성 가능한 모든 무기 표시 (등급 필터 없음)
         ws = [w for w in inv["weapons"] if can_compose(w)]
+        
         if e.key == pygame.K_w:
             blacksmith_state["weapon_select_index"] = max(0, blacksmith_state["weapon_select_index"] - 1)
         elif e.key == pygame.K_s and ws:
@@ -576,12 +711,19 @@ def handle_compose(e, inv):
         elif e.key == pygame.K_ESCAPE:
             blacksmith_state["weapon_select_open"] = False
     else:
-        if e.key == pygame.K_w:
-            blacksmith_state["compose_selected"] = max(0, blacksmith_state["compose_selected"] - 1)
+        # A/D로 슬롯 좌우 이동
+        if e.key == pygame.K_a:
+            if blacksmith_state["compose_selected"] < 2:
+                blacksmith_state["compose_selected"] = 0
+        elif e.key == pygame.K_d:
+            if blacksmith_state["compose_selected"] < 2:
+                blacksmith_state["compose_selected"] = 1
+        # W로 슬롯으로, S로 버튼으로
+        elif e.key == pygame.K_w:
+            if blacksmith_state["compose_selected"] == 2:
+                blacksmith_state["compose_selected"] = 0
         elif e.key == pygame.K_s:
-            blacksmith_state["compose_selected"] = min(2, blacksmith_state["compose_selected"] + 1)
-        elif e.key in [pygame.K_a, pygame.K_d] and blacksmith_state["compose_selected"] < 2:
-            blacksmith_state["compose_selected"] = 0 if e.key == pygame.K_a else 1
+            blacksmith_state["compose_selected"] = 2  # 바로 버튼으로
         elif e.key == pygame.K_RETURN:
             s = blacksmith_state["compose_selected"]
             if s < 2:
@@ -595,6 +737,11 @@ def handle_compose(e, inv):
             else:
                 w1, w2 = blacksmith_state["compose_slots"]
                 if w1 and w2:
+                    # 등급 체크
+                    if w1.grade != w2.grade:
+                        blacksmith_state["message"], blacksmith_state["message_timer"] = "같은 등급만 합성 가능!", 0
+                        return
+                    
                     # 합성 실행 및 결과 저장
                     r, m = do_compose(w1, w2)
                     blacksmith_state["compose_slots"] = [None, None]

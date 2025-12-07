@@ -149,12 +149,19 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
             screen.blit(durability_text, (info_panel_x + 15, y_offset))
             y_offset += 30
             
-            # 강화도 표시
+            # 강화도 및 추가 공격력 표시
             upgrade_level = getattr(selected_item, 'upgrade_level', 0)
+            bonus_power = getattr(selected_item, 'bonus_power', 0)
             if upgrade_level > 0:
                 upgrade_text = info_font.render(f"강화: +{upgrade_level}", True, (255, 180, 50))
                 screen.blit(upgrade_text, (info_panel_x + 15, y_offset))
                 y_offset += 30
+                
+                # 추가 공격력
+                if bonus_power > 0:
+                    atk_text = info_font.render(f"추가 공격력: +{bonus_power}", True, (255, 100, 100))
+                    screen.blit(atk_text, (info_panel_x + 15, y_offset))
+                    y_offset += 30
             
             # 초월 여부 표시
             is_transcended = getattr(selected_item, 'is_transcended', False)

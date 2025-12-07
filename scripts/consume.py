@@ -44,7 +44,7 @@ HEALTH_POTION_SMALL = Consumable(
     type_="potion",
     effect_value=30,
     description="체력을 30 회복한다.",
-    image_path="resources/png/consumable/health_potion_small.png"
+    image_path="resources/png/consumable/hp_potion1.png"
 )
 
 HEALTH_POTION_MEDIUM = Consumable(
@@ -53,7 +53,7 @@ HEALTH_POTION_MEDIUM = Consumable(
     type_="potion",
     effect_value=50,
     description="체력을 50 회복한다.",
-    image_path="resources/png/consumable/health_potion_medium.png"
+    image_path="resources/png/consumable/hp_potion2.png"
 )
 
 HEALTH_POTION_LARGE = Consumable(
@@ -62,7 +62,7 @@ HEALTH_POTION_LARGE = Consumable(
     type_="potion",
     effect_value=100,
     description="체력을 100 회복한다.",
-    image_path="resources/png/consumable/health_potion_large.png"
+    image_path="resources/png/consumable/hp_potion3.png"
 )
 
 # ==================== 수리 키트 정의 ====================
@@ -73,7 +73,7 @@ REPAIR_KIT_BASIC = Consumable(
     type_="repair_kit",
     effect_value=30,
     description="무기의 내구도를 30 회복한다.",
-    image_path="resources/png/consumable/repair_kit_basic.png"
+    image_path="resources/png/consumable/repair_kit1.png"
 )
 
 REPAIR_KIT_ADVANCED = Consumable(
@@ -82,7 +82,7 @@ REPAIR_KIT_ADVANCED = Consumable(
     type_="repair_kit",
     effect_value=50,
     description="무기의 내구도를 50 회복한다.",
-    image_path="resources/png/consumable/repair_kit_advanced.png"
+    image_path="resources/png/consumable/repair_kit2.png"
 )
 
 REPAIR_KIT_MASTER = Consumable(
@@ -91,7 +91,7 @@ REPAIR_KIT_MASTER = Consumable(
     type_="repair_kit",
     effect_value=100,
     description="무기의 내구도를 100 회복한다.",
-    image_path="resources/png/consumable/repair_kit_master.png"
+    image_path="resources/png/consumable/repair_kit3.png"
 )
 
 # ==================== 소모품 딕셔너리 ====================

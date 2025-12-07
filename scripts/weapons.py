@@ -15,7 +15,7 @@ class Weapon:
         
         # 강화 관련
         self.upgrade_level = 0  # 강화 레벨 (0~5)
-        self.skill_upgrades = {}  # 스킬별 강화량 {skill_id: power_bonus}
+        self.bonus_power = 0  # 추가 공격력 (강화당 +1)
         self.is_transcended = False  # 초월 여부
         self.transcend_skill = transcend_skill  # 초월 시 해금되는 스킬 ID
         self.is_boss_drop = is_boss_drop  # 보스 드롭 무기 여부 (합성 불가)
@@ -30,8 +30,7 @@ class Weapon:
             return 0
         
         base_power = ALL_SKILLS[skill_id].power
-        bonus = self.skill_upgrades.get(skill_id, 0)
-        return base_power + bonus
+        return base_power + self.bonus_power
     
     def use_skill(self, skill):
         """스킬 사용 시 내구도 감소"""
