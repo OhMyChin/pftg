@@ -147,7 +147,28 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
             
             durability_text = info_font.render(durability_str, True, (100, 200, 255))
             screen.blit(durability_text, (info_panel_x + 15, y_offset))
-            y_offset += 35
+            y_offset += 30
+            
+            # 강화도 표시
+            upgrade_level = getattr(selected_item, 'upgrade_level', 0)
+            if upgrade_level > 0:
+                upgrade_text = info_font.render(f"강화: +{upgrade_level}", True, (255, 180, 50))
+                screen.blit(upgrade_text, (info_panel_x + 15, y_offset))
+                y_offset += 30
+            
+            # 초월 여부 표시
+            is_transcended = getattr(selected_item, 'is_transcended', False)
+            transcend_skill = getattr(selected_item, 'transcend_skill', None)
+            if is_transcended and transcend_skill:
+                from scripts.skills import ALL_SKILLS
+                skill_name = ALL_SKILLS[transcend_skill].name if transcend_skill in ALL_SKILLS else transcend_skill
+                transcend_text = info_font.render(f"초월: {skill_name}", True, (255, 100, 255))
+                screen.blit(transcend_text, (info_panel_x + 15, y_offset))
+                y_offset += 30
+            elif transcend_skill and not is_transcended:
+                transcend_text = font_tiny.render("(+5 강화 시 초월 가능)", True, (150, 100, 150))
+                screen.blit(transcend_text, (info_panel_x + 15, y_offset))
+                y_offset += 25
             
             y_offset += 8
             desc_lines = wrap_text(selected_item.description, font_tiny, info_panel_width - 30)

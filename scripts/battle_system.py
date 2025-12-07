@@ -1,7 +1,7 @@
 import pygame
 import random
 from scripts.weapons import create_weapon
-from scripts.floor import get_floor_monsters, get_max_floor
+from scripts.floor import get_floor_monsters, get_max_floor, get_floor_background
 
 # --- 한글 폰트 설정 ---
 FONT_PATH = None
@@ -19,6 +19,7 @@ current_floor = 1
 floor_monsters = []
 current_monster_index = 0
 current_monster_data = None  # 현재 몬스터 데이터 (드롭용)
+current_bg_image = None  # 현재 층 배경 이미지 캐시
 
 # --- 전투 상태 제어 ---
 battle_state = {
@@ -109,7 +110,7 @@ def wrap_battle_text(text, font, max_width):
 def start_battle(game_state_ref, player_name):
     """던전 진입 시 전투 시작"""
     global battle_player, battle_enemy, battle_message, selected_skill_index
-    global current_floor, floor_monsters, current_monster_index
+    global current_floor, floor_monsters, current_monster_index, current_bg_image
 
     if not battle_player:
         print("Error: battle_player not initialized.")
@@ -120,6 +121,9 @@ def start_battle(game_state_ref, player_name):
     current_floor = 1
     floor_monsters = get_floor_monsters(current_floor)
     current_monster_index = 0
+    
+    # 배경 이미지 로드
+    current_bg_image = load_floor_background(current_floor)
 
     spawn_next_monster()
 
@@ -190,13 +194,26 @@ def spawn_next_monster():
 
 def advance_floor():
     """다음 층으로 진행"""
-    global current_floor, floor_monsters, current_monster_index
+    global current_floor, floor_monsters, current_monster_index, current_bg_image
     
     current_floor += 1
     floor_monsters = get_floor_monsters(current_floor)
     current_monster_index = 0
     
+    # 배경 이미지 업데이트 (10층마다 변경)
+    current_bg_image = load_floor_background(current_floor)
+    
     spawn_next_monster()
+
+
+def load_floor_background(floor_num):
+    """층에 맞는 배경 이미지 로드"""
+    try:
+        bg_path = get_floor_background(floor_num)
+        bg_image = pygame.image.load(bg_path).convert()
+        return bg_image
+    except:
+        return None
 
 
 def move_battle_selection(d_row, d_col):
@@ -407,7 +424,12 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
         battle_state["returning_from_swap"] = False
 
     # ---------- 레이아웃 설정 ----------
-    screen.fill((30, 30, 60))
+    # 배경 이미지 그리기
+    if current_bg_image:
+        scaled_bg = pygame.transform.scale(current_bg_image, (WIDTH, HEIGHT))
+        screen.blit(scaled_bg, (0, 0))
+    else:
+        screen.fill((30, 30, 60))
 
     # --- 몬스터 표시 (오른쪽 위) ---
     enemy_x = WIDTH - 300

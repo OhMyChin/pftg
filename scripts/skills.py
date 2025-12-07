@@ -39,22 +39,40 @@ SWING = Skill(
     description="무기를 휘둘러 적을 공격한다"
 )
 
-PIERCE = Skill(
-    id_="pierce",
-    name="찌르기",
-    power=12,
-    priority=0,
-    durability_cost=8,
-    description="날카로운 공격으로 적을 찌른다"
-)
-
-SLASH = Skill(
-    id_="slash",
-    name="베기",
+SLASH1 = Skill(
+    id_="slash1",
+    name="세로 베기",
     power=15,
     priority=0,
     durability_cost=15,
-    description="강력하게 베어 큰 피해를 준다"
+    description="강력하게 세로로 베어 큰 피해를 준다"
+)
+
+SLASH2 = Skill(
+    id_="slash2",
+    name="가로 베기",
+    power=15,
+    priority=0,
+    durability_cost=15,
+    description="강력하게 가로로 베어 큰 피해를 준다"
+)
+
+PIERCE = Skill(
+    id_="pierce",
+    name="찌르기",
+    power=8,
+    priority=1,
+    durability_cost=8,
+    description="날카로운 공격으로 빠르게 적을 찌른다"
+)
+
+RAPID_STAB = Skill(
+    id_="rapid_stab",
+    name="연속 찌르기",
+    power=16,
+    priority=0,
+    durability_cost=16,
+    description="연속으로 찌른다"
 )
 
 # ==================== 초월 스킬 ====================
@@ -68,28 +86,37 @@ POWER_STRIKE = Skill(
     description="[초월] 온 힘을 실어 강하게 내리친다"
 )
 
-RAPID_STAB = Skill(
-    id_="rapid_stab",
-    name="연속 찌르기",
-    power=18,
-    priority=2,
-    durability_cost=15,
-    description="[초월] 빠르게 연속으로 찌른다"
+DEEP_WOUND = Skill(
+    id_="deep_wound",
+    name="깊은 상처",
+    power=30,
+    priority=0,
+    durability_cost=30,
+    description="[초월] 정교한 상처를 입힌다."
 )
 
 SPIN_SLASH = Skill(
     id_="spin_slash",
     name="회전 베기",
-    power=20,
+    power=40,
     priority=0,
-    durability_cost=25,
+    durability_cost=30,
     description="[초월] 몸을 회전하며 주변을 베어버린다"
+)
+
+FAST_PIERCE = Skill(
+    id_="fast_pierce",
+    name="초고속 찌르기",
+    power=25,
+    priority=3,
+    durability_cost=15,
+    description="[초월] 날카로운 공격으로 적을 찌른다"
 )
 
 SLIME_BURST = Skill(
     id_="slime_burst",
     name="슬라임 폭발",
-    power=35,
+    power=50,
     priority=0,
     durability_cost=30,
     description="[초월] 슬라임의 힘을 폭발시켜 강력한 피해를 입힌다"
@@ -183,12 +210,15 @@ ALL_SKILLS = {
     "magma_shot": MAGMA_SHOT,
     "slime_slash": SLIME_SLASH,
     "pierce": PIERCE,
-    "slash": SLASH,
+    "rapid_stab": RAPID_STAB,
+    "slash1": SLASH1,
+    "slash2": SLASH2,
     "rainbow_attack": RAINBOW_ATTACK,
     "kings_slam": KINGS_SLAM,
     # 초월 스킬
+    "deep_wound":DEEP_WOUND,
     "power_strike": POWER_STRIKE,
-    "rapid_stab": RAPID_STAB,
     "spin_slash": SPIN_SLASH,
+    "fast_pierce": FAST_PIERCE,
     "slime_burst": SLIME_BURST,
 }

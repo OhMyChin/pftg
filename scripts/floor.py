@@ -34,6 +34,27 @@ class MonsterData:
         return drops
 
 
+# ==================== 층별 배경 설정 (10층 단위) ====================
+
+FLOOR_BACKGROUNDS = {
+    1: "resources/png/battle_bg_1.png",   # 1~10층
+    2: "resources/png/battle_bg_2.png",   # 11~20층
+    3: "resources/png/battle_bg_3.png",   # 21~30층
+    4: "resources/png/battle_bg_4.png",   # 31~40층
+    5: "resources/png/battle_bg_5.png",   # 41~50층
+}
+
+# 기본 배경 (배경이 지정되지 않은 경우)
+DEFAULT_BACKGROUND = "resources/png/battle_bg_1.png"
+
+
+def get_floor_background(floor_num):
+    """특정 층의 배경 이미지 경로 반환 (10층 단위)"""
+    # 1~10층 → 1, 11~20층 → 2, ...
+    bg_index = ((floor_num - 1) // 10) + 1
+    return FLOOR_BACKGROUNDS.get(bg_index, DEFAULT_BACKGROUND)
+
+
 # ==================== 층별 몬스터 배치 ====================
 
 FLOOR_DATA = {

@@ -100,7 +100,7 @@ RUSTY_DAGGER = Weapon(
     skill_ids=["pierce"],
     description="오래되어 녹슨 단검. 빠른 공격에 특화되어 있다.",
     image_path="resources/png/weapon/rusty_dagger.png",
-    transcend_skill="rapid_stab"  # 초월: 연속 찌르기
+    transcend_skill="deep_wound"  # 초월: 연속 찌르기
 )
 
 IRON_SWORD = Weapon(
@@ -108,10 +108,21 @@ IRON_SWORD = Weapon(
     name="철 검",
     grade="희귀",
     max_durability=100,
-    skill_ids=["pierce", "slash"],
-    description="잘 벼려진 철 검. 다양한 공격 기술을 사용할 수 있다.",
+    skill_ids=["slash1", "slash2"],
+    description="잘 벼려진 철 검. 든든한 국밥 같은 검이다.",
     image_path="resources/png/weapon/iron_sword.png",
     transcend_skill="spin_slash"  # 초월: 회전 베기
+)
+
+RAPIER = Weapon(
+    id_="rapier",
+    name="레이피어",
+    grade="희귀",
+    max_durability=80,
+    skill_ids=["pierce", "rapid_stab"],
+    description="보급형 레이피어. 고급진 찌르기 기술을 사용할 수 있다.",
+    image_path="resources/png/weapon/rapier.png",
+    transcend_skill="fast_pierce"  # 초월: 초고속 찌르기
 )
 
 SLIME_WAND = Weapon(
@@ -214,6 +225,7 @@ ALL_WEAPONS = {
     "test_sword": TESTER_SWORD,
     "wooden_stick": WOODEN_STICK,
     "iron_sword": IRON_SWORD,
+    "rapier": RAPIER,
     "rusty_dagger": RUSTY_DAGGER,
     "slime_wand": SLIME_WAND,
     "slime1": SLIME_BODY,
