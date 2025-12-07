@@ -61,7 +61,7 @@ SLASH = Skill(
 
 POWER_STRIKE = Skill(
     id_="power_strike",
-    name="★강타",
+    name="강타",
     power=25,
     priority=0,
     durability_cost=20,
@@ -70,7 +70,7 @@ POWER_STRIKE = Skill(
 
 RAPID_STAB = Skill(
     id_="rapid_stab",
-    name="★연속 찌르기",
+    name="연속 찌르기",
     power=18,
     priority=2,
     durability_cost=15,
@@ -79,7 +79,7 @@ RAPID_STAB = Skill(
 
 SPIN_SLASH = Skill(
     id_="spin_slash",
-    name="★회전 베기",
+    name="회전 베기",
     power=20,
     priority=0,
     durability_cost=25,
@@ -88,7 +88,7 @@ SPIN_SLASH = Skill(
 
 SLIME_BURST = Skill(
     id_="slime_burst",
-    name="★슬라임 폭발",
+    name="슬라임 폭발",
     power=35,
     priority=0,
     durability_cost=30,
