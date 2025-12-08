@@ -20,7 +20,6 @@ floor_monsters = []
 current_monster_index = 0
 current_monster_data = None  # 현재 몬스터 데이터 (드롭용)
 current_bg_image = None  # 현재 층 배경 이미지 캐시
-max_floor_reached = 0  # 최대 도달 층 (스토리/대화 해금용)
 
 # --- 전투 상태 제어 ---
 battle_state = {
@@ -108,7 +107,7 @@ def wrap_battle_text(text, font, max_width):
     return lines
 
 
-def start_battle(game_state_ref, player_name):
+def start_battle(game_state_ref, player_name, start_floor=1):
     """던전 진입 시 전투 시작"""
     global battle_player, battle_enemy, battle_message, selected_skill_index
     global current_floor, floor_monsters, current_monster_index, current_bg_image
@@ -119,7 +118,7 @@ def start_battle(game_state_ref, player_name):
 
     battle_player.speed = 12
 
-    current_floor = 1
+    current_floor = start_floor
     floor_monsters = get_floor_monsters(current_floor)
     current_monster_index = 0
     
@@ -196,16 +195,15 @@ def spawn_next_monster():
 
 def advance_floor():
     """다음 층으로 진행"""
-    global current_floor, floor_monsters, current_monster_index, current_bg_image, max_floor_reached
+    global current_floor, floor_monsters, current_monster_index, current_bg_image
     
     current_floor += 1
-    
-    # 최대 도달 층 업데이트
-    if current_floor > max_floor_reached:
-        max_floor_reached = current_floor
-    
     floor_monsters = get_floor_monsters(current_floor)
     current_monster_index = 0
+    
+    # 최대 도달 층 업데이트
+    from scripts import temple
+    temple.set_max_floor_reached(current_floor)
     
     # 배경 이미지 업데이트 (10층마다 변경)
     current_bg_image = load_floor_background(current_floor)
@@ -301,6 +299,17 @@ def execute_battle_action(game_state_ref):
             battle_state["action_queue"].clear()
         
         elif battle_state["stage"] == "enemy_defeat":
+            # 보스 처치 시 대화 해금
+            if battle_enemy and battle_enemy.name == "킹 슬라임":
+                from scripts import temple
+                temple.set_visited("boss_king_slime")
+            elif battle_enemy and battle_enemy.name == "뮤턴트 고블린":
+                from scripts import temple
+                temple.set_visited("boss_mutant_goblin")
+            elif battle_enemy and battle_enemy.name == "황금왕":
+                from scripts import temple
+                temple.set_visited("boss_golden_king")
+            
             # 드롭 처리
             if current_monster_data and not battle_state["showing_drop"]:
                 drops = current_monster_data.get_drops()
@@ -311,12 +320,9 @@ def execute_battle_action(game_state_ref):
                         game_state_ref["gold"] = game_state_ref.get("gold", 0) + drop["amount"]
                         drop_msgs.append(f"{drop['amount']}G")
                     elif drop["type"] == "weapon":
-                        from scripts.inventory import try_add_weapon
-                        added, msg = try_add_weapon(drop["item"])
-                        if added:
-                            drop_msgs.append(f"[{drop['item'].grade}] {drop['item'].name}")
-                        else:
-                            drop_msgs.append(f"[{drop['item'].grade}] {drop['item'].name} ({msg})")
+                        from scripts.inventory import player_inventory
+                        player_inventory["weapons"].append(drop["item"])
+                        drop_msgs.append(f"[{drop['item'].grade}] {drop['item'].name}")
                 
                 if drop_msgs:
                     battle_state["drop_message"] = "획득: " + ", ".join(drop_msgs)
@@ -441,11 +447,10 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
     else:
         screen.fill((30, 30, 60))
 
-    # --- 몬스터 표시 (오른쪽, 중심 기준으로 확대) ---
-    # 기본 크기 (160px)를 기준으로 중심점 설정
-    base_size = 160  # 기본 몬스터 크기
-    enemy_center_x = WIDTH - 300 + (base_size // 2)  # 기본 크기 기준 중심 X
-    enemy_base_y = 280  # 바닥 기준 Y
+    # --- 몬스터 표시 (오른쪽, 바닥 기준) ---
+    # 몬스터 영역의 왼쪽 아래 기준점 설정
+    enemy_base_x = WIDTH - 300  # 왼쪽 기준 X
+    enemy_base_y = 280  # 바닥 기준 Y (이미지 하단이 이 위치에 맞춰짐)
 
     # 층 진행도 (왼쪽 위)
     floor_info_text = font.render(
@@ -459,68 +464,40 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
         enemy_image_width = battle_enemy.image.get_width()
         enemy_image_height = battle_enemy.image.get_height()
         
+        # 이미지 위치 계산 (왼쪽 아래 기준)
+        enemy_x = enemy_base_x
+        enemy_y = enemy_base_y - enemy_image_height  # 바닥에서 이미지 높이만큼 위로
+        
         # 체력바 설정 (이미지 가로 길이에 맞춤)
         hp_bar_width = enemy_image_width
         hp_bar_height = 25
         name_hp_gap = 5  # 이름과 체력바 사이 간격
         hp_image_gap = 5  # 체력바와 이미지 사이 간격
         
-        # 체력바 최대 높이 제한 (이 Y 좌표 아래로만 체력바 표시)
-        max_hp_bar_y = 50  # 화면 상단에서 최소 50px 여유
-        
-        # 중심 기준으로 이미지 위치 계산 (8방향 확대 효과)
-        enemy_x = enemy_center_x - (enemy_image_width // 2)  # 중심에서 좌우로 확대
-        enemy_y = enemy_base_y - enemy_image_height  # 바닥에서 위로 확대
-        
-        # 체력바 위치 계산 (이미지 바로 위)
+        # 체력바 위치 (이미지 바로 위)
         hp_bar_y = enemy_y - hp_image_gap - hp_bar_height
         
-        # 체력바가 최대 높이를 넘으면 기준점을 아래로 내림
-        if hp_bar_y < max_hp_bar_y:
-            # 체력바를 max_hp_bar_y에 맞추고, 그에 따라 이미지도 아래로 이동
-            hp_bar_y = max_hp_bar_y
-            enemy_y = hp_bar_y + hp_bar_height + hp_image_gap
-        
-        # 체력바 X 위치도 이미지 중심에 맞춤
-        hp_bar_x = enemy_center_x - (hp_bar_width // 2)
-        
-        # 이름 폰트 크기 자동 조절 (체력바 너비에 맞춤)
-        name_font_size = 32  # 기본 폰트 크기
-        if FONT_PATH:
-            name_font = pygame.font.Font(FONT_PATH, name_font_size)
-        else:
-            name_font = pygame.font.Font(None, name_font_size)
-        
-        # 이름이 체력바보다 길면 폰트 크기 줄이기
-        while name_font.size(battle_enemy.name)[0] > hp_bar_width and name_font_size > 16:
-            name_font_size -= 2
-            if FONT_PATH:
-                name_font = pygame.font.Font(FONT_PATH, name_font_size)
-            else:
-                name_font = pygame.font.Font(None, name_font_size)
-        
-        # 이름 위치 (체력바 바로 위, 중앙 정렬)
-        name_y = hp_bar_y - name_hp_gap - name_font_size
+        # 이름 위치 (체력바 바로 위)
+        name_y = hp_bar_y - name_hp_gap - 30  # 폰트 높이 약 30px
         
         # 이미지 그리기
         screen.blit(battle_enemy.image, (enemy_x, enemy_y))
 
-        # 이름 그리기 (중앙 정렬, 자동 조절된 폰트)
-        enemy_name_text = name_font.render(f"{battle_enemy.name}", True, (255, 255, 255))
-        name_x = enemy_center_x - (enemy_name_text.get_width() // 2)
-        screen.blit(enemy_name_text, (name_x, name_y))
+        # 이름 그리기
+        enemy_name_text = font.render(f"{battle_enemy.name}", True, (255, 255, 255))
+        screen.blit(enemy_name_text, (enemy_x, name_y))
 
         # 체력바 그리기
         hp_ratio = max(0, battle_enemy.hp) / (battle_enemy.max_hp if battle_enemy.max_hp else 1)
-        hp_back = pygame.Rect(hp_bar_x, hp_bar_y, hp_bar_width, hp_bar_height)
+        hp_back = pygame.Rect(enemy_x, hp_bar_y, hp_bar_width, hp_bar_height)
         pygame.draw.rect(screen, (60, 60, 60), hp_back)
-        hp_fill = pygame.Rect(hp_bar_x, hp_bar_y, int(hp_bar_width * hp_ratio), hp_bar_height)
+        hp_fill = pygame.Rect(enemy_x, hp_bar_y, int(hp_bar_width * hp_ratio), hp_bar_height)
         pygame.draw.rect(screen, (200, 50, 50), hp_fill)
         pygame.draw.rect(screen, (100, 100, 100), hp_back, 2)  # 테두리
         
         # 체력바 안에 HP 수치 표시
         hp_text = font.render(f"{max(0, battle_enemy.hp)}/{battle_enemy.max_hp}", True, (255, 255, 255))
-        hp_text_rect = hp_text.get_rect(center=(hp_bar_x + hp_bar_width // 2, hp_bar_y + hp_bar_height // 2))
+        hp_text_rect = hp_text.get_rect(center=(enemy_x + hp_bar_width // 2, hp_bar_y + hp_bar_height // 2))
         screen.blit(hp_text, hp_text_rect)
 
 

@@ -964,6 +964,10 @@ def handle_decompose(e, inv, gs):
                     blacksmith_state["anim_frame"] = 0
                     blacksmith_state["anim_timer"] = 0
                     blacksmith_state["anim_result"] = {"title": "분해 결과", "gold": gold, "materials": mats, "message": "분해 완료!"}
+                    
+                    # 분해 기록
+                    from scripts import temple
+                    temple.set_visited("blacksmith_decompose")
                 else:
                     blacksmith_state["message"], blacksmith_state["message_timer"] = "무기를 넣어주세요!", 0
         elif e.key == pygame.K_ESCAPE:

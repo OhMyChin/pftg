@@ -20,6 +20,11 @@ visited_places = {
     "shop": False,
     "blacksmith": False,
     "dungeon": False,
+    "shop_consumable": False,  # 상점에서 소비템 구매
+    "blacksmith_decompose": False,  # 대장간에서 분해
+    "boss_king_slime": False,  # 킹 슬라임 처치
+    "boss_mutant_goblin": False,  # 뮤턴트 고블린 처치
+    "boss_golden_king": False,  # 황금왕 처치
 }
 
 # --- 무기 보관함 ---
@@ -70,7 +75,7 @@ STORY_DATA = {
     },
 }
 
-# --- 질문 데이터 (방문 해금) ---
+# --- 대화 데이터 (방문/보스 해금) ---
 QUESTION_DATA = {
     "shop": {
         "title": "상점에 대하여",
@@ -85,6 +90,18 @@ QUESTION_DATA = {
         ],
         "unlock_key": "shop"
     },
+    "shop_consumable": {
+        "title": "소비 아이템에 대하여",
+        "speaker": "신관",
+        "lines": [
+            "소비 아이템을 구매하셨군요.",
+            "체력 물약은 전투 중 체력을 회복시켜 줍니다.",
+            "작은 물약부터 큰 물약까지, 회복량이 다르니 상황에 맞게 사용하세요.",
+            "수리 키트는 무기의 내구도를 회복시킵니다.",
+            "무기가 부서지면 전투가 힘들어지니, 항상 여유분을 챙기세요."
+        ],
+        "unlock_key": "shop_consumable"
+    },
     "blacksmith": {
         "title": "대장간에 대하여",
         "speaker": "신관",
@@ -97,6 +114,19 @@ QUESTION_DATA = {
             "조금 불편하시겠지만, 그래도 쓸만할 겁니다."
         ],
         "unlock_key": "blacksmith"
+    },
+    "blacksmith_decompose": {
+        "title": "광석에 대하여",
+        "speaker": "신관",
+        "lines": [
+            "무기를 분해해 보셨군요.",
+            "분해하면 무기에 깃든 광석을 추출할 수 있습니다.",
+            "철광석은 가장 흔한 광석이고, 미스릴은 희귀한 광석입니다.",
+            "오리하르콘은 영웅급 무기에서만 얻을 수 있는 귀한 광석이지요.",
+            "전설급 무기에서는 아다만티움이라는 최고급 광석이 나옵니다.",
+            "좋은 무기를 강화하려면 많은 광석이 필요합니다."
+        ],
+        "unlock_key": "blacksmith_decompose"
     },
     "dungeon": {
         "title": "던전에 대하여",
@@ -111,6 +141,51 @@ QUESTION_DATA = {
         ],
         "unlock_key": "dungeon"
     },
+    "boss_king_slime": {
+        "title": "킹 슬라임에 대하여",
+        "speaker": "신관",
+        "lines": [
+            "킹 슬라임을 쓰러뜨리셨군요. 대단합니다.",
+            "슬라임들은 원래 던전의 마력이 응집된 존재입니다.",
+            "킹 슬라임은 그중에서도 가장 오래된 개체지요.",
+            "오랜 세월 마력을 흡수하며 거대해진 것입니다.",
+            "하지만 걱정 마십시오. 시간이 지나면 또 다른 킹 슬라임이 탄생합니다.",
+            "던전은... 스스로를 재생하는 힘이 있으니까요."
+        ],
+        "unlock_key": "boss_king_slime"
+    },
+    "boss_mutant_goblin": {
+        "title": "뮤턴트 고블린에 대하여",
+        "speaker": "신관",
+        "lines": [
+            "뮤턴트 고블린을 쓰러뜨리셨군요.",
+            "그 괴물은... 자연적으로 태어난 것이 아닙니다.",
+            "누군가가 고블린에게 실험을 했습니다.",
+            "던전의 마력과 금지된 연금술을 결합한 흔적이 보입니다.",
+            "아마도 던전을 만든 마법사의 소행이겠지요.",
+            "더 깊은 곳에는 더 끔찍한 실험의 결과물이 있을지도 모릅니다."
+        ],
+        "unlock_key": "boss_mutant_goblin"
+    },
+    "boss_golden_king": {
+        "title": "황금왕에 대하여",
+        "speaker": "신관",
+        "lines": [
+            "황금왕을... 해방시켜 주셨군요.",
+            "그는 수백 년 전 이 땅을 다스리던 왕이었습니다.",
+            "영원히 살고 싶었던 그는 던전의 마법사에게 손을 내밀었지요.",
+            "마법사는 그에게 불사의 몸을 주었지만... 대가가 있었습니다.",
+            "황금으로 변한 몸, 영원히 던전에 갇힌 영혼.",
+            "당신 덕분에 그는 드디어 안식을 찾았을 것입니다. 감사합니다."
+        ],
+        "unlock_key": "boss_golden_king"
+    },
+}
+
+# --- 하이패스 상태 ---
+highpass_state = {
+    "active": False,
+    "select_index": 0,
 }
 
 # --- 최대 진행 층 ---
@@ -135,6 +210,57 @@ def set_max_floor_reached(floor):
     global max_floor_reached
     if floor > max_floor_reached:
         max_floor_reached = floor
+
+
+def get_highpass_floors():
+    """하이패스 가능한 층 목록 (1, 11, 21, 31...)"""
+    floors = [1]  # 1층은 항상 가능
+    for f in range(11, max_floor_reached + 1, 10):
+        floors.append(f)
+    return floors
+
+
+def is_highpass_active():
+    return highpass_state["active"]
+
+
+def activate_highpass():
+    global highpass_state
+    highpass_state["active"] = True
+    highpass_state["select_index"] = 0
+
+
+def deactivate_highpass():
+    global highpass_state
+    highpass_state["active"] = False
+
+
+def get_selected_highpass_floor():
+    floors = get_highpass_floors()
+    if highpass_state["select_index"] < len(floors):
+        return floors[highpass_state["select_index"]]
+    return 1
+
+
+def wrap_text(text, font, max_width):
+    """텍스트 줄바꿈 함수"""
+    words = list(text)  # 한글은 글자 단위로 분리
+    lines = []
+    current_line = ""
+    
+    for char in words:
+        test_line = current_line + char
+        if font.size(test_line)[0] <= max_width:
+            current_line = test_line
+        else:
+            if current_line:
+                lines.append(current_line)
+            current_line = char
+    
+    if current_line:
+        lines.append(current_line)
+    
+    return lines
 
 
 def add_weapon_to_storage(weapon):
@@ -284,8 +410,8 @@ def draw_menu(screen, font_main, font_small, width, height):
 
 
 def draw_dialogue_menu(screen, font_main, font_small, width, height):
-    """대화 서브메뉴: 스토리, 질문"""
-    menu_items = ["스토리", "질문"]
+    """대화 서브메뉴: 스토리, 대화"""
+    menu_items = ["스토리", "대화"]
     
     # 대화 박스
     dialog_height = 179
@@ -386,10 +512,16 @@ def draw_story(screen, font_main, font_small, width, height):
     title = title_font.render(story["title"], True, (100, 200, 220))
     screen.blit(title, (40, dialog_y + 20))
     
-    # 페이지 내용
+    # 페이지 내용 (줄바꿈 적용)
     content_font = pygame.font.Font(FONT_PATH, 24) if FONT_PATH else font_small
-    content = content_font.render(story["pages"][page], True, (255, 255, 255))
-    screen.blit(content, (40, dialog_y + 60))
+    max_text_width = dialog_rect.width - 80
+    lines = wrap_text(story["pages"][page], content_font, max_text_width)
+    
+    text_y = dialog_y + 55
+    for line in lines:
+        line_surface = content_font.render(line, True, (255, 255, 255))
+        screen.blit(line_surface, (40, text_y))
+        text_y += 32
     
     # 페이지 표시
     info_font = pygame.font.Font(FONT_PATH, 18) if FONT_PATH else font_small
@@ -401,11 +533,11 @@ def draw_story(screen, font_main, font_small, width, height):
 
 
 def draw_question_select(screen, font_main, font_small, width, height):
-    """질문 선택 화면 - 대장간 스타일 팝업"""
+    """대화 선택 화면 - 대장간 스타일 팝업"""
     unlocked = get_unlocked_questions()
     
     # 중앙 팝업
-    pw, ph = 400, 300
+    pw, ph = 400, 320
     px, py = (width - pw) // 2, (height - ph) // 2
     
     pygame.draw.rect(screen, (35, 50, 60), (px, py, pw, ph))
@@ -413,25 +545,33 @@ def draw_question_select(screen, font_main, font_small, width, height):
     
     # 제목
     title_font = pygame.font.Font(FONT_PATH, 28) if FONT_PATH else font_small
-    title = title_font.render("질문 선택", True, (150, 220, 255))
+    title = title_font.render("대화 선택", True, (150, 220, 255))
     screen.blit(title, (px + pw // 2 - title.get_width() // 2, py + 15))
     
     if not unlocked:
         no_q_font = pygame.font.Font(FONT_PATH, 22) if FONT_PATH else font_small
-        no_q_text = no_q_font.render("아직 해금된 질문이 없습니다.", True, (180, 180, 180))
+        no_q_text = no_q_font.render("아직 해금된 대화가 없습니다.", True, (180, 180, 180))
         screen.blit(no_q_text, (px + pw // 2 - no_q_text.get_width() // 2, py + ph // 2 - 30))
         no_q_text2 = no_q_font.render("마을을 둘러보세요.", True, (180, 180, 180))
         screen.blit(no_q_text2, (px + pw // 2 - no_q_text2.get_width() // 2, py + ph // 2 + 10))
         return
     
-    # 질문 목록
+    # 대화 목록 (스크롤)
     ly = py + 60
-    item_font = pygame.font.Font(FONT_PATH, 22) if FONT_PATH else font_small
+    item_font = pygame.font.Font(FONT_PATH, 20) if FONT_PATH else font_small
     
-    for i, (key, question) in enumerate(unlocked):
-        ir = pygame.Rect(px + 20, ly, pw - 40, 45)
+    visible = 5
+    scroll_offset = max(0, min(temple_state["question_select_index"] - 2, len(unlocked) - visible))
+    
+    for i in range(visible):
+        idx = scroll_offset + i
+        if idx >= len(unlocked):
+            break
         
-        if i == temple_state["question_select_index"]:
+        key, question = unlocked[idx]
+        ir = pygame.Rect(px + 20, ly, pw - 40, 40)
+        
+        if idx == temple_state["question_select_index"]:
             pygame.draw.rect(screen, (50, 80, 100), ir)
             pygame.draw.rect(screen, (100, 180, 220), ir, 2)
             text_color = (255, 255, 255)
@@ -439,9 +579,26 @@ def draw_question_select(screen, font_main, font_small, width, height):
             text_color = (180, 180, 180)
         
         text = item_font.render(question["title"], True, text_color)
-        screen.blit(text, (ir.x + 15, ir.y + 10))
+        screen.blit(text, (ir.x + 15, ir.y + 8))
         
-        ly += 50
+        ly += 45
+    
+    # 위쪽 화살표
+    arrow_x = px + pw // 2
+    if scroll_offset > 0:
+        pygame.draw.polygon(screen, (150, 220, 255), [
+            (arrow_x, py + 52),
+            (arrow_x - 8, py + 62),
+            (arrow_x + 8, py + 62)
+        ])
+    
+    # 아래쪽 화살표
+    if scroll_offset + visible < len(unlocked):
+        pygame.draw.polygon(screen, (150, 220, 255), [
+            (arrow_x, py + ph - 35),
+            (arrow_x - 8, py + ph - 45),
+            (arrow_x + 8, py + ph - 45)
+        ])
 
 
 def draw_question(screen, font_main, font_small, width, height):
@@ -479,10 +636,16 @@ def draw_question(screen, font_main, font_small, width, height):
     title = title_font.render(question["title"], True, (100, 200, 220))
     screen.blit(title, (40, dialog_y + 20))
     
-    # 대사
+    # 대사 (줄바꿈 적용)
     line_font = pygame.font.Font(FONT_PATH, 24) if FONT_PATH else font_small
-    line = line_font.render(question["lines"][line_idx], True, (255, 255, 255))
-    screen.blit(line, (40, dialog_y + 60))
+    max_text_width = dialog_rect.width - 80  # 좌우 여백
+    lines = wrap_text(question["lines"][line_idx], line_font, max_text_width)
+    
+    text_y = dialog_y + 55
+    for line in lines:
+        line_surface = line_font.render(line, True, (255, 255, 255))
+        screen.blit(line_surface, (40, text_y))
+        text_y += 32
     
     # 페이지 표시
     info_font = pygame.font.Font(FONT_PATH, 18) if FONT_PATH else font_small
@@ -733,3 +896,101 @@ def handle_temple_input(events, game_state):
                     return
                 elif event.key == pygame.K_ESCAPE:
                     temple_state["current_screen"] = "menu"
+
+
+def draw_highpass(screen, font_main, font_small, width, height, font_path=None):
+    """하이패스 선택 화면 그리기"""
+    global FONT_PATH
+    if font_path:
+        FONT_PATH = font_path
+    
+    floors = get_highpass_floors()
+    
+    # 중앙 팝업
+    pw, ph = 350, 300
+    px, py = (width - pw) // 2, (height - ph) // 2
+    
+    pygame.draw.rect(screen, (35, 50, 60), (px, py, pw, ph))
+    pygame.draw.rect(screen, (100, 180, 220), (px, py, pw, ph), 3)
+    
+    # 제목
+    title_font = pygame.font.Font(FONT_PATH, 26) if FONT_PATH else font_small
+    title = title_font.render("던전 입장", True, (150, 220, 255))
+    screen.blit(title, (px + pw // 2 - title.get_width() // 2, py + 15))
+    
+    # 안내
+    guide_font = pygame.font.Font(FONT_PATH, 18) if FONT_PATH else font_small
+    guide = guide_font.render("시작 층을 선택하세요", True, (180, 180, 180))
+    screen.blit(guide, (px + pw // 2 - guide.get_width() // 2, py + 50))
+    
+    # 층 목록
+    ly = py + 85
+    item_font = pygame.font.Font(FONT_PATH, 22) if FONT_PATH else font_small
+    
+    visible = 5
+    scroll_offset = max(0, min(highpass_state["select_index"] - 2, len(floors) - visible))
+    
+    for i in range(visible):
+        idx = scroll_offset + i
+        if idx >= len(floors):
+            break
+        
+        floor = floors[idx]
+        ir = pygame.Rect(px + 30, ly, pw - 60, 35)
+        
+        if idx == highpass_state["select_index"]:
+            pygame.draw.rect(screen, (50, 80, 100), ir)
+            pygame.draw.rect(screen, (100, 180, 220), ir, 2)
+            text_color = (255, 255, 255)
+        else:
+            text_color = (180, 180, 180)
+        
+        floor_text = f"{floor}층" if floor > 1 else "1층 (처음부터)"
+        text = item_font.render(floor_text, True, text_color)
+        screen.blit(text, (ir.x + ir.width // 2 - text.get_width() // 2, ir.y + 5))
+        
+        ly += 40
+    
+    # 위쪽 화살표
+    arrow_x = px + pw // 2
+    if scroll_offset > 0:
+        pygame.draw.polygon(screen, (150, 220, 255), [
+            (arrow_x, py + 78),
+            (arrow_x - 8, py + 88),
+            (arrow_x + 8, py + 88)
+        ])
+    
+    # 아래쪽 화살표
+    if scroll_offset + visible < len(floors):
+        pygame.draw.polygon(screen, (150, 220, 255), [
+            (arrow_x, py + ph - 35),
+            (arrow_x - 8, py + ph - 45),
+            (arrow_x + 8, py + ph - 45)
+        ])
+
+
+def handle_highpass_input(events, game_state, battle_start_func, player_name):
+    """하이패스 입력 처리"""
+    global highpass_state
+    
+    floors = get_highpass_floors()
+    
+    for event in events:
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_w:
+                if floors:
+                    highpass_state["select_index"] = (highpass_state["select_index"] - 1) % len(floors)
+            elif event.key == pygame.K_s:
+                if floors:
+                    highpass_state["select_index"] = (highpass_state["select_index"] + 1) % len(floors)
+            elif event.key == pygame.K_RETURN:
+                # 선택한 층으로 던전 시작
+                selected_floor = get_selected_highpass_floor()
+                deactivate_highpass()
+                
+                # 던전 시작 (선택한 층에서)
+                battle_start_func(game_state, player_name, start_floor=selected_floor)
+                return
+            elif event.key == pygame.K_ESCAPE:
+                deactivate_highpass()
+                game_state["state"] = "town"

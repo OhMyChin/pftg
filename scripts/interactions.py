@@ -1,7 +1,7 @@
 from scripts import battle_system
 
 def enter_dungeon(battle_start_func, game_state_ref, player_name):
-    """던전 진입 (체력이 0이면 입장 불가)"""
+    """던전 진입 - 하이패스 선택창 표시"""
     from scripts import temple
     player = battle_system.battle_player
 
@@ -16,8 +16,14 @@ def enter_dungeon(battle_start_func, game_state_ref, player_name):
     # 던전 방문 기록
     temple.set_visited("dungeon")
     
-    print(f"{player_name}이(가) 던전에 들어갑니다!")
-    battle_start_func(game_state_ref, player_name)
+    # 하이패스 활성화 (11층 이상 도달한 적 있으면)
+    if temple.get_max_floor_reached() >= 11:
+        temple.activate_highpass()
+        game_state_ref["state"] = "highpass"
+    else:
+        # 처음부터 시작
+        print(f"{player_name}이(가) 던전에 들어갑니다!")
+        battle_start_func(game_state_ref, player_name)
 
 def home_interact(game_state_ref):
     """집과 상호작용: 체력 회복 + 페널티 적용"""

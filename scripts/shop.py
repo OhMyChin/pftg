@@ -661,24 +661,23 @@ def handle_shop_input(events, game_state):
                                 
                                 # 아이템 지급
                                 if item["type"] == "weapon":
-                                    # 무기 추가 (통합 함수 사용)
+                                    # 무기 추가
                                     weapon = create_weapon(item["id"])
                                     if weapon:
-                                        from scripts.inventory import try_add_weapon
-                                        added, msg = try_add_weapon(weapon)
-                                        if added:
-                                            shop_state["message"] = f"{item['name']}을(를) 구매했습니다!"
-                                        else:
-                                            shop_state["message"] = f"{item['name']} 구매! ({msg})"
+                                        player_inventory["weapons"].append(weapon)
+                                        shop_state["message"] = f"{item['name']}을(를) 구매했습니다!"
                                         shop_state["message_timer"] = 0
                                 elif item["type"] == "consumable":
                                     # 소모품 추가
                                     from scripts.consume import create_consumable
+                                    from scripts import temple
                                     consumable = create_consumable(item["id"])
                                     if consumable:
                                         player_inventory["consumables"].append(consumable)
                                         shop_state["message"] = f"{item['name']}을(를) 구매했습니다!"
                                         shop_state["message_timer"] = 0
+                                        # 소비템 구매 기록
+                                        temple.set_visited("shop_consumable")
                                 elif item["type"] == "bag":
                                     # 가방 구매 - 인벤토리 확장
                                     from scripts.inventory import inventory_state
@@ -718,13 +717,10 @@ def handle_shop_input(events, game_state):
                                         weapon_id = random.choice(available_weapons)
                                         weapon = create_weapon(weapon_id)
                                         if weapon:
-                                            from scripts.inventory import try_add_weapon
-                                            added, msg = try_add_weapon(weapon)
+                                            player_inventory["weapons"].append(weapon)
                                             # 등급별 색상 지정
-                                            if added:
-                                                shop_state["message"] = f"[{target_grade}] {weapon.name} 획득!"
-                                            else:
-                                                shop_state["message"] = f"[{target_grade}] {weapon.name} 획득! ({msg})"
+                                            grade_color = {"일반": "흰색", "희귀": "파란색", "영웅": "보라색"}
+                                            shop_state["message"] = f"[{target_grade}] {weapon.name} 획득!"
                                             shop_state["message_timer"] = 0
                                     else:
                                         shop_state["message"] = "랜덤 박스 오류!"

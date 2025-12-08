@@ -682,6 +682,30 @@ while True:
         case "temple":
             temple.draw_temple(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, game_state, dt, FONT_PATH)
             temple.handle_temple_input(events, game_state)
+        
+        case "highpass":
+            # 마을 배경 그리기 (town과 동일)
+            screen.fill((50, 50, 50))
+            if town_bg:
+                screen.blit(town_bg, (-camera_offset.x, -camera_offset.y))
+            
+            # 건물 그리기
+            for building in buildings:
+                if isinstance(building, HitboxObject):
+                    if building.image:
+                        screen.blit(building.image, building.image_rect.topleft - camera_offset)
+                else:
+                    screen.blit(building.image, building.image_rect.topleft - camera_offset)
+            
+            # 플레이어 그리기
+            player_image_bottom_y = HEIGHT // 2 + player.hitbox.height // 2
+            player_image_top_y = player_image_bottom_y - player.image_height
+            player_image_rect = player.display_image.get_rect(centerx=WIDTH // 2, top=player_image_top_y)
+            screen.blit(player.display_image, player_image_rect)
+            
+            # 하이패스 UI
+            temple.draw_highpass(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, FONT_PATH)
+            temple.handle_highpass_input(events, game_state, battle_system.start_battle, game_state["player_name"])
                     
         case "battle":
             battle_system.update_battle(screen, FONT_SMALL, WIDTH, HEIGHT, game_state, events)
