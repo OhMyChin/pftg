@@ -107,7 +107,7 @@ def wrap_battle_text(text, font, max_width):
     return lines
 
 
-def start_battle(game_state_ref, player_name, start_floor=1):
+def start_battle(game_state_ref, player_name):
     """던전 진입 시 전투 시작"""
     global battle_player, battle_enemy, battle_message, selected_skill_index
     global current_floor, floor_monsters, current_monster_index, current_bg_image
@@ -118,7 +118,7 @@ def start_battle(game_state_ref, player_name, start_floor=1):
 
     battle_player.speed = 12
 
-    current_floor = start_floor
+    current_floor = 1
     floor_monsters = get_floor_monsters(current_floor)
     current_monster_index = 0
     
@@ -201,10 +201,6 @@ def advance_floor():
     floor_monsters = get_floor_monsters(current_floor)
     current_monster_index = 0
     
-    # 최대 도달 층 업데이트
-    from scripts import temple
-    temple.set_max_floor_reached(current_floor)
-    
     # 배경 이미지 업데이트 (10층마다 변경)
     current_bg_image = load_floor_background(current_floor)
     
@@ -254,7 +250,7 @@ def execute_battle_action(game_state_ref):
             else:
                 attacker, defender = battle_enemy, battle_player
 
-            if attacker.weapon and skill_obj.durability_cost > 0:
+            if attacker.weapon and skill_obj.durability_cost != 0:
                 attacker.weapon.use_skill(skill_obj)
 
             dmg = calc_damage(attacker, skill_obj, defender)
@@ -299,17 +295,6 @@ def execute_battle_action(game_state_ref):
             battle_state["action_queue"].clear()
         
         elif battle_state["stage"] == "enemy_defeat":
-            # 보스 처치 시 대화 해금
-            if battle_enemy and battle_enemy.name == "킹 슬라임":
-                from scripts import temple
-                temple.set_visited("boss_king_slime")
-            elif battle_enemy and battle_enemy.name == "뮤턴트 고블린":
-                from scripts import temple
-                temple.set_visited("boss_mutant_goblin")
-            elif battle_enemy and battle_enemy.name == "황금왕":
-                from scripts import temple
-                temple.set_visited("boss_golden_king")
-            
             # 드롭 처리
             if current_monster_data and not battle_state["showing_drop"]:
                 drops = current_monster_data.get_drops()
@@ -320,14 +305,38 @@ def execute_battle_action(game_state_ref):
                         game_state_ref["gold"] = game_state_ref.get("gold", 0) + drop["amount"]
                         drop_msgs.append(f"{drop['amount']}G")
                     elif drop["type"] == "weapon":
-                        from scripts.inventory import player_inventory
-                        player_inventory["weapons"].append(drop["item"])
-                        drop_msgs.append(f"[{drop['item'].grade}] {drop['item'].name}")
+                        from scripts.inventory import try_add_weapon
+                        success, location = try_add_weapon(drop["item"])
+                        if location == "storage":
+                            drop_msgs.append(f"[{drop['item'].grade}] {drop['item'].name} (신전 보관)")
+                        else:
+                            drop_msgs.append(f"[{drop['item'].grade}] {drop['item'].name}")
+                    elif drop["type"] == "material":
+                        from scripts.blacksmith import player_materials, MATERIAL_NAMES
+                        mat_type = drop["material_type"]
+                        mat_amount = drop["amount"]
+                        player_materials[mat_type] = player_materials.get(mat_type, 0) + mat_amount
+                        drop_msgs.append(f"{MATERIAL_NAMES[mat_type]} {mat_amount}개")
                 
                 if drop_msgs:
                     battle_state["drop_message"] = "획득: " + ", ".join(drop_msgs)
                     battle_state["showing_drop"] = True
                     battle_state["current_text"] = battle_state["drop_message"]
+                    
+                    # 보스 처치 시 신전 대화 해금
+                    if battle_enemy and battle_enemy.name == "킹 슬라임":
+                        from scripts import temple
+                        temple.set_visited("boss_king_slime")
+                    elif battle_enemy and battle_enemy.name == "뮤턴트 고블린":
+                        from scripts import temple
+                        temple.set_visited("boss_mutant_goblin")
+                    elif battle_enemy and battle_enemy.name == "황금왕":
+                        from scripts import temple
+                        temple.set_visited("boss_golden_king")
+                    elif battle_enemy and battle_enemy.name == "마공학 골렘":
+                        from scripts import temple
+                        temple.set_visited("boss_hextech_golem")
+                    
                     return False
             
             # 드롭 메시지 확인 후 다음 진행

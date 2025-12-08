@@ -4,11 +4,12 @@ from scripts.weapons import create_weapon
 class MonsterData:
     """몬스터 데이터 클래스"""
     def __init__(self, name, hp, speed, weapon_id, image_path, 
-                 gold=(5, 15), drop_weapon=None, image_size=160):
+                 gold=(5, 15), drop_weapon=None, image_size=160, drop_material=None):
         """
-        gold: (최소, 최대) 골드 드롭 범위
+        gold: (최소, 최대) 골드 드롭 범위, None이면 골드 안떨굼
         drop_weapon: 드롭할 무기 ID (보스 전용, None이면 무기 안떨굼)
         image_size: 몬스터 이미지 정사각형 한 변 길이 (기본 160)
+        drop_material: 드롭할 재료 {"type": "normal/rare/hero/legend", "min": 1, "max": 3}
         """
         self.name = name
         self.hp = hp
@@ -18,14 +19,22 @@ class MonsterData:
         self.gold = gold
         self.drop_weapon = drop_weapon
         self.image_size = image_size
+        self.drop_material = drop_material
     
     def get_drops(self):
         """드롭 아이템 계산"""
         drops = []
         
-        # 골드 드롭
-        gold_amount = random.randint(self.gold[0], self.gold[1])
-        drops.append({"type": "gold", "amount": gold_amount})
+        # 골드 드롭 (None이 아닐 때만)
+        if self.gold:
+            gold_amount = random.randint(self.gold[0], self.gold[1])
+            drops.append({"type": "gold", "amount": gold_amount})
+        
+        # 재료 드롭
+        if self.drop_material:
+            mat_type = self.drop_material["type"]
+            mat_amount = random.randint(self.drop_material["min"], self.drop_material["max"])
+            drops.append({"type": "material", "material_type": mat_type, "amount": mat_amount})
         
         # 무기 드롭 (보스만)
         if self.drop_weapon:
@@ -261,6 +270,76 @@ FLOOR_DATA = {
         # 보스: 황금왕 (무기 드롭)
         MonsterData("황금왕", 300, 12, "skeleton_boss", "resources/png/enemy/skeletons/rich_king.png",
                     gold=(500, 1000), drop_weapon="golden_sword", image_size=240),
+    ],
+    
+    # ==================== 31~40층: 골렘 ====================
+    31: [
+        MonsterData("골렘", 150, 8, "golem1", "resources/png/enemy/golems/golem.png",
+                    gold=None, image_size=200, drop_material={"type": "normal", "min": 2, "max": 4}),
+    ],
+    32: [
+        MonsterData("골렘", 150, 8, "golem1", "resources/png/enemy/golems/golem.png",
+                    gold=None, image_size=200, drop_material={"type": "normal", "min": 2, "max": 4}),
+        MonsterData("푸른 골렘", 140, 10, "golem2", "resources/png/enemy/golems/blue_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "normal", "min": 3, "max": 5}),
+    ],
+    33: [
+        MonsterData("골렘", 150, 8, "golem1", "resources/png/enemy/golems/golem.png",
+                    gold=None, image_size=200, drop_material={"type": "normal", "min": 2, "max": 4}),
+        MonsterData("붉은 골렘", 160, 9, "golem3", "resources/png/enemy/golems/red_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "rare", "min": 1, "max": 2}),
+    ],
+    34: [
+        MonsterData("푸른 골렘", 140, 10, "golem2", "resources/png/enemy/golems/blue_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "normal", "min": 3, "max": 5}),
+        MonsterData("붉은 골렘", 160, 9, "golem3", "resources/png/enemy/golems/red_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "rare", "min": 1, "max": 2}),
+    ],
+    35: [
+        MonsterData("골렘", 150, 8, "golem1", "resources/png/enemy/golems/golem.png",
+                    gold=None, image_size=200, drop_material={"type": "normal", "min": 2, "max": 4}),
+        MonsterData("검은 골렘", 180, 7, "golem4", "resources/png/enemy/golems/black_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "rare", "min": 2, "max": 3}),
+    ],
+    36: [
+        MonsterData("푸른 골렘", 140, 10, "golem2", "resources/png/enemy/golems/blue_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "normal", "min": 3, "max": 5}),
+        MonsterData("검은 골렘", 180, 7, "golem4", "resources/png/enemy/golems/black_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "rare", "min": 2, "max": 3}),
+    ],
+    37: [
+        MonsterData("붉은 골렘", 160, 9, "golem3", "resources/png/enemy/golems/red_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "rare", "min": 1, "max": 2}),
+        MonsterData("킬러 골렘", 190, 11, "golem5", "resources/png/enemy/golems/killer_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "hero", "min": 1, "max": 2}),
+    ],
+    38: [
+        MonsterData("검은 골렘", 180, 7, "golem4", "resources/png/enemy/golems/black_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "rare", "min": 2, "max": 3}),
+        MonsterData("킬러 골렘", 190, 11, "golem5", "resources/png/enemy/golems/killer_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "hero", "min": 1, "max": 2}),
+    ],
+    39: [
+        MonsterData("푸른 골렘", 140, 10, "golem2", "resources/png/enemy/golems/blue_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "normal", "min": 3, "max": 5}),
+        MonsterData("붉은 골렘", 160, 9, "golem3", "resources/png/enemy/golems/red_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "rare", "min": 1, "max": 2}),
+        MonsterData("검은 골렘", 180, 7, "golem4", "resources/png/enemy/golems/black_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "rare", "min": 2, "max": 3}),
+        MonsterData("킬러 골렘", 190, 11, "golem5", "resources/png/enemy/golems/killer_golem.png",
+                    gold=None, image_size=200, drop_material={"type": "hero", "min": 1, "max": 2}),
+    ],
+    40: [
+        MonsterData("골렘", 150, 8, "golem1", "resources/png/enemy/golems/golem.png",
+                    gold=None, image_size=200, drop_material={"type": "normal", "min": 2, "max": 4}),
+        MonsterData("골렘", 150, 8, "golem1", "resources/png/enemy/golems/golem.png",
+                    gold=None, image_size=200, drop_material={"type": "normal", "min": 2, "max": 4}),
+        MonsterData("골렘", 150, 8, "golem1", "resources/png/enemy/golems/golem.png",
+                    gold=None, image_size=200, drop_material={"type": "normal", "min": 2, "max": 4}),
+        # 보스: 마공학 골렘 (전설 무기 + 전설 재료 드롭)
+        MonsterData("마공학 골렘", 500, 12, "golem_boss", "resources/png/enemy/golems/hextech_golem.png",
+                    gold=(800, 1500), drop_weapon="hextech_hammer", image_size=280, 
+                    drop_material={"type": "legend", "min": 1, "max": 3}),
     ],
 }
 

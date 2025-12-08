@@ -3,7 +3,7 @@ from scripts.skills import ALL_SKILLS
 class Weapon:
     """무기 기본 클래스"""
     def __init__(self, id_, name, grade, max_durability, skill_ids, description="", image_path="",
-                 transcend_skill=None, is_boss_drop=False):
+                 transcend_skill=None, is_boss_drop=False, transcend_passive=None):
         self.id = id_
         self.name = name
         self.grade = grade  # 등급: "일반", "희귀", "영웅", "전설" 등
@@ -17,20 +17,56 @@ class Weapon:
         self.upgrade_level = 0  # 강화 레벨 (0~5)
         self.bonus_power = 0  # 추가 공격력 (강화당 +1)
         self.is_transcended = False  # 초월 여부
-        self.transcend_skill = transcend_skill  # 초월 시 해금되는 스킬 ID
+        self.transcend_skill = transcend_skill  # 초월 시 해금되는 스킬 ID (영웅 이하)
+        self.transcend_passive = transcend_passive  # 초월 시 해금되는 패시브 (전설)
         self.is_boss_drop = is_boss_drop  # 보스 드롭 무기 여부 (합성 불가)
+        
+        # 패시브 관련 (전설 무기용)
+        self.passive_stacks = 0  # 패시브 스택 수
     
     def get_skills(self):
         """무기가 사용 가능한 스킬 객체 리스트 반환"""
         return [ALL_SKILLS[skill_id] for skill_id in self.skill_ids if skill_id in ALL_SKILLS]
     
     def get_skill_power(self, skill_id):
-        """강화 보너스가 적용된 스킬 위력 반환"""
+        """강화 보너스 + 패시브 보너스가 적용된 스킬 위력 반환"""
         if skill_id not in ALL_SKILLS:
             return 0
         
         base_power = ALL_SKILLS[skill_id].power
-        return base_power + self.bonus_power
+        passive_bonus = self.get_passive_bonus()
+        return base_power + self.bonus_power + passive_bonus
+    
+    def get_passive_bonus(self):
+        """패시브로 인한 추가 공격력 반환"""
+        if self.is_transcended and self.transcend_passive:
+            # 패시브 타입에 따라 보너스 계산
+            if self.transcend_passive == "stack_power":
+                return self.passive_stacks  # 스택당 +1 공격력
+            elif self.transcend_passive == "overcharge":
+                # 내구도가 낮을수록 공격력 증가 (50% 이하부터 최대 +20)
+                ratio = self.durability / self.max_durability
+                if ratio <= 0.5:
+                    return int((0.5 - ratio) * 40)  # 0%일 때 +20, 50%일 때 +0
+        return 0
+    
+    def on_skill_used(self):
+        """스킬 사용 후 호출 (패시브 효과 적용)"""
+        if self.is_transcended and self.transcend_passive == "stack_power":
+            self.passive_stacks += 1  # 스킬 사용할 때마다 스택 증가
+    
+    def reset_passive_stacks(self):
+        """전투 종료 시 패시브 스택 초기화"""
+        self.passive_stacks = 0
+    
+    def get_passive_description(self):
+        """패시브 설명 반환"""
+        if self.transcend_passive == "stack_power":
+            return f"[패시브] 성검의 각성: 스킬 사용 시 공격력 +1 (현재: +{self.passive_stacks})"
+        elif self.transcend_passive == "overcharge":
+            bonus = self.get_passive_bonus()
+            return f"[패시브] 과부하: 내구도가 낮을수록 공격력 증가 (현재: +{bonus})"
+        return ""
     
     def use_skill(self, skill):
         """스킬 사용 시 내구도 감소 (음수 소모는 회복, 최대 내구도 제한)"""
@@ -39,6 +75,8 @@ class Weapon:
             # 최대 내구도를 넘지 않도록 제한
             if self.durability > self.max_durability:
                 self.durability = self.max_durability
+            # 패시브 효과 적용
+            self.on_skill_used()
             return True
         return False
     
@@ -79,7 +117,7 @@ WOODEN_STICK = Weapon(
     id_="wooden_stick",
     name="나무 막대기",
     grade="일반",
-    max_durability=20,
+    max_durability=30,
     skill_ids=["swing"],
     description="평범한 나무 막대기. 기본적인 공격만 가능하다.",
     image_path="resources/png/weapon/wooden_stick.png",
@@ -400,6 +438,90 @@ RICH_KING_SWORD = Weapon(
     image_path=""
 )
 
+# ==================== 몬스터 전용 무기 (골렘) ====================
+
+GOLEM_FIST = Weapon(
+    id_="golem1",
+    name="골렘의 주먹",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["stone_punch", "rock_throw"],
+    image_path=""
+)
+
+BLUE_GOLEM_FIST = Weapon(
+    id_="golem2",
+    name="푸른 골렘의 주먹",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["ice_punch", "frost_breath"],
+    image_path=""
+)
+
+RED_GOLEM_FIST = Weapon(
+    id_="golem3",
+    name="붉은 골렘의 주먹",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["lava_fist", "eruption"],
+    image_path=""
+)
+
+BLACK_GOLEM_FIST = Weapon(
+    id_="golem4",
+    name="검은 골렘의 주먹",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["shadow_fist", "void_crush"],
+    image_path=""
+)
+
+KILLER_GOLEM_HAMMER = Weapon(
+    id_="golem5",
+    name="킬러 골렘의 해머",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["bloody_rampage", "hammer_crush"],
+    image_path=""
+)
+
+HEXTECH_GOLEM_CORE = Weapon(
+    id_="golem_boss",
+    name="마공학 골렘의 코어",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["hextech_beam", "core_overload"],
+    image_path=""
+)
+
+# ==================== 보스 드롭 무기 (골렘) ====================
+
+HEXTECH_HAMMER = Weapon(
+    id_="hextech_hammer",
+    name="마공학 해머",
+    grade="전설",
+    max_durability=350,
+    skill_ids=["hextech_strike", "energy_wave", "overcharge_smash", "core_charge"],
+    description="마공학 골렘의 코어로 만든 전설의 해머. 마법 기술의 정수가 담겨있다.",
+    image_path="resources/png/weapon/hextech_hammer.png",
+    transcend_passive="overcharge",  # 초월 패시브: 내구도가 낮을수록 공격력 증가
+    is_boss_drop=True
+)
+
+# ==================== 전설 무기 ====================
+
+EXCALIBUR = Weapon(
+    id_="excalibur",
+    name="엑스칼리버",
+    grade="전설",
+    max_durability=500,
+    skill_ids=["holy_slash", "light_burst", "divine_judgment", "blessing_of_light"],
+    description="전설 속에만 존재하던 성스러운 검. 선택받은 자만이 그 진정한 힘을 발휘할 수 있다.",
+    image_path="resources/png/weapon/excalibur.png",
+    transcend_passive="stack_power",  # 초월 패시브: 스킬 사용 시 공격력 +1 스택
+    is_boss_drop=False
+)
+
 # 무기 딕셔너리 (ID로 접근 가능)
 ALL_WEAPONS = {
     "test_sword": TESTER_SWORD,
@@ -416,6 +538,9 @@ ALL_WEAPONS = {
     "slime_wand": SLIME_WAND,
     "golden_sword": GOLDEN_SWORD,
     "goblin_big_axe": GOBLIN_BIG_AXE,
+    "hextech_hammer": HEXTECH_HAMMER,
+    # 전설 무기
+    "excalibur": EXCALIBUR,
     # 몬스터 무기 (슬라임)
     "slime1": SLIME_BODY,
     "slime2": RED_SLIME_BODY,
@@ -440,6 +565,13 @@ ALL_WEAPONS = {
     "goblin4": GOBLIN_AXE,
     "goblin5": GOBLIN_STAFF,
     "goblin_boss": MUTANT_GOBLIN_FIST,
+    # 몬스터 무기 (골렘)
+    "golem1": GOLEM_FIST,
+    "golem2": BLUE_GOLEM_FIST,
+    "golem3": RED_GOLEM_FIST,
+    "golem4": BLACK_GOLEM_FIST,
+    "golem5": KILLER_GOLEM_HAMMER,
+    "golem_boss": HEXTECH_GOLEM_CORE,
 }
 
 def create_weapon(weapon_id):
@@ -457,6 +589,7 @@ def create_weapon(weapon_id):
         description=template.description,
         image_path=template.image_path,
         transcend_skill=template.transcend_skill,
-        is_boss_drop=template.is_boss_drop
+        is_boss_drop=template.is_boss_drop,
+        transcend_passive=template.transcend_passive
     )
     return weapon

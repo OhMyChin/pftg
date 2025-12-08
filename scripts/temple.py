@@ -15,6 +15,9 @@ temple_state = {
     "message_timer": 0,
 }
 
+# --- 프롤로그 완료 여부 ---
+prologue_completed = False
+
 # --- 방문 기록 (질문 해금용) ---
 visited_places = {
     "shop": False,
@@ -25,6 +28,7 @@ visited_places = {
     "boss_king_slime": False,  # 킹 슬라임 처치
     "boss_mutant_goblin": False,  # 뮤턴트 고블린 처치
     "boss_golden_king": False,  # 황금왕 처치
+    "boss_hextech_golem": False,  # 마공학 골렘 처치
 }
 
 # --- 무기 보관함 ---
@@ -38,7 +42,11 @@ STORY_DATA = {
             "당신은 눈을 떴다. 낯선 마을, 낯선 하늘...",
             "기억이 없다. 이름조차 희미하게 느껴진다.",
             "마을 사람들은 당신을 '이방인'이라 불렀다.",
-            "던전에서 답을 찾으라는 신관의 말이 떠오른다..."
+            "던전에서 답을 찾으라는 신관의 말이 떠오른다...",
+            "신관이 말했다. '던전은 위험합니다. 무기가 필요할 것입니다.'",
+            "하지만 줄 수 있는 무기가 없다고 한다.",
+            "신전 구석에 버려진 나무 막대기가 눈에 들어왔다.",
+            "...이거라도 들고 가야겠다."
         ],
         "unlock_floor": 0
     },
@@ -72,6 +80,18 @@ STORY_DATA = {
             "'더 깊이... 진실은 더 깊은 곳에...'"
         ],
         "unlock_floor": 30
+    },
+    4: {
+        "title": "4장: 마법사의 유산",
+        "pages": [
+            "마공학 골렘... 그것은 단순한 몬스터가 아니었다.",
+            "마법과 기술의 결정체, 헥스텍의 힘이 깃든 인공 생명체.",
+            "던전을 만든 마법사가 남긴 최후의 수호자였다.",
+            "골렘의 코어에서 발견된 기록에는 이런 문구가 있었다.",
+            "'내 연구의 끝에는 영원이 있다. 그리고 영원의 끝에는...'",
+            "문장은 거기서 끊겨 있었다."
+        ],
+        "unlock_floor": 40
     },
 }
 
@@ -124,7 +144,7 @@ QUESTION_DATA = {
             "철광석은 가장 흔한 광석이고, 미스릴은 희귀한 광석입니다.",
             "오리하르콘은 영웅급 무기에서만 얻을 수 있는 귀한 광석이지요.",
             "전설급 무기에서는 아다만티움이라는 최고급 광석이 나옵니다.",
-            "좋은 무기를 강화하려면 많은 광석이 필요합니다."
+            "좋은 무기를 합성하려면 많은 광석이 필요합니다."
         ],
         "unlock_key": "blacksmith_decompose"
     },
@@ -179,6 +199,19 @@ QUESTION_DATA = {
             "당신 덕분에 그는 드디어 안식을 찾았을 것입니다. 감사합니다."
         ],
         "unlock_key": "boss_golden_king"
+    },
+    "boss_magolem": {
+        "title": "마공학 골렘에 대하여",
+        "speaker": "신관",
+        "lines": [
+            "마공학 골렘을 쓰러뜨리셨다고요...? 놀랍습니다.",
+            "그것은 던전을 만든 마법사의 최고 걸작이었습니다.",
+            "헥스텍... 마법과 기술을 융합한 금지된 학문이지요.",
+            "마법사는 헥스텍으로 영원히 움직이는 생명체를 만들려 했습니다.",
+            "마공학 골렘은 그 연구의 완성체... 혹은 실패작이었을지도 모릅니다.",
+            "그 해머에 담긴 힘을 잘 사용하시길 바랍니다."
+        ],
+        "unlock_key": "boss_hextech_golem"
     },
 }
 
@@ -411,7 +444,7 @@ def draw_menu(screen, font_main, font_small, width, height):
 
 def draw_dialogue_menu(screen, font_main, font_small, width, height):
     """대화 서브메뉴: 스토리, 대화"""
-    menu_items = ["스토리", "대화"]
+    menu_items = ["스토리", "질문"]
     
     # 대화 박스
     dialog_height = 179
@@ -533,7 +566,7 @@ def draw_story(screen, font_main, font_small, width, height):
 
 
 def draw_question_select(screen, font_main, font_small, width, height):
-    """대화 선택 화면 - 대장간 스타일 팝업"""
+    """질문 선택 화면 - 대장간 스타일 팝업"""
     unlocked = get_unlocked_questions()
     
     # 중앙 팝업
@@ -545,12 +578,12 @@ def draw_question_select(screen, font_main, font_small, width, height):
     
     # 제목
     title_font = pygame.font.Font(FONT_PATH, 28) if FONT_PATH else font_small
-    title = title_font.render("대화 선택", True, (150, 220, 255))
+    title = title_font.render("질문 선택", True, (150, 220, 255))
     screen.blit(title, (px + pw // 2 - title.get_width() // 2, py + 15))
     
     if not unlocked:
         no_q_font = pygame.font.Font(FONT_PATH, 22) if FONT_PATH else font_small
-        no_q_text = no_q_font.render("아직 해금된 대화가 없습니다.", True, (180, 180, 180))
+        no_q_text = no_q_font.render("아직 해금된 질문이 없습니다.", True, (180, 180, 180))
         screen.blit(no_q_text, (px + pw // 2 - no_q_text.get_width() // 2, py + ph // 2 - 30))
         no_q_text2 = no_q_font.render("마을을 둘러보세요.", True, (180, 180, 180))
         screen.blit(no_q_text2, (px + pw // 2 - no_q_text2.get_width() // 2, py + ph // 2 + 10))
@@ -816,10 +849,22 @@ def handle_temple_input(events, game_state):
                 unlocked = get_unlocked_stories()
                 if event.key in [pygame.K_RETURN, pygame.K_SPACE]:
                     if unlocked:
-                        _, story = unlocked[temple_state["story_index"]]
+                        story_key, story = unlocked[temple_state["story_index"]]
                         if temple_state["story_page"] < len(story["pages"]) - 1:
                             temple_state["story_page"] += 1
                         else:
+                            # 프롤로그(스토리 0) 완료 시 나무막대기 지급
+                            global prologue_completed
+                            if story_key == 0 and not prologue_completed:
+                                prologue_completed = True
+                                from scripts.weapons import create_weapon
+                                from scripts import inventory
+                                wooden_stick = create_weapon("excalibur")
+                                if wooden_stick:
+                                    inventory.player_inventory["weapons"].append(wooden_stick)
+                                    temple_state["message"] = "나무 막대기를 획득했습니다!"
+                                    temple_state["message_timer"] = 0
+                            
                             # 다음 스토리 or 돌아가기
                             if temple_state["story_index"] < len(unlocked) - 1:
                                 temple_state["story_index"] += 1

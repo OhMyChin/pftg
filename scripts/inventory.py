@@ -25,7 +25,7 @@ def wrap_text(text, font, max_width):
 inventory_state = {
     "current_tab": "weapon",  # "weapon" 또는 "consume"
     "selected_area": "slots",  # "tabs", "slots", 또는 "pages"
-    "selected_tab_index": 0,  # 0: 무기, 1: 소비
+    "selected_tab_index": 0,  # 0: 무기, 1: 소비, 2: 재화
     "selected_row": 1,  # 0: 장착템, 1~3: 보유템
     "selected_col": 0,
     "weapon_page": 0,  # 0 또는 1
@@ -52,33 +52,28 @@ player_inventory = {
     "consumables": []  # 소비 아이템 리스트
 }
 
-# 최대 무기 칸 (장착 + 보유 합계)
-MAX_WEAPONS = 42  # 장착 최대 6 + 보유 최대 36
-
-
 def try_add_weapon(weapon):
     """
-    무기 획득 통합 함수 - 모든 무기 획득 경로에서 사용
-    상점, 이스터에그, 보스 드롭, 랜덤박스 등
-    
-    Returns:
-        tuple: (added_to_inventory: bool, message: str)
+    무기를 인벤토리에 추가 시도. 가득 차면 신전 보관함으로.
+    반환: (성공여부, 메시지)
+    - (True, "inventory") - 인벤토리에 추가됨
+    - (True, "storage") - 신전 보관함에 추가됨
+    - (False, "error") - 실패
     """
-    global player_inventory
+    if weapon is None:
+        return (False, "error")
     
-    # 보유칸만 체크 (장착칸 제외)
-    weapons_count = len(player_inventory["weapons"])
-    max_weapons = inventory_state["max_inventory_slots"]
+    max_slots = inventory_state["max_inventory_slots"]
+    current_count = len(player_inventory["weapons"])
     
-    if weapons_count < max_weapons:
-        # 보유칸에 공간 있음
+    if current_count < max_slots:
         player_inventory["weapons"].append(weapon)
-        return (True, "인벤토리에 추가됨")
+        return (True, "inventory")
     else:
-        # 보유칸 꽉 참 -> 신전 보관함으로
-        from scripts import temple
-        temple.add_weapon_to_storage(weapon)
-        return (False, "신전 보관함으로 이동")
+        # 신전 보관함으로 전송
+        from scripts.temple import weapon_storage
+        weapon_storage.append(weapon)
+        return (True, "storage")
 
 def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, dt, font_path=None, game_state=None):
     """인벤토리 화면 그리기"""
@@ -265,16 +260,20 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
                 y_offset += 22
     
     # ===== 탭 버튼 =====
-    tab_button_width = 130
+    tab_button_width = 100
     tab_button_height = 45
     
     weapon_tab_rect = pygame.Rect(tab_area_x, tab_area_y, tab_button_width, tab_button_height)
     consume_tab_rect = pygame.Rect(tab_area_x + tab_button_width + 10, tab_area_y, tab_button_width, tab_button_height)
+    currency_tab_rect = pygame.Rect(tab_area_x + (tab_button_width + 10) * 2, tab_area_y, tab_button_width, tab_button_height)
     
     weapon_color = (150, 150, 250) if inventory_state["current_tab"] == "weapon" else (80, 80, 100)
     consume_color = (150, 150, 250) if inventory_state["current_tab"] == "consume" else (80, 80, 100)
+    currency_color = (150, 150, 250) if inventory_state["current_tab"] == "currency" else (80, 80, 100)
     
     pygame.draw.rect(screen, weapon_color, weapon_tab_rect)
+    pygame.draw.rect(screen, consume_color, consume_tab_rect)
+    pygame.draw.rect(screen, currency_color, currency_tab_rect)
     
     # 탭이 선택되었는지 체크
     if inventory_state["selected_area"] == "tabs":
@@ -282,24 +281,28 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
             pygame.draw.rect(screen, (100, 150, 255), weapon_tab_rect, 4)
         else:
             pygame.draw.rect(screen, (255, 255, 255), weapon_tab_rect, 3)
-    else:
-        pygame.draw.rect(screen, (255, 255, 255), weapon_tab_rect, 3)
-    
-    pygame.draw.rect(screen, consume_color, consume_tab_rect)
-    
-    if inventory_state["selected_area"] == "tabs":
+        
         if inventory_state["selected_tab_index"] == 1:
             pygame.draw.rect(screen, (100, 150, 255), consume_tab_rect, 4)
         else:
             pygame.draw.rect(screen, (255, 255, 255), consume_tab_rect, 3)
+        
+        if inventory_state["selected_tab_index"] == 2:
+            pygame.draw.rect(screen, (100, 150, 255), currency_tab_rect, 4)
+        else:
+            pygame.draw.rect(screen, (255, 255, 255), currency_tab_rect, 3)
     else:
+        pygame.draw.rect(screen, (255, 255, 255), weapon_tab_rect, 3)
         pygame.draw.rect(screen, (255, 255, 255), consume_tab_rect, 3)
+        pygame.draw.rect(screen, (255, 255, 255), currency_tab_rect, 3)
     
     weapon_text = font_small.render("무기", True, (255, 255, 255))
     consume_text = font_small.render("소비", True, (255, 255, 255))
+    currency_text = font_small.render("재화", True, (255, 255, 255))
     
     screen.blit(weapon_text, weapon_text.get_rect(center=weapon_tab_rect.center))
     screen.blit(consume_text, consume_text.get_rect(center=consume_tab_rect.center))
+    screen.blit(currency_text, currency_text.get_rect(center=currency_tab_rect.center))
     
     # ===== 아이템 슬롯 영역 =====
     slots_start_y = tab_area_y + tab_button_height + 15
@@ -406,23 +409,8 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
         next_text = font_small.render("다음", True, next_text_color)
         next_text_rect = next_text.get_rect(center=next_button_rect.center)
         screen.blit(next_text, next_text_rect)
-        
-        # ===== 골드 정보 표시 (페이지 버튼 아래, 슬롯 영역 우측 정렬) =====
-        if game_state:
-            gold_text = font_small.render(f"골드: {game_state.get('gold', 0)}G", True, (255, 215, 0))
-            gold_y = page_button_y + page_button_height + 25
-            # 슬롯 영역 끝에 맞춤 (tab_area_x + 6슬롯 + 5간격)
-            slots_end_x = tab_area_x + 6 * slot_size + 5 * slot_gap
-            gold_rect = gold_text.get_rect(topright=(slots_end_x, gold_y))
-            
-            # 골드 배경 박스
-            gold_bg_rect = pygame.Rect(gold_rect.x - 15, gold_rect.y - 10, gold_rect.width + 30, gold_rect.height + 20)
-            pygame.draw.rect(screen, (40, 40, 50), gold_bg_rect)
-            pygame.draw.rect(screen, (255, 215, 0), gold_bg_rect, 2)
-            
-            screen.blit(gold_text, gold_rect)
     
-    else:  # consume 탭
+    elif inventory_state["current_tab"] == "consume":
         consume_area_y = slots_start_y
         max_pages = max(1, (len(player_inventory["consumables"]) + 29) // 30)  # 5*6=30칸
         
@@ -500,6 +488,53 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
         next_text = font_small.render("다음", True, next_text_color)
         next_text_rect = next_text.get_rect(center=next_button_rect.center)
         screen.blit(next_text, next_text_rect)
+    
+    elif inventory_state["current_tab"] == "currency":
+        # 재화 탭 화면
+        from scripts.blacksmith import player_materials, MATERIAL_NAMES
+        
+        currency_area_y = slots_start_y + 20
+        currency_area_x = tab_area_x
+        
+        # 배경 박스
+        bg_width = 6 * slot_size + 5 * slot_gap
+        bg_height = 280
+        bg_rect = pygame.Rect(currency_area_x - 10, currency_area_y - 10, bg_width + 20, bg_height)
+        pygame.draw.rect(screen, (30, 30, 40), bg_rect)
+        pygame.draw.rect(screen, (100, 100, 120), bg_rect, 3)
+        
+        y_offset = currency_area_y + 15
+        
+        # 골드 표시
+        gold_amount = game_state.get("gold", 0) if game_state else 0
+        gold_color = (255, 215, 0)
+        gold_text = font_small.render(f"골드: {gold_amount}G", True, gold_color)
+        screen.blit(gold_text, (currency_area_x + 20, y_offset))
+        y_offset += 45
+        
+        # 구분선
+        pygame.draw.line(screen, (80, 80, 100), (currency_area_x + 10, y_offset), 
+                        (currency_area_x + bg_width - 10, y_offset), 2)
+        y_offset += 20
+        
+        # 광석 표시 (대장간 GRADE_COLORS 사용)
+        material_colors = {
+            "normal": (200, 200, 200),   # 철광석 - 일반 (회색)
+            "rare": (100, 150, 255),     # 미스릴 - 희귀 (파란색)
+            "hero": (200, 100, 255),     # 오리하르콘 - 영웅 (보라색)
+            "legend": (255, 200, 50)     # 아다만티움 - 전설 (황금색)
+        }
+        
+        material_order = ["normal", "rare", "hero", "legend"]
+        
+        for mat_key in material_order:
+            mat_name = MATERIAL_NAMES.get(mat_key, mat_key)
+            mat_amount = player_materials.get(mat_key, 0)
+            mat_color = material_colors.get(mat_key, (255, 255, 255))
+            
+            mat_text = font_small.render(f"{mat_name}: {mat_amount}개", True, mat_color)
+            screen.blit(mat_text, (currency_area_x + 20, y_offset))
+            y_offset += 40
     
     # ===== 정보 화면 표시 (최우선) =====
     if inventory_state["info_screen_open"]:
@@ -1000,8 +1035,10 @@ def handle_inventory_input(events, battle_player):
                     # 탭 전환 (선택 영역과 위치 모두 유지)
                     if inventory_state["selected_tab_index"] == 0:
                         inventory_state["current_tab"] = "weapon"
-                    else:
+                    elif inventory_state["selected_tab_index"] == 1:
                         inventory_state["current_tab"] = "consume"
+                    else:
+                        inventory_state["current_tab"] = "currency"
                     # selected_area, row, col 모두 그대로 유지
                 elif inventory_state["current_tab"] == "weapon":
                     if inventory_state["selected_area"] == "pages":
@@ -1047,17 +1084,18 @@ def move_selection(d_row, d_col):
         # 탭 영역에서 이동
         if d_col != 0:
             new_index = inventory_state["selected_tab_index"] + d_col
-            if 0 <= new_index <= 1:
+            if 0 <= new_index <= 2:  # 0: 무기, 1: 소비, 2: 재화
                 inventory_state["selected_tab_index"] = new_index
         
-        # 아래로 이동하면 슬롯 영역으로
+        # 아래로 이동하면 슬롯 영역으로 (재화 탭은 슬롯 없음)
         if d_row > 0:
-            inventory_state["selected_area"] = "slots"
-            if inventory_state["current_tab"] == "weapon":
-                inventory_state["selected_row"] = 0  # 장착템으로 이동
-            else:
-                inventory_state["selected_row"] = 0
-            inventory_state["selected_col"] = 0
+            if inventory_state["current_tab"] != "currency":
+                inventory_state["selected_area"] = "slots"
+                if inventory_state["current_tab"] == "weapon":
+                    inventory_state["selected_row"] = 0  # 장착템으로 이동
+                else:
+                    inventory_state["selected_row"] = 0
+                inventory_state["selected_col"] = 0
     
     elif inventory_state["current_tab"] == "weapon":
         if inventory_state["selected_area"] == "slots":

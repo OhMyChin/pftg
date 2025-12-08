@@ -662,3 +662,233 @@ ALL_SKILLS = {
     "executioner": EXECUTIONER,
     "titan_crush": TITAN_CRUSH,
 }
+
+
+# ==================== 몬스터 전용 스킬 (골렘) ====================
+
+STONE_PUNCH = Skill(
+    id_="stone_punch",
+    name="돌 주먹",
+    power=28,
+    priority=0,
+    durability_cost=15,
+    description="단단한 돌 주먹으로 적을 가격한다"
+)
+
+ROCK_THROW = Skill(
+    id_="rock_throw",
+    name="바위 던지기",
+    power=32,
+    priority=0,
+    durability_cost=20,
+    description="거대한 바위를 던져 적을 공격한다"
+)
+
+ICE_PUNCH = Skill(
+    id_="ice_punch",
+    name="얼음 주먹",
+    power=30,
+    priority=0,
+    durability_cost=18,
+    description="얼어붙은 주먹으로 적을 가격한다"
+)
+
+FROST_BREATH = Skill(
+    id_="frost_breath",
+    name="냉기 브레스",
+    power=35,
+    priority=0,
+    durability_cost=22,
+    description="차가운 냉기를 내뿜는다"
+)
+
+LAVA_FIST = Skill(
+    id_="lava_fist",
+    name="용암 주먹",
+    power=32,
+    priority=0,
+    durability_cost=20,
+    description="불타는 용암 주먹으로 적을 가격한다"
+)
+
+ERUPTION = Skill(
+    id_="eruption",
+    name="분화",
+    power=40,
+    priority=-1,
+    durability_cost=28,
+    description="몸에서 용암을 분출시킨다"
+)
+
+SHADOW_FIST = Skill(
+    id_="shadow_fist",
+    name="어둠의 주먹",
+    power=34,
+    priority=0,
+    durability_cost=22,
+    description="어둠에 물든 주먹으로 적을 가격한다"
+)
+
+VOID_CRUSH = Skill(
+    id_="void_crush",
+    name="공허의 분쇄",
+    power=42,
+    priority=0,
+    durability_cost=28,
+    description="공허의 힘으로 적을 분쇄한다"
+)
+
+HEXTECH_BEAM = Skill(
+    id_="hextech_beam",
+    name="헥스텍 빔",
+    power=45,
+    priority=1,
+    durability_cost=30,
+    description="마법 기술로 강력한 빔을 발사한다"
+)
+
+CORE_OVERLOAD = Skill(
+    id_="core_overload",
+    name="코어 과부하",
+    power=55,
+    priority=-1,
+    durability_cost=40,
+    description="코어의 에너지를 폭발시킨다"
+)
+
+BLOODY_RAMPAGE = Skill(
+    id_="bloody_rampage",
+    name="피의 광란",
+    power=50,
+    priority=0,
+    durability_cost=35,
+    description="피로 물든 채 광란에 빠져 난동을 부린다"
+)
+
+HAMMER_CRUSH = Skill(
+    id_="hammer_crush",
+    name="해머 분쇄",
+    power=60,
+    priority=-2,
+    durability_cost=45,
+    description="거대한 해머로 모든 것을 분쇄한다"
+)
+
+# ==================== 마공학 해머 스킬 (보스 드롭) ====================
+
+HEXTECH_STRIKE = Skill(
+    id_="hextech_strike",
+    name="헥스텍 스트라이크",
+    power=35,
+    priority=0,
+    durability_cost=25,
+    description="마법 기술이 깃든 해머로 적을 강타한다"
+)
+
+ENERGY_WAVE = Skill(
+    id_="energy_wave",
+    name="에너지 파동",
+    power=42,
+    priority=0,
+    durability_cost=30,
+    description="해머에서 에너지 파동을 발사한다"
+)
+
+OVERCHARGE_SMASH = Skill(
+    id_="overcharge_smash",
+    name="과충전 스매시",
+    power=50,
+    priority=-1,
+    durability_cost=38,
+    description="과충전된 에너지로 강력하게 내리친다"
+)
+
+# 초월 스킬
+HEXTECH_ANNIHILATION = Skill(
+    id_="hextech_annihilation",
+    name="헥스텍 섬멸",
+    power=70,
+    priority=-2,
+    durability_cost=50,
+    description="[초월] 헥스텍의 궁극적인 파괴력을 해방한다"
+)
+
+CORE_CHARGE = Skill(
+    id_="core_charge",
+    name="코어 충전",
+    power=0,
+    priority=2,
+    durability_cost=-40,
+    description="헥스텍 코어의 에너지를 충전하여 내구도를 회복한다"
+)
+
+# ALL_SKILLS 업데이트
+ALL_SKILLS.update({
+    # 골렘 스킬
+    "stone_punch": STONE_PUNCH,
+    "rock_throw": ROCK_THROW,
+    "ice_punch": ICE_PUNCH,
+    "frost_breath": FROST_BREATH,
+    "lava_fist": LAVA_FIST,
+    "eruption": ERUPTION,
+    "shadow_fist": SHADOW_FIST,
+    "void_crush": VOID_CRUSH,
+    "hextech_beam": HEXTECH_BEAM,
+    "core_overload": CORE_OVERLOAD,
+    "bloody_rampage": BLOODY_RAMPAGE,
+    "hammer_crush": HAMMER_CRUSH,
+    # 마공학 해머 스킬
+    "hextech_strike": HEXTECH_STRIKE,
+    "energy_wave": ENERGY_WAVE,
+    "overcharge_smash": OVERCHARGE_SMASH,
+    "hextech_annihilation": HEXTECH_ANNIHILATION,
+    "core_charge": CORE_CHARGE,
+})
+
+
+# ==================== 전설 무기 스킬 (엑스칼리버) ====================
+
+HOLY_SLASH = Skill(
+    id_="holy_slash",
+    name="성스러운 베기",
+    power=40,
+    priority=1,
+    durability_cost=30,
+    description="신성한 빛을 담은 검으로 적을 베어낸다"
+)
+
+LIGHT_BURST = Skill(
+    id_="light_burst",
+    name="빛의 폭발",
+    power=50,
+    priority=0,
+    durability_cost=40,
+    description="검에서 눈부신 빛을 폭발시켜 적을 공격한다"
+)
+
+DIVINE_JUDGMENT = Skill(
+    id_="divine_judgment",
+    name="신성한 심판",
+    power=65,
+    priority=0,
+    durability_cost=55,
+    description="하늘의 심판을 내려 적을 정화한다"
+)
+
+BLESSING_OF_LIGHT = Skill(
+    id_="blessing_of_light",
+    name="빛의 축복",
+    power=0,
+    priority=2,
+    durability_cost=-30,
+    description="성스러운 빛으로 검을 정화하여 내구도를 회복한다"
+)
+
+# ALL_SKILLS 업데이트
+ALL_SKILLS.update({
+    # 엑스칼리버 스킬
+    "holy_slash": HOLY_SLASH,
+    "light_burst": LIGHT_BURST,
+    "divine_judgment": DIVINE_JUDGMENT,
+    "blessing_of_light": BLESSING_OF_LIGHT,
+})

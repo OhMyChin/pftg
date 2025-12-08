@@ -891,7 +891,10 @@ def handle_compose(e, inv):
                     r, m = do_compose(w1, w2)
                     blacksmith_state["compose_slots"] = [None, None]
                     if r:
-                        inv["weapons"].append(r)
+                        from scripts.inventory import try_add_weapon
+                        success, location = try_add_weapon(r)
+                        if location == "storage":
+                            m = m + " (신전 보관)"
                     
                     # 애니메이션 시작
                     blacksmith_state["animating"] = True

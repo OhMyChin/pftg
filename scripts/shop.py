@@ -19,15 +19,15 @@ TAB_NAMES = ["포션", "키트", "무기", "기타"]
 SHOP_ITEMS = {
     # 탭 0: 포션
     0: [
-        {"id": "health_potion_small", "name": "작은 체력 물약", "price": 50, "type": "consumable"},
-        {"id": "health_potion_medium", "name": "중간 체력 물약", "price": 100, "type": "consumable"},
-        {"id": "health_potion_large", "name": "큰 체력 물약", "price": 200, "type": "consumable"},
+        {"id": "health_potion_small", "name": "작은 체력 물약", "price": 10, "type": "consumable"},
+        {"id": "health_potion_medium", "name": "중간 체력 물약", "price": 50, "type": "consumable"},
+        {"id": "health_potion_large", "name": "큰 체력 물약", "price": 100, "type": "consumable"},
     ],
     # 탭 1: 수리 키트
     1: [
-        {"id": "repair_kit_basic", "name": "초급 수리 키트", "price": 50, "type": "consumable"},
-        {"id": "repair_kit_advanced", "name": "중급 수리 키트", "price": 100, "type": "consumable"},
-        {"id": "repair_kit_master", "name": "고급 수리 키트", "price": 200, "type": "consumable"},
+        {"id": "repair_kit_basic", "name": "초급 수리 키트", "price": 10, "type": "consumable"},
+        {"id": "repair_kit_advanced", "name": "중급 수리 키트", "price": 50, "type": "consumable"},
+        {"id": "repair_kit_master", "name": "고급 수리 키트", "price": 100, "type": "consumable"},
     ],
     # 탭 2: 무기
     2: [
@@ -664,20 +664,21 @@ def handle_shop_input(events, game_state):
                                     # 무기 추가
                                     weapon = create_weapon(item["id"])
                                     if weapon:
-                                        player_inventory["weapons"].append(weapon)
-                                        shop_state["message"] = f"{item['name']}을(를) 구매했습니다!"
+                                        from scripts.inventory import try_add_weapon
+                                        success, location = try_add_weapon(weapon)
+                                        if location == "storage":
+                                            shop_state["message"] = f"{item['name']}을(를) 구매! (신전 보관)"
+                                        else:
+                                            shop_state["message"] = f"{item['name']}을(를) 구매했습니다!"
                                         shop_state["message_timer"] = 0
                                 elif item["type"] == "consumable":
                                     # 소모품 추가
                                     from scripts.consume import create_consumable
-                                    from scripts import temple
                                     consumable = create_consumable(item["id"])
                                     if consumable:
                                         player_inventory["consumables"].append(consumable)
                                         shop_state["message"] = f"{item['name']}을(를) 구매했습니다!"
                                         shop_state["message_timer"] = 0
-                                        # 소비템 구매 기록
-                                        temple.set_visited("shop_consumable")
                                 elif item["type"] == "bag":
                                     # 가방 구매 - 인벤토리 확장
                                     from scripts.inventory import inventory_state
@@ -717,10 +718,12 @@ def handle_shop_input(events, game_state):
                                         weapon_id = random.choice(available_weapons)
                                         weapon = create_weapon(weapon_id)
                                         if weapon:
-                                            player_inventory["weapons"].append(weapon)
-                                            # 등급별 색상 지정
-                                            grade_color = {"일반": "흰색", "희귀": "파란색", "영웅": "보라색"}
-                                            shop_state["message"] = f"[{target_grade}] {weapon.name} 획득!"
+                                            from scripts.inventory import try_add_weapon
+                                            success, location = try_add_weapon(weapon)
+                                            if location == "storage":
+                                                shop_state["message"] = f"[{target_grade}] {weapon.name} 획득! (신전 보관)"
+                                            else:
+                                                shop_state["message"] = f"[{target_grade}] {weapon.name} 획득!"
                                             shop_state["message_timer"] = 0
                                     else:
                                         shop_state["message"] = "랜덤 박스 오류!"
