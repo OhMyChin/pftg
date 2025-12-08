@@ -33,9 +33,12 @@ class Weapon:
         return base_power + self.bonus_power
     
     def use_skill(self, skill):
-        """스킬 사용 시 내구도 감소"""
+        """스킬 사용 시 내구도 감소 (음수 소모는 회복, 최대 내구도 제한)"""
         if self.durability >= skill.durability_cost:
             self.durability -= skill.durability_cost
+            # 최대 내구도를 넘지 않도록 제한
+            if self.durability > self.max_durability:
+                self.durability = self.max_durability
             return True
         return False
     
@@ -168,7 +171,7 @@ SLIME_WAND = Weapon(
     id_="slime_wand",
     name="킹 슬라임의 지팡이",
     grade="영웅",
-    max_durability=300,
+    max_durability=400,
     skill_ids=["blood_bite", "magma_shot", "slime_slash"],
     description="킹 슬라임의 힘이 깃든 지팡이. 상위 슬라임들의 기술을 사용할 수 있다.",
     image_path="resources/png/weapon/slime_wand.png",
@@ -176,7 +179,31 @@ SLIME_WAND = Weapon(
     is_boss_drop=True  # 보스 드롭 무기
 )
 
-# ==================== 몬스터 전용 무기 ====================
+GOLDEN_SWORD = Weapon(
+    id_="golden_sword",
+    name="황금왕의 검",
+    grade="영웅",
+    max_durability=300,
+    skill_ids=["golden_slash", "sword_rain", "kings_judgment"],
+    description="황금왕이 사용하던 전설의 검. 무한한 부와 권력의 상징이다.",
+    image_path="resources/png/weapon/golden_sword.png",
+    transcend_skill="kings_judgment",
+    is_boss_drop=True
+)
+
+GOBLIN_BIG_AXE = Weapon(
+    id_="goblin_big_axe",
+    name="뮤턴트의 대도끼",
+    grade="영웅",
+    max_durability=250,
+    skill_ids=["giant_cleave", "whirlwind_axe", "executioner"],
+    description="뮤턴트 고블린이 휘두르던 거대한 도끼. 그 무게만으로도 적을 압도한다.",
+    image_path="resources/png/weapon/goblin_big_axe.png",
+    transcend_skill="titan_crush",
+    is_boss_drop=True
+)
+
+# ==================== 몬스터 전용 무기 (슬라임) ====================
 
 SLIME_BODY = Weapon(
     id_="slime1",
@@ -259,6 +286,120 @@ KING_SLIME_BODY = Weapon(
     image_path=""
 )
 
+# ==================== 몬스터 전용 무기 (스켈레톤) ====================
+
+# ==================== 몬스터 전용 무기 (고블린) ====================
+
+GOBLIN_CLUB = Weapon(
+    id_="goblin1",
+    name="고블린의 몽둥이",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["club_swing"],
+    image_path=""
+)
+
+GOBLIN_BOW = Weapon(
+    id_="goblin2",
+    name="궁수 고블린의 활",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["goblin_arrow"],
+    image_path=""
+)
+
+GOBLIN_DAGGER = Weapon(
+    id_="goblin3",
+    name="도적 고블린의 단검",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["sneak_attack", "steal"],
+    image_path=""
+)
+
+GOBLIN_AXE = Weapon(
+    id_="goblin4",
+    name="전사 고블린의 도끼",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["axe_slash", "shield_bash"],
+    image_path=""
+)
+
+GOBLIN_STAFF = Weapon(
+    id_="goblin5",
+    name="마법사 고블린의 지팡이",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["fireball", "dark_magic"],
+    image_path=""
+)
+
+MUTANT_GOBLIN_FIST = Weapon(
+    id_="goblin_boss",
+    name="뮤턴트 고블린의 주먹",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["mutant_smash", "berserk_rage"],
+    image_path=""
+)
+
+# ==================== 몬스터 전용 무기 (스켈레톤) ====================
+
+SKELETON_BONE = Weapon(
+    id_="skeleton1",
+    name="스켈레톤의 뼈",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["bone_strike"],
+    image_path=""
+)
+
+MUSCLE_SKELETON_BODY = Weapon(
+    id_="skeleton2",
+    name="머슬 스켈레톤의 몸",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["muscle_punch", "muscle_charge"],
+    image_path=""
+)
+
+PSYCHIC_SKELETON_MIND = Weapon(
+    id_="skeleton3",
+    name="사이킥 스켈레톤의 정신",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["psychic_wave", "mind_crush"],
+    image_path=""
+)
+
+DARK_SKELETON_SHADOW = Weapon(
+    id_="skeleton4",
+    name="다크 스켈레톤의 그림자",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["dark_claw", "shadow_bolt"],
+    image_path=""
+)
+
+WING_SKELETON_WINGS = Weapon(
+    id_="skeleton5",
+    name="윙 스켈레톤의 날개",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["wing_slash", "dive_attack"],
+    image_path=""
+)
+
+RICH_KING_SWORD = Weapon(
+    id_="skeleton_boss",
+    name="황금왕의 무기",
+    grade="몬스터",
+    max_durability=9999,
+    skill_ids=["golden_slash", "sword_rain", "kings_judgment"],
+    image_path=""
+)
+
 # 무기 딕셔너리 (ID로 접근 가능)
 ALL_WEAPONS = {
     "test_sword": TESTER_SWORD,
@@ -273,7 +414,9 @@ ALL_WEAPONS = {
     "polearm_of_earth": POLEARM_OF_EARTH,
     # 보스 드롭
     "slime_wand": SLIME_WAND,
-    # 몬스터 무기
+    "golden_sword": GOLDEN_SWORD,
+    "goblin_big_axe": GOBLIN_BIG_AXE,
+    # 몬스터 무기 (슬라임)
     "slime1": SLIME_BODY,
     "slime2": RED_SLIME_BODY,
     "slime3": YELLOW_SLIME_BODY,
@@ -282,7 +425,21 @@ ALL_WEAPONS = {
     "slime6": MAGMA_SLIME_BODY,
     "slime7": SWORD_SLIME_BODY,
     "slime8": RAINBOW_SLIME_BODY,
-    "slime9": KING_SLIME_BODY
+    "slime9": KING_SLIME_BODY,
+    # 몬스터 무기 (스켈레톤)
+    "skeleton1": SKELETON_BONE,
+    "skeleton2": MUSCLE_SKELETON_BODY,
+    "skeleton3": PSYCHIC_SKELETON_MIND,
+    "skeleton4": DARK_SKELETON_SHADOW,
+    "skeleton5": WING_SKELETON_WINGS,
+    "skeleton_boss": RICH_KING_SWORD,
+    # 몬스터 무기 (고블린)
+    "goblin1": GOBLIN_CLUB,
+    "goblin2": GOBLIN_BOW,
+    "goblin3": GOBLIN_DAGGER,
+    "goblin4": GOBLIN_AXE,
+    "goblin5": GOBLIN_STAFF,
+    "goblin_boss": MUTANT_GOBLIN_FIST,
 }
 
 def create_weapon(weapon_id):

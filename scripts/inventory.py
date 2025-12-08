@@ -65,18 +65,6 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
     else:
         font_tiny = pygame.font.Font(None, 20)
     
-    # ===== 골드 정보 표시 (오른쪽 위) =====
-    if game_state:
-        gold_text = font_small.render(f"골드: {game_state.get('gold', 0)}G", True, (255, 215, 0))
-        gold_rect = gold_text.get_rect(topright=(WIDTH - 30, 30))
-        
-        # 골드 배경 박스
-        gold_bg_rect = pygame.Rect(gold_rect.x - 15, gold_rect.y - 10, gold_rect.width + 30, gold_rect.height + 20)
-        pygame.draw.rect(screen, (40, 40, 50), gold_bg_rect)
-        pygame.draw.rect(screen, (255, 215, 0), gold_bg_rect, 2)
-        
-        screen.blit(gold_text, gold_rect)
-    
     # 레이아웃 설정
     info_panel_width = 240
     info_panel_x = 30
@@ -390,6 +378,21 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
         next_text = font_small.render("다음", True, next_text_color)
         next_text_rect = next_text.get_rect(center=next_button_rect.center)
         screen.blit(next_text, next_text_rect)
+        
+        # ===== 골드 정보 표시 (페이지 버튼 아래, 슬롯 영역 우측 정렬) =====
+        if game_state:
+            gold_text = font_small.render(f"골드: {game_state.get('gold', 0)}G", True, (255, 215, 0))
+            gold_y = page_button_y + page_button_height + 25
+            # 슬롯 영역 끝에 맞춤 (tab_area_x + 6슬롯 + 5간격)
+            slots_end_x = tab_area_x + 6 * slot_size + 5 * slot_gap
+            gold_rect = gold_text.get_rect(topright=(slots_end_x, gold_y))
+            
+            # 골드 배경 박스
+            gold_bg_rect = pygame.Rect(gold_rect.x - 15, gold_rect.y - 10, gold_rect.width + 30, gold_rect.height + 20)
+            pygame.draw.rect(screen, (40, 40, 50), gold_bg_rect)
+            pygame.draw.rect(screen, (255, 215, 0), gold_bg_rect, 2)
+            
+            screen.blit(gold_text, gold_rect)
     
     else:  # consume 탭
         consume_area_y = slots_start_y

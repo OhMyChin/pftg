@@ -43,7 +43,7 @@ pftg_icon = pygame.image.load("resources\\png\\pftg_icon.png")
 game_state = {
     "state": "start",  # start, town, battle등등
     "player_name": "Hero",
-    "gold": 20000,  # 초기 골드 추가
+    "gold": 100,  # 초기 골드 추가
     "message": "",
     "message_timer": 0
 }

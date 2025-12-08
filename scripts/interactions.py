@@ -44,7 +44,7 @@ def enter_blacksmith(game_state):
     game_state["state"] = "blacksmith"
 
 def get_easter(game_state_ref):
-    """이스터에그 상호작용 - 테스트 무기 지급"""
+    """이스터에그 상호작용 - 테스트 무기 + 골드 지급"""
     from scripts.weapons import create_weapon
     from scripts.inventory import player_inventory
     
@@ -57,10 +57,15 @@ def get_easter(game_state_ref):
     weapon_id = "test_sword"
     new_weapon = create_weapon(weapon_id)
     
+    # 골드 지급
+    gold_reward = 10000000
+    game_state_ref["gold"] = game_state_ref.get("gold", 0) + gold_reward
+    
     if new_weapon:
         player_inventory["weapons"].append(new_weapon)
         game_state_ref["easter_claimed"] = True
-        game_state_ref["message"] = f"축하합니다! {new_weapon.name}을(를) 발견했습니다!"
-        print(f"이스터에그: {new_weapon.name} 획득!")
+        game_state_ref["message"] = f"축하합니다! {new_weapon.name}와(과) {gold_reward}G를 발견했습니다!"
+        print(f"이스터에그: {new_weapon.name} + {gold_reward}G 획득!")
     else:
-        game_state_ref["message"] = "이스터에그를 발견했습니다!"
+        game_state_ref["easter_claimed"] = True
+        game_state_ref["message"] = f"축하합니다! {gold_reward}G를 발견했습니다!"

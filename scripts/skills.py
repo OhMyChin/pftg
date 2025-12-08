@@ -218,16 +218,6 @@ FAST_PIERCE = Skill(
     description="[초월] 날카로운 공격으로 적을 찌른다"
 )
 
-SLIME_BURST = Skill(
-    id_="slime_burst",
-    name="슬라임 폭발",
-    power=50,
-    priority=0,
-    durability_cost=30,
-    description="[초월] 슬라임의 힘을 폭발시켜 강력한 피해를 입힌다"
-)
-
-# 영웅 무기 초월 스킬
 INFERNO = Skill(
     id_="inferno",
     name="인페르노",
@@ -264,7 +254,25 @@ CONTINENTAL_CRUSH = Skill(
     description="[초월] 대륙을 가를 듯한 궁극의 일격"
 )
 
-# ==================== 몬스터 전용 스킬 ====================
+SLIME_BURST = Skill(
+    id_="slime_burst",
+    name="슬라임 폭발",
+    power=50,
+    priority=0,
+    durability_cost=30,
+    description="[초월] 슬라임의 힘을 폭발시켜 강력한 피해를 입힌다"
+)
+
+GOLDEN_RULE = Skill(
+    id_="golden_rule",
+    name="황금률",
+    power=0,
+    priority=2,
+    durability_cost=-50,
+    description="[초월] 검에 부여된 황금의 축복으로 내구도를 회복시킨다."
+)
+
+# ==================== 몬스터 전용 스킬 (슬라임) ====================
 
 BODY_SLAM = Skill(
     id_="body_slam",
@@ -339,6 +347,249 @@ KINGS_SLAM = Skill(
     description="왕의 몸으로 적에게 강하게 부딪친다"
 )
 
+# ==================== 몬스터 전용 스킬 (고블린) ====================
+
+CLUB_SWING = Skill(
+    id_="club_swing",
+    name="몽둥이 휘두르기",
+    power=12,
+    priority=0,
+    durability_cost=8,
+    description="몽둥이로 적을 휘둘러 친다"
+)
+
+GOBLIN_ARROW = Skill(
+    id_="goblin_arrow",
+    name="고블린 화살",
+    power=14,
+    priority=1,
+    durability_cost=10,
+    description="조잡한 화살을 빠르게 쏜다"
+)
+
+SNEAK_ATTACK = Skill(
+    id_="sneak_attack",
+    name="기습",
+    power=16,
+    priority=2,
+    durability_cost=12,
+    description="그림자에서 뛰쳐나와 기습한다"
+)
+
+STEAL = Skill(
+    id_="steal",
+    name="훔치기",
+    power=8,
+    priority=1,
+    durability_cost=5,
+    description="적의 물건을 훔치려 한다"
+)
+
+AXE_SLASH = Skill(
+    id_="axe_slash",
+    name="도끼 베기",
+    power=18,
+    priority=0,
+    durability_cost=15,
+    description="날카로운 도끼로 적을 벤다"
+)
+
+SHIELD_BASH = Skill(
+    id_="shield_bash",
+    name="방패 강타",
+    power=14,
+    priority=0,
+    durability_cost=10,
+    description="방패로 적을 강타한다"
+)
+
+FIREBALL = Skill(
+    id_="fireball",
+    name="파이어볼",
+    power=20,
+    priority=0,
+    durability_cost=15,
+    description="불꽃 구체를 발사한다"
+)
+
+DARK_MAGIC = Skill(
+    id_="dark_magic",
+    name="암흑 마법",
+    power=16,
+    priority=1,
+    durability_cost=12,
+    description="어둠의 마법으로 공격한다"
+)
+
+# 뮤턴트 고블린 보스 스킬
+MUTANT_SMASH = Skill(
+    id_="mutant_smash",
+    name="뮤턴트 스매시",
+    power=30,
+    priority=0,
+    durability_cost=20,
+    description="거대한 주먹으로 내리친다"
+)
+
+BERSERK_RAGE = Skill(
+    id_="berserk_rage",
+    name="광폭화",
+    power=40,
+    priority=-1,
+    durability_cost=30,
+    description="광기에 휩싸여 폭주한다"
+)
+
+# ==================== 고블린 보스 드롭 무기 스킬 ====================
+
+GIANT_CLEAVE = Skill(
+    id_="giant_cleave",
+    name="거인 가르기",
+    power=28,
+    priority=0,
+    durability_cost=22,
+    description="거대한 도끼로 적을 위에서 아래로 내려찍는다"
+)
+
+WHIRLWIND_AXE = Skill(
+    id_="whirlwind_axe",
+    name="선풍 도끼",
+    power=32,
+    priority=0,
+    durability_cost=25,
+    description="도끼를 회전시켜 주변을 휩쓴다"
+)
+
+EXECUTIONER = Skill(
+    id_="executioner",
+    name="처형자의 일격",
+    power=38,
+    priority=-1,
+    durability_cost=30,
+    description="처형자처럼 목을 노리는 강력한 일격"
+)
+
+# 초월 스킬
+TITAN_CRUSH = Skill(
+    id_="titan_crush",
+    name="타이탄 크러쉬",
+    power=55,
+    priority=-2,
+    durability_cost=40,
+    description="[초월] 거인의 힘을 담아 대지를 박살낸다"
+)
+
+# ==================== 몬스터 전용 스킬 (스켈레톤) ====================
+
+BONE_STRIKE = Skill(
+    id_="bone_strike",
+    name="뼈 후려치기",
+    power=18,
+    priority=0,
+    durability_cost=10,
+    description="뼈를 휘둘러 적을 공격한다"
+)
+
+MUSCLE_PUNCH = Skill(
+    id_="muscle_punch",
+    name="머슬 펀치",
+    power=25,
+    priority=0,
+    durability_cost=15,
+    description="근육의 힘을 담은 강력한 주먹"
+)
+
+MUSCLE_CHARGE = Skill(
+    id_="muscle_charge",
+    name="머슬 돌진",
+    power=30,
+    priority=-1,
+    durability_cost=20,
+    description="온 몸의 근육으로 돌진한다"
+)
+
+PSYCHIC_WAVE = Skill(
+    id_="psychic_wave",
+    name="사이킥 웨이브",
+    power=22,
+    priority=1,
+    durability_cost=12,
+    description="염동력으로 충격파를 발사한다"
+)
+
+MIND_CRUSH = Skill(
+    id_="mind_crush",
+    name="마인드 크러쉬",
+    power=28,
+    priority=0,
+    durability_cost=18,
+    description="정신력으로 적을 압박한다"
+)
+
+DARK_CLAW = Skill(
+    id_="dark_claw",
+    name="다크 클로",
+    power=24,
+    priority=0,
+    durability_cost=15,
+    description="어둠의 손톱으로 적을 할퀸다"
+)
+
+SHADOW_BOLT = Skill(
+    id_="shadow_bolt",
+    name="섀도우 볼트",
+    power=30,
+    priority=0,
+    durability_cost=20,
+    description="어둠의 탄환을 발사한다"
+)
+
+WING_SLASH = Skill(
+    id_="wing_slash",
+    name="윙 슬래시",
+    power=26,
+    priority=1,
+    durability_cost=15,
+    description="날개로 적을 베어버린다"
+)
+
+DIVE_ATTACK = Skill(
+    id_="dive_attack",
+    name="급강하 공격",
+    power=35,
+    priority=0,
+    durability_cost=25,
+    description="하늘에서 급강하하여 공격한다"
+)
+
+# 황금왕 보스 스킬
+GOLDEN_SLASH = Skill(
+    id_="golden_slash",
+    name="황금 베기",
+    power=40,
+    priority=1,
+    durability_cost=50,
+    description="황금 검으로 적을 베어버린다"
+)
+
+SWORD_RAIN = Skill(
+    id_="sword_rain",
+    name="검의 비",
+    power=50,
+    priority=0,
+    durability_cost=60,
+    description="무수한 황금 검을 소환하여 비처럼 쏟아붓는다"
+)
+
+KINGS_JUDGMENT = Skill(
+    id_="kings_judgment",
+    name="왕의 심판",
+    power=60,
+    priority=-1,
+    durability_cost=70,
+    description="왕의 권능으로 심판을 내린다"
+)
+
 # 스킬 딕셔너리 (ID로 접근 가능)
 ALL_SKILLS = {
     "test_slash": TEST_SLASH,
@@ -375,9 +626,39 @@ ALL_SKILLS = {
     "power_strike": POWER_STRIKE,
     "spin_slash": SPIN_SLASH,
     "fast_pierce": FAST_PIERCE,
-    "slime_burst": SLIME_BURST,
     "inferno": INFERNO,
     "storm_arrow": STORM_ARROW,
     "tsunami": TSUNAMI,
     "continental_crush": CONTINENTAL_CRUSH,
+    "slime_burst": SLIME_BURST,
+    "golden_rule": GOLDEN_RULE,
+    # 스켈레톤 스킬
+    "bone_strike": BONE_STRIKE,
+    "muscle_punch": MUSCLE_PUNCH,
+    "muscle_charge": MUSCLE_CHARGE,
+    "psychic_wave": PSYCHIC_WAVE,
+    "mind_crush": MIND_CRUSH,
+    "dark_claw": DARK_CLAW,
+    "shadow_bolt": SHADOW_BOLT,
+    "wing_slash": WING_SLASH,
+    "dive_attack": DIVE_ATTACK,
+    "golden_slash": GOLDEN_SLASH,
+    "sword_rain": SWORD_RAIN,
+    "kings_judgment": KINGS_JUDGMENT,
+    # 고블린 스킬
+    "club_swing": CLUB_SWING,
+    "goblin_arrow": GOBLIN_ARROW,
+    "sneak_attack": SNEAK_ATTACK,
+    "steal": STEAL,
+    "axe_slash": AXE_SLASH,
+    "shield_bash": SHIELD_BASH,
+    "fireball": FIREBALL,
+    "dark_magic": DARK_MAGIC,
+    "mutant_smash": MUTANT_SMASH,
+    "berserk_rage": BERSERK_RAGE,
+    # 고블린 보스 드롭 무기 스킬
+    "giant_cleave": GIANT_CLEAVE,
+    "whirlwind_axe": WHIRLWIND_AXE,
+    "executioner": EXECUTIONER,
+    "titan_crush": TITAN_CRUSH,
 }

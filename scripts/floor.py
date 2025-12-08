@@ -4,10 +4,11 @@ from scripts.weapons import create_weapon
 class MonsterData:
     """몬스터 데이터 클래스"""
     def __init__(self, name, hp, speed, weapon_id, image_path, 
-                 gold=(5, 15), drop_weapon=None):
+                 gold=(5, 15), drop_weapon=None, image_size=160):
         """
         gold: (최소, 최대) 골드 드롭 범위
         drop_weapon: 드롭할 무기 ID (보스 전용, None이면 무기 안떨굼)
+        image_size: 몬스터 이미지 정사각형 한 변 길이 (기본 160)
         """
         self.name = name
         self.hp = hp
@@ -16,6 +17,7 @@ class MonsterData:
         self.image_path = image_path
         self.gold = gold
         self.drop_weapon = drop_weapon
+        self.image_size = image_size
     
     def get_drops(self):
         """드롭 아이템 계산"""
@@ -58,6 +60,7 @@ def get_floor_background(floor_num):
 # ==================== 층별 몬스터 배치 ====================
 
 FLOOR_DATA = {
+    # ==================== 1~10층: 슬라임 ====================
     1: [
         MonsterData("슬라임", 30, 8, "slime1", "resources/png/enemy/slimes/slime.png",
                     gold=(5, 15)),
@@ -120,6 +123,144 @@ FLOOR_DATA = {
         # 보스: 킹 슬라임 (무기 드롭)
         MonsterData("킹 슬라임", 100, 10, "slime9", "resources/png/enemy/slimes/king_slime.png",
                     gold=(100, 200), drop_weapon="slime_wand"),
+    ],
+    
+    # ==================== 11~20층: 고블린 ====================
+    11: [
+        MonsterData("고블린", 50, 11, "goblin1", "resources/png/enemy/goblins/goblin.png",
+                    gold=(15, 30), image_size=160),
+    ],
+    12: [
+        MonsterData("고블린", 50, 11, "goblin1", "resources/png/enemy/goblins/goblin.png",
+                    gold=(15, 30), image_size=160),
+        MonsterData("궁수 고블린", 45, 14, "goblin2", "resources/png/enemy/goblins/archer_goblin.png",
+                    gold=(20, 40), image_size=160),
+    ],
+    13: [
+        MonsterData("고블린", 50, 11, "goblin1", "resources/png/enemy/goblins/goblin.png",
+                    gold=(15, 30), image_size=160),
+        MonsterData("도적 고블린", 40, 16, "goblin3", "resources/png/enemy/goblins/theif_goblin.png",
+                    gold=(25, 50), image_size=160),
+    ],
+    14: [
+        MonsterData("궁수 고블린", 45, 14, "goblin2", "resources/png/enemy/goblins/archer_goblin.png",
+                    gold=(20, 40), image_size=160),
+        MonsterData("도적 고블린", 40, 16, "goblin3", "resources/png/enemy/goblins/theif_goblin.png",
+                    gold=(25, 50), image_size=160),
+    ],
+    15: [
+        MonsterData("고블린", 50, 11, "goblin1", "resources/png/enemy/goblins/goblin.png",
+                    gold=(15, 30), image_size=160),
+        MonsterData("전사 고블린", 70, 10, "goblin4", "resources/png/enemy/goblins/worrier_goblin.png",
+                    gold=(30, 55), image_size=180),
+    ],
+    16: [
+        MonsterData("궁수 고블린", 45, 14, "goblin2", "resources/png/enemy/goblins/archer_goblin.png",
+                    gold=(20, 40), image_size=160),
+        MonsterData("전사 고블린", 70, 10, "goblin4", "resources/png/enemy/goblins/worrier_goblin.png",
+                    gold=(30, 55), image_size=180),
+    ],
+    17: [
+        MonsterData("도적 고블린", 40, 16, "goblin3", "resources/png/enemy/goblins/theif_goblin.png",
+                    gold=(25, 50), image_size=160),
+        MonsterData("마법사 고블린", 55, 12, "goblin5", "resources/png/enemy/goblins/wizard_goblin.png",
+                    gold=(35, 60), image_size=160),
+    ],
+    18: [
+        MonsterData("전사 고블린", 70, 10, "goblin4", "resources/png/enemy/goblins/worrier_goblin.png",
+                    gold=(30, 55), image_size=180),
+        MonsterData("마법사 고블린", 55, 12, "goblin5", "resources/png/enemy/goblins/wizard_goblin.png",
+                    gold=(35, 60), image_size=160),
+    ],
+    19: [
+        MonsterData("궁수 고블린", 45, 14, "goblin2", "resources/png/enemy/goblins/archer_goblin.png",
+                    gold=(20, 40), image_size=160),
+        MonsterData("도적 고블린", 40, 16, "goblin3", "resources/png/enemy/goblins/theif_goblin.png",
+                    gold=(25, 50), image_size=160),
+        MonsterData("전사 고블린", 70, 10, "goblin4", "resources/png/enemy/goblins/worrier_goblin.png",
+                    gold=(30, 55), image_size=180),
+        MonsterData("마법사 고블린", 55, 12, "goblin5", "resources/png/enemy/goblins/wizard_goblin.png",
+                    gold=(35, 60), image_size=160),
+    ],
+    20: [
+        MonsterData("고블린", 50, 11, "goblin1", "resources/png/enemy/goblins/goblin.png",
+                    gold=(15, 30), image_size=160),
+        MonsterData("고블린", 50, 11, "goblin1", "resources/png/enemy/goblins/goblin.png",
+                    gold=(15, 30), image_size=160),
+        MonsterData("고블린", 50, 11, "goblin1", "resources/png/enemy/goblins/goblin.png",
+                    gold=(15, 30), image_size=160),
+        # 보스: 뮤턴트 고블린
+        MonsterData("뮤턴트 고블린", 200, 8, "goblin_boss", "resources/png/enemy/goblins/mutant_goblin.png",
+                    gold=(200, 400), drop_weapon="goblin_big_axe", image_size=280),
+    ],
+    
+    # ==================== 21~30층: 스켈레톤 ====================
+    21: [
+        MonsterData("스켈레톤", 80, 12, "skeleton1", "resources/png/enemy/skeletons/skeleton.png",
+                    gold=(30, 50)),
+    ],
+    22: [
+        MonsterData("스켈레톤", 80, 12, "skeleton1", "resources/png/enemy/skeletons/skeleton.png",
+                    gold=(30, 50)),
+        MonsterData("머슬 스켈레톤", 120, 10, "skeleton2", "resources/png/enemy/skeletons/muscle_skeleton.png",
+                    gold=(40, 70)),
+    ],
+    23: [
+        MonsterData("스켈레톤", 80, 12, "skeleton1", "resources/png/enemy/skeletons/skeleton.png",
+                    gold=(30, 50)),
+        MonsterData("사이킥 스켈레톤", 100, 15, "skeleton3", "resources/png/enemy/skeletons/psychic_skeleton.png",
+                    gold=(45, 75)),
+    ],
+    24: [
+        MonsterData("머슬 스켈레톤", 120, 10, "skeleton2", "resources/png/enemy/skeletons/muscle_skeleton.png",
+                    gold=(40, 70)),
+        MonsterData("사이킥 스켈레톤", 100, 15, "skeleton3", "resources/png/enemy/skeletons/psychic_skeleton.png",
+                    gold=(45, 75)),
+    ],
+    25: [
+        MonsterData("스켈레톤", 80, 12, "skeleton1", "resources/png/enemy/skeletons/skeleton.png",
+                    gold=(30, 50)),
+        MonsterData("다크 스켈레톤", 110, 14, "skeleton4", "resources/png/enemy/skeletons/dark_skeleton.png",
+                    gold=(50, 80)),
+    ],
+    26: [
+        MonsterData("머슬 스켈레톤", 120, 10, "skeleton2", "resources/png/enemy/skeletons/muscle_skeleton.png",
+                    gold=(40, 70)),
+        MonsterData("다크 스켈레톤", 110, 14, "skeleton4", "resources/png/enemy/skeletons/dark_skeleton.png",
+                    gold=(50, 80)),
+    ],
+    27: [
+        MonsterData("사이킥 스켈레톤", 100, 15, "skeleton3", "resources/png/enemy/skeletons/psychic_skeleton.png",
+                    gold=(45, 75)),
+        MonsterData("윙 스켈레톤", 95, 18, "skeleton5", "resources/png/enemy/skeletons/wing_skeleton.png",
+                    gold=(55, 85)),
+    ],
+    28: [
+        MonsterData("다크 스켈레톤", 110, 14, "skeleton4", "resources/png/enemy/skeletons/dark_skeleton.png",
+                    gold=(50, 80)),
+        MonsterData("윙 스켈레톤", 95, 18, "skeleton5", "resources/png/enemy/skeletons/wing_skeleton.png",
+                    gold=(55, 85)),
+    ],
+    29: [
+        MonsterData("머슬 스켈레톤", 120, 10, "skeleton2", "resources/png/enemy/skeletons/muscle_skeleton.png",
+                    gold=(40, 70)),
+        MonsterData("사이킥 스켈레톤", 100, 15, "skeleton3", "resources/png/enemy/skeletons/psychic_skeleton.png",
+                    gold=(45, 75)),
+        MonsterData("다크 스켈레톤", 110, 14, "skeleton4", "resources/png/enemy/skeletons/dark_skeleton.png",
+                    gold=(50, 80)),
+        MonsterData("윙 스켈레톤", 95, 18, "skeleton5", "resources/png/enemy/skeletons/wing_skeleton.png",
+                    gold=(55, 85)),
+    ],
+    30: [
+        MonsterData("스켈레톤", 80, 12, "skeleton1", "resources/png/enemy/skeletons/skeleton.png",
+                    gold=(30, 50)),
+        MonsterData("스켈레톤", 80, 12, "skeleton1", "resources/png/enemy/skeletons/skeleton.png",
+                    gold=(30, 50)),
+        MonsterData("스켈레톤", 80, 12, "skeleton1", "resources/png/enemy/skeletons/skeleton.png",
+                    gold=(30, 50)),
+        # 보스: 황금왕 (무기 드롭)
+        MonsterData("황금왕", 300, 12, "skeleton_boss", "resources/png/enemy/skeletons/rich_king.png",
+                    gold=(500, 1000), drop_weapon="golden_sword", image_size=240),
     ],
 }
 
