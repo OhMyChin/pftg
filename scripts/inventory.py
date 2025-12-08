@@ -132,76 +132,102 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
             screen.blit(name_text, (info_panel_x + 15, y_offset))
             y_offset += 35
             
-            # 등급과 내구도 텍스트 준비
+            # 등급 색상 (대장간 GRADE_COLORS 기준)
+            grade_colors = {
+                "일반": (200, 200, 200),
+                "희귀": (100, 150, 255),
+                "영웅": (200, 100, 255),
+                "전설": (255, 200, 50)
+            }
+            grade_color = grade_colors.get(selected_item.grade, (200, 200, 200))
+            
+            # 모든 정보 텍스트 준비
             grade_str = f"등급: {selected_item.grade}"
             durability_str = f"내구도: {selected_item.durability}/{selected_item.max_durability}"
             
-            # 둘 중 더 긴 텍스트에 맞춰 폰트 크기 조절
+            upgrade_level = getattr(selected_item, 'upgrade_level', 0)
+            bonus_power = getattr(selected_item, 'bonus_power', 0)
+            upgrade_str = f"강화: +{upgrade_level}" if upgrade_level > 0 else ""
+            atk_str = f"추가 공격력: +{bonus_power}" if bonus_power > 0 else ""
+            
+            is_transcended = getattr(selected_item, 'is_transcended', False)
+            transcend_skill = getattr(selected_item, 'transcend_skill', None)
+            transcend_passive = getattr(selected_item, 'transcend_passive', None)
+            
+            # 초월 스킬 텍스트 (일반~영웅 무기)
+            transcend_str = ""
+            if transcend_skill and is_transcended and not transcend_passive:
+                from scripts.skills import ALL_SKILLS
+                skill_name = ALL_SKILLS[transcend_skill].name if transcend_skill in ALL_SKILLS else transcend_skill
+                transcend_str = f"초월: {skill_name}"
+            
+            # 모든 텍스트 중 가장 긴 것에 맞춰 폰트 크기 조절
+            all_texts = [grade_str, durability_str]
+            if upgrade_str:
+                all_texts.append(upgrade_str)
+            if atk_str:
+                all_texts.append(atk_str)
+            if transcend_str:
+                all_texts.append(transcend_str)
+            
             info_font_size = 28
             if font_path:
                 info_font = pygame.font.Font(font_path, info_font_size)
             else:
                 info_font = font_small
             
-            # 둘 다 패널 안에 들어올 때까지 크기 줄이기
-            while (info_font.size(grade_str)[0] > max_name_width or 
-                   info_font.size(durability_str)[0] > max_name_width) and info_font_size > 14:
+            # 모든 텍스트가 패널 안에 들어올 때까지 크기 줄이기
+            while any(info_font.size(t)[0] > max_name_width for t in all_texts) and info_font_size > 14:
                 info_font_size -= 2
                 if font_path:
                     info_font = pygame.font.Font(font_path, info_font_size)
                 else:
                     info_font = pygame.font.Font(None, info_font_size)
             
-            grade_text = info_font.render(grade_str, True, (200, 200, 100))
+            # 등급
+            grade_text = info_font.render(grade_str, True, grade_color)
             screen.blit(grade_text, (info_panel_x + 15, y_offset))
             y_offset += 30
             
+            # 내구도
             durability_text = info_font.render(durability_str, True, (100, 200, 255))
             screen.blit(durability_text, (info_panel_x + 15, y_offset))
             y_offset += 30
             
-            # 강화도 및 추가 공격력 표시
-            upgrade_level = getattr(selected_item, 'upgrade_level', 0)
-            bonus_power = getattr(selected_item, 'bonus_power', 0)
-            if upgrade_level > 0:
-                upgrade_text = info_font.render(f"강화: +{upgrade_level}", True, (255, 180, 50))
+            # 강화도
+            if upgrade_str:
+                upgrade_text = info_font.render(upgrade_str, True, (255, 180, 50))
                 screen.blit(upgrade_text, (info_panel_x + 15, y_offset))
                 y_offset += 30
-                
-                # 추가 공격력
-                if bonus_power > 0:
-                    atk_text = info_font.render(f"추가 공격력: +{bonus_power}", True, (255, 100, 100))
-                    screen.blit(atk_text, (info_panel_x + 15, y_offset))
-                    y_offset += 30
             
-            # 초월 여부 표시
-            is_transcended = getattr(selected_item, 'is_transcended', False)
-            transcend_skill = getattr(selected_item, 'transcend_skill', None)
-            if is_transcended and transcend_skill:
-                from scripts.skills import ALL_SKILLS
-                skill_name = ALL_SKILLS[transcend_skill].name if transcend_skill in ALL_SKILLS else transcend_skill
-                transcend_str = f"초월: {skill_name}"
-                
-                # 초월 스킬 이름 폰트 크기 조절
-                transcend_font_size = 28
-                if font_path:
-                    transcend_font = pygame.font.Font(font_path, transcend_font_size)
-                else:
-                    transcend_font = info_font
-                
-                while transcend_font.size(transcend_str)[0] > max_name_width and transcend_font_size > 14:
-                    transcend_font_size -= 2
-                    if font_path:
-                        transcend_font = pygame.font.Font(font_path, transcend_font_size)
-                    else:
-                        transcend_font = pygame.font.Font(None, transcend_font_size)
-                
-                transcend_text = transcend_font.render(transcend_str, True, (255, 100, 255))
+            # 추가 공격력
+            if atk_str:
+                atk_text = info_font.render(atk_str, True, (255, 100, 100))
+                screen.blit(atk_text, (info_panel_x + 15, y_offset))
+                y_offset += 30
+            
+            # 초월 스킬 (일반~영웅 무기)
+            if transcend_str:
+                transcend_text = info_font.render(transcend_str, True, (255, 100, 255))
                 screen.blit(transcend_text, (info_panel_x + 15, y_offset))
                 y_offset += 30
+            
+            # 전설 무기: 패시브는 아래 박스에서 표시, 여기선 초월 힌트만
+            if transcend_passive:
+                if not is_transcended:
+                    # 패시브 미해금 - 중앙 정렬
+                    transcend_hint = "(+5 강화 시 초월 가능)"
+                    hint_text = font_tiny.render(transcend_hint, True, (150, 100, 150))
+                    hint_x = info_panel_x + (info_panel_width - hint_text.get_width()) // 2
+                    screen.blit(hint_text, (hint_x, y_offset))
+                    y_offset += 25
+            # 일반~영웅 무기: 초월 미해금 시 힌트
             elif transcend_skill and not is_transcended:
-                transcend_text = font_tiny.render("(+5 강화 시 초월 가능)", True, (150, 100, 150))
-                screen.blit(transcend_text, (info_panel_x + 15, y_offset))
+                # 초월 미해금 - 중앙 정렬
+                transcend_hint = "(+5 강화 시 초월 가능)"
+                hint_text = font_tiny.render(transcend_hint, True, (150, 100, 150))
+                hint_x = info_panel_x + (info_panel_width - hint_text.get_width()) // 2
+                screen.blit(hint_text, (hint_x, y_offset))
                 y_offset += 25
             
             y_offset += 8
@@ -409,6 +435,57 @@ def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, 
         next_text = font_small.render("다음", True, next_text_color)
         next_text_rect = next_text.get_rect(center=next_button_rect.center)
         screen.blit(next_text, next_text_rect)
+        
+        # ===== 패시브 정보 박스 (전설 무기 초월 시에만 표시) =====
+        selected_item = get_selected_item(battle_player)
+        if selected_item and hasattr(selected_item, 'durability'):
+            is_transcended = getattr(selected_item, 'is_transcended', False)
+            transcend_passive = getattr(selected_item, 'transcend_passive', None)
+            
+            # 전설 무기 초월 시에만 패시브 박스 표시
+            if is_transcended and transcend_passive:
+                # 박스 위치 및 크기 (보유 무기 칸 양끝에 맞춤, 왼쪽 패널 끝까지)
+                passive_box_x = tab_area_x
+                passive_box_y = page_button_y + page_button_height + 15
+                passive_box_width = 6 * slot_size + 5 * slot_gap
+                # 왼쪽 패널 끝까지 (info_panel_y + info_panel_height)
+                passive_box_bottom = info_panel_y + info_panel_height
+                passive_box_height = passive_box_bottom - passive_box_y
+                
+                passive_box_rect = pygame.Rect(passive_box_x, passive_box_y, passive_box_width, passive_box_height)
+                pygame.draw.rect(screen, (35, 35, 50), passive_box_rect)
+                pygame.draw.rect(screen, (150, 100, 200), passive_box_rect, 2)
+                
+                # 두 줄용 폰트 크기 계산 (박스 높이의 절반 - 여백)
+                line_height = (passive_box_height - 20) // 2
+                text_font_size = min(24, line_height - 5)
+                if font_path:
+                    text_font = pygame.font.Font(font_path, text_font_size)
+                else:
+                    text_font = font_small
+                
+                # 전설 패시브 - 두 줄로 표시
+                if transcend_passive == "stack_power":
+                    line1 = "[패시브] 성검의 각성"
+                    line2 = f"스킬 사용 시 공격력 +1 (현재: +{selected_item.passive_stacks})"
+                elif transcend_passive == "overcharge":
+                    bonus = selected_item.get_passive_bonus()
+                    line1 = "[패시브] 과부하"
+                    line2 = f"내구도 70% 이하 시 공격력↑ (현재: +{bonus})"
+                else:
+                    line1 = "[패시브]"
+                    line2 = selected_item.get_passive_description()
+                
+                text1 = text_font.render(line1, True, (255, 200, 100))
+                text2 = text_font.render(line2, True, (255, 200, 100))
+                
+                text1_x = passive_box_x + (passive_box_width - text1.get_width()) // 2
+                text2_x = passive_box_x + (passive_box_width - text2.get_width()) // 2
+                text1_y = passive_box_y + 10
+                text2_y = passive_box_y + 10 + line_height
+                
+                screen.blit(text1, (text1_x, text1_y))
+                screen.blit(text2, (text2_x, text2_y))
     
     elif inventory_state["current_tab"] == "consume":
         consume_area_y = slots_start_y

@@ -45,10 +45,6 @@ def draw_weapon_swap(screen, font_main, font_small, WIDTH, HEIGHT, battle_player
     pygame.draw.rect(screen, (40, 50, 60), current_rect)
     pygame.draw.rect(screen, (100, 150, 100), current_rect, 4)
     
-    # 타이틀
-    title_text = font_small.render("현재 장착 중", True, (100, 255, 100))
-    screen.blit(title_text, (current_rect.x + 20, current_rect.y + 15))
-    
     if battle_player and battle_player.weapon:
         weapon = battle_player.weapon
         
@@ -58,23 +54,31 @@ def draw_weapon_swap(screen, font_main, font_small, WIDTH, HEIGHT, battle_player
             if hasattr(weapon, 'image_path') and weapon.image_path:
                 weapon_img = pygame.image.load(weapon.image_path).convert_alpha()
                 weapon_img = pygame.transform.scale(weapon_img, (100, 100))
-                screen.blit(weapon_img, (current_rect.centerx - 50, current_rect.y + 60))
+                screen.blit(weapon_img, (current_rect.centerx - 50, current_rect.y + 30))
             else:
                 # 이미지가 없으면 기본 표시
                 pygame.draw.rect(screen, (60, 60, 80), 
-                               (current_rect.centerx - 50, current_rect.y + 60, 100, 100))
+                               (current_rect.centerx - 50, current_rect.y + 30, 100, 100))
         except:
             pygame.draw.rect(screen, (60, 60, 80), 
-                           (current_rect.centerx - 50, current_rect.y + 60, 100, 100))
+                           (current_rect.centerx - 50, current_rect.y + 30, 100, 100))
         
         # 무기 정보
-        y_offset = current_rect.y + 175
+        y_offset = current_rect.y + 145
         
         name_text = font_small.render(weapon.name, True, (255, 255, 255))
         screen.blit(name_text, (current_rect.x + 20, y_offset))
         y_offset += 30
         
-        grade_text = font_small.render(f"등급: {weapon.grade}", True, (200, 200, 100))
+        # 등급 색상
+        grade_colors = {
+            "일반": (200, 200, 200),
+            "희귀": (100, 150, 255),
+            "영웅": (200, 100, 255),
+            "전설": (255, 200, 50)
+        }
+        grade_color = grade_colors.get(weapon.grade, (200, 200, 100))
+        grade_text = font_small.render(f"등급: {weapon.grade}", True, grade_color)
         screen.blit(grade_text, (current_rect.x + 20, y_offset))
         y_offset += 30
         
@@ -83,6 +87,13 @@ def draw_weapon_swap(screen, font_main, font_small, WIDTH, HEIGHT, battle_player
             True, (100, 200, 255)
         )
         screen.blit(durability_text, (current_rect.x + 20, y_offset))
+        y_offset += 30
+        
+        # 추가 공격력 (있으면 표시)
+        bonus_power = getattr(weapon, 'bonus_power', 0)
+        if bonus_power > 0:
+            atk_text = font_small.render(f"추가 공격력: +{bonus_power}", True, (255, 100, 100))
+            screen.blit(atk_text, (current_rect.x + 20, y_offset))
     else:
         # 맨손
         no_weapon_text = font_main.render("맨손", True, (150, 150, 150))
@@ -100,18 +111,20 @@ def draw_weapon_swap(screen, font_main, font_small, WIDTH, HEIGHT, battle_player
         
         y_offset = selected_info_rect.y + 20
         
-        # 제목
-        info_title = font_small.render("선택한 무기", True, (200, 200, 200))
-        screen.blit(info_title, (selected_info_rect.x + 20, y_offset))
-        y_offset += 40
-        
         # 무기 이름
         name_text = font_small.render(selected_weapon.name, True, (255, 255, 255))
         screen.blit(name_text, (selected_info_rect.x + 20, y_offset))
         y_offset += 35
         
-        # 등급
-        grade_text = font_small.render(f"등급: {selected_weapon.grade}", True, (200, 200, 100))
+        # 등급 색상
+        grade_colors = {
+            "일반": (200, 200, 200),
+            "희귀": (100, 150, 255),
+            "영웅": (200, 100, 255),
+            "전설": (255, 200, 50)
+        }
+        grade_color = grade_colors.get(selected_weapon.grade, (200, 200, 100))
+        grade_text = font_small.render(f"등급: {selected_weapon.grade}", True, grade_color)
         screen.blit(grade_text, (selected_info_rect.x + 20, y_offset))
         y_offset += 30
         
@@ -121,7 +134,16 @@ def draw_weapon_swap(screen, font_main, font_small, WIDTH, HEIGHT, battle_player
             True, (100, 200, 255)
         )
         screen.blit(durability_text, (selected_info_rect.x + 20, y_offset))
-        y_offset += 40
+        y_offset += 30
+        
+        # 추가 공격력 (있으면 표시)
+        bonus_power = getattr(selected_weapon, 'bonus_power', 0)
+        if bonus_power > 0:
+            atk_text = font_small.render(f"추가 공격력: +{bonus_power}", True, (255, 100, 100))
+            screen.blit(atk_text, (selected_info_rect.x + 20, y_offset))
+            y_offset += 30
+        
+        y_offset += 10
         
         # 설명
         if hasattr(selected_weapon, 'description'):
@@ -199,11 +221,6 @@ def draw_weapon_swap(screen, font_main, font_small, WIDTH, HEIGHT, battle_player
                 True, (200, 200, 200)
             )
             screen.blit(durability_text, (slot_rect.x + 90, slot_rect.y + 50))
-            
-            # 현재 장착 표시
-            if is_current:
-                current_badge = font_small.render("장착중", True, (100, 255, 100))
-                screen.blit(current_badge, (slot_rect.x + slot_rect.width - 100, slot_rect.y + 30))
         else:
             # 빈 슬롯 표시
             empty_text = font_small.render("빈 슬롯", True, (100, 100, 120))

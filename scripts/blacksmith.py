@@ -414,6 +414,12 @@ def draw_upgrade(screen, font_main, font_small, WIDTH, HEIGHT, game_state, font_
             cost_str = " ".join([f"{MATERIAL_NAMES[m]} {a}개(보유:{player_materials[m]})" for m, a in cost.items()])
             color = (100, 255, 100) if can_afford_upgrade(weapon) else (255, 100, 100)
             screen.blit(font_small.render(cost_str, True, color), (WIDTH // 2 - font_small.size(cost_str)[0] // 2, 380))
+            
+            # 강화 확률 표시
+            prob_text1 = "추가 공격력: +2(50%) / +3(50%)"
+            prob_text2 = "내구도: +5(30%) / +10(40%) / +15(30%)"
+            screen.blit(font_small.render(prob_text1, True, (255, 100, 100)), (WIDTH // 2 - font_small.size(prob_text1)[0] // 2, 410))
+            screen.blit(font_small.render(prob_text2, True, (100, 200, 255)), (WIDTH // 2 - font_small.size(prob_text2)[0] // 2, 440))
     
     # 강화 버튼
     btn_rect = pygame.Rect(WIDTH // 2 - 60, 530, 120, 40)
@@ -554,7 +560,8 @@ def draw_weapon_select(screen, font_small, WIDTH, HEIGHT, weapons):
             level = getattr(w, 'upgrade_level', 0)
             name = f"+{level} {w.name}" if level > 0 else w.name
             screen.blit(font_small.render(name, True, color), (ir.x + 10, ir.y + 8))
-            screen.blit(font_small.render(f"[{w.grade}]", True, color), (ir.right - 80, ir.y + 8))
+            grade_text = font_small.render(f"[{w.grade}]", True, color)
+            screen.blit(grade_text, (ir.right - grade_text.get_width() - 10, ir.y + 8))
         
         ly += 42
     
@@ -763,20 +770,33 @@ def do_upgrade(w):
         w.bonus_power = 0
     
     w.upgrade_level += 1
-    w.bonus_power += 1  # 강화당 추가 공격력 +1
     
-    # 내구도 보너스
-    bonus = random.randint(5, 15)
-    w.max_durability += bonus
+    # 추가 공격력: 2(50%) 또는 3(50%)
+    power_bonus = random.choice([2, 3])
+    w.bonus_power += power_bonus
+    
+    # 내구도 보너스: 5(30%) / 10(40%) / 15(30%)
+    durability_roll = random.random()
+    if durability_roll < 0.3:
+        durability_bonus = 5
+    elif durability_roll < 0.7:
+        durability_bonus = 10
+    else:
+        durability_bonus = 15
+    w.max_durability += durability_bonus
     w.durability = w.max_durability
     
     # 초월 체크
     if w.upgrade_level >= 5 and not getattr(w, 'is_transcended', False):
         w.is_transcended = True
-        if hasattr(w, 'transcend_skill') and w.transcend_skill and w.transcend_skill not in w.skill_ids:
+        # 전설 무기: 패시브 해금
+        if hasattr(w, 'transcend_passive') and w.transcend_passive:
+            return True, f"+5 강화! 초월 달성! 패시브 해금!"
+        # 일반~영웅 무기: 스킬 해금
+        elif hasattr(w, 'transcend_skill') and w.transcend_skill and w.transcend_skill not in w.skill_ids:
             w.skill_ids.append(w.transcend_skill)
             return True, f"+5 강화! 초월 달성! 새 스킬 해금!"
-    return True, f"+{w.upgrade_level} 강화! 공격력+1, 내구도+{bonus}"
+    return True, f"+{w.upgrade_level} 강화! 공격력+{power_bonus}, 내구도+{durability_bonus}"
 
 
 def handle_blacksmith_input(events, game_state):

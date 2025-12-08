@@ -44,10 +44,12 @@ class Weapon:
             if self.transcend_passive == "stack_power":
                 return self.passive_stacks  # 스택당 +1 공격력
             elif self.transcend_passive == "overcharge":
-                # 내구도가 낮을수록 공격력 증가 (50% 이하부터 최대 +20)
+                # 내구도가 낮을수록 공격력 증가 (70% 이하부터, 10%일 때 최대 +20)
                 ratio = self.durability / self.max_durability
-                if ratio <= 0.5:
-                    return int((0.5 - ratio) * 40)  # 0%일 때 +20, 50%일 때 +0
+                if ratio <= 0.7:
+                    # 70%일 때 0, 10%일 때 20 (선형 증가)
+                    bonus = int((0.7 - max(ratio, 0.1)) / 0.6 * 20)
+                    return bonus
         return 0
     
     def on_skill_used(self):
@@ -65,7 +67,7 @@ class Weapon:
             return f"[패시브] 성검의 각성: 스킬 사용 시 공격력 +1 (현재: +{self.passive_stacks})"
         elif self.transcend_passive == "overcharge":
             bonus = self.get_passive_bonus()
-            return f"[패시브] 과부하: 내구도가 낮을수록 공격력 증가 (현재: +{bonus})"
+            return f"[패시브] 과부하: 내구도 70% 이하 시 공격력 증가 (현재: +{bonus})"
         return ""
     
     def use_skill(self, skill):
@@ -117,7 +119,7 @@ WOODEN_STICK = Weapon(
     id_="wooden_stick",
     name="나무 막대기",
     grade="일반",
-    max_durability=30,
+    max_durability=20,
     skill_ids=["swing"],
     description="평범한 나무 막대기. 기본적인 공격만 가능하다.",
     image_path="resources/png/weapon/wooden_stick.png",

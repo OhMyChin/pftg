@@ -82,8 +82,18 @@ def decide_order(player, p_skill, enemy, e_skill):
 
 
 def calc_damage(attacker, skill, defender):
-    """단순 데미지 계산"""
-    return max(1, skill.power)
+    """데미지 계산 - 스킬 위력 + 무기 추가 공격력"""
+    base_power = skill.power
+    bonus_power = 0
+    
+    # 무기의 추가 공격력 (강화 보너스 + 패시브 보너스)
+    if attacker.weapon:
+        bonus_power = getattr(attacker.weapon, 'bonus_power', 0)
+        # 패시브 보너스도 추가
+        passive_bonus = attacker.weapon.get_passive_bonus() if hasattr(attacker.weapon, 'get_passive_bonus') else 0
+        bonus_power += passive_bonus
+    
+    return max(1, base_power + bonus_power)
 
 
 def wrap_battle_text(text, font, max_width):
@@ -117,6 +127,12 @@ def start_battle(game_state_ref, player_name):
         return
 
     battle_player.speed = 12
+    
+    # 던전 입장 시 첫번째 슬롯 무기 자동 장착
+    from scripts.inventory import player_inventory
+    if player_inventory["equipped_weapons"]:
+        first_weapon = player_inventory["equipped_weapons"][0]
+        battle_player.equip_weapon(first_weapon)
 
     current_floor = 1
     floor_monsters = get_floor_monsters(current_floor)
@@ -456,10 +472,10 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
     else:
         screen.fill((30, 30, 60))
 
-    # --- 몬스터 표시 (오른쪽, 바닥 기준) ---
-    # 몬스터 영역의 왼쪽 아래 기준점 설정
-    enemy_base_x = WIDTH - 300  # 왼쪽 기준 X
-    enemy_base_y = 280  # 바닥 기준 Y (이미지 하단이 이 위치에 맞춰짐)
+    # --- 몬스터 표시 (오른쪽) ---
+    # 기준점: 가로는 중앙, 세로는 바닥 기준
+    enemy_center_x = WIDTH - 220  # 가로 중심 X
+    enemy_base_y = 280  # 바닥 기준 Y (이미지 하단이 이 위치)
 
     # 층 진행도 (왼쪽 위)
     floor_info_text = font.render(
@@ -473,40 +489,74 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
         enemy_image_width = battle_enemy.image.get_width()
         enemy_image_height = battle_enemy.image.get_height()
         
-        # 이미지 위치 계산 (왼쪽 아래 기준)
-        enemy_x = enemy_base_x
-        enemy_y = enemy_base_y - enemy_image_height  # 바닥에서 이미지 높이만큼 위로
+        # 이미지 최대 크기 제한
+        max_enemy_width = 280
+        max_enemy_height = 280
         
-        # 체력바 설정 (이미지 가로 길이에 맞춤)
-        hp_bar_width = enemy_image_width
+        # 비율 유지하며 크기 조절
+        scale_ratio = min(max_enemy_width / enemy_image_width, max_enemy_height / enemy_image_height, 1.0)
+        if scale_ratio < 1.0:
+            enemy_image_width = int(enemy_image_width * scale_ratio)
+            enemy_image_height = int(enemy_image_height * scale_ratio)
+            enemy_image = pygame.transform.scale(battle_enemy.image, (enemy_image_width, enemy_image_height))
+        else:
+            enemy_image = battle_enemy.image
+        
+        # 가로: 중앙 기준 양쪽으로 확장
+        enemy_x = enemy_center_x - enemy_image_width // 2
+        
+        # 세로: 바닥 기준 위로 확장
+        enemy_y = enemy_base_y - enemy_image_height
+        
+        # 체력바 설정 (이미지 가로 길이에 맞춤, 최소/최대 제한)
+        hp_bar_width = max(100, min(enemy_image_width, 200))
         hp_bar_height = 25
-        name_hp_gap = 5  # 이름과 체력바 사이 간격
-        hp_image_gap = 5  # 체력바와 이미지 사이 간격
+        name_hp_gap = 5
+        hp_image_gap = 5
         
-        # 체력바 위치 (이미지 바로 위)
+        # 체력바 위치 (이미지 바로 위, 가로 중앙 정렬)
+        hp_bar_x = enemy_center_x - hp_bar_width // 2
         hp_bar_y = enemy_y - hp_image_gap - hp_bar_height
         
+        # 이름 폰트 크기 조절 (체력바 너비에 맞춤)
+        enemy_name_font_size = 28
+        enemy_name_font = font
+        if FONT_PATH:
+            enemy_name_font = pygame.font.Font(FONT_PATH, enemy_name_font_size)
+            while enemy_name_font.size(battle_enemy.name)[0] > hp_bar_width and enemy_name_font_size > 14:
+                enemy_name_font_size -= 2
+                enemy_name_font = pygame.font.Font(FONT_PATH, enemy_name_font_size)
+        
         # 이름 위치 (체력바 바로 위)
-        name_y = hp_bar_y - name_hp_gap - 30  # 폰트 높이 약 30px
+        name_y = hp_bar_y - name_hp_gap - enemy_name_font_size
+        
+        # 이름이 천장(화면 위)에 닿으면 전체를 아래로 이동
+        min_name_y = 5  # 화면 최상단 여백
+        if name_y < min_name_y:
+            offset = min_name_y - name_y
+            name_y += offset
+            hp_bar_y += offset
+            enemy_y += offset
         
         # 이미지 그리기
-        screen.blit(battle_enemy.image, (enemy_x, enemy_y))
+        screen.blit(enemy_image, (enemy_x, enemy_y))
 
-        # 이름 그리기
-        enemy_name_text = font.render(f"{battle_enemy.name}", True, (255, 255, 255))
-        screen.blit(enemy_name_text, (enemy_x, name_y))
+        # 이름 그리기 (가로 중앙 정렬)
+        enemy_name_text = enemy_name_font.render(f"{battle_enemy.name}", True, (255, 255, 255))
+        name_x = hp_bar_x + (hp_bar_width - enemy_name_text.get_width()) // 2
+        screen.blit(enemy_name_text, (name_x, name_y))
 
         # 체력바 그리기
         hp_ratio = max(0, battle_enemy.hp) / (battle_enemy.max_hp if battle_enemy.max_hp else 1)
-        hp_back = pygame.Rect(enemy_x, hp_bar_y, hp_bar_width, hp_bar_height)
+        hp_back = pygame.Rect(hp_bar_x, hp_bar_y, hp_bar_width, hp_bar_height)
         pygame.draw.rect(screen, (60, 60, 60), hp_back)
-        hp_fill = pygame.Rect(enemy_x, hp_bar_y, int(hp_bar_width * hp_ratio), hp_bar_height)
+        hp_fill = pygame.Rect(hp_bar_x, hp_bar_y, int(hp_bar_width * hp_ratio), hp_bar_height)
         pygame.draw.rect(screen, (200, 50, 50), hp_fill)
-        pygame.draw.rect(screen, (100, 100, 100), hp_back, 2)  # 테두리
+        pygame.draw.rect(screen, (100, 100, 100), hp_back, 2)
         
         # 체력바 안에 HP 수치 표시
         hp_text = font.render(f"{max(0, battle_enemy.hp)}/{battle_enemy.max_hp}", True, (255, 255, 255))
-        hp_text_rect = hp_text.get_rect(center=(enemy_x + hp_bar_width // 2, hp_bar_y + hp_bar_height // 2))
+        hp_text_rect = hp_text.get_rect(center=(hp_bar_x + hp_bar_width // 2, hp_bar_y + hp_bar_height // 2))
         screen.blit(hp_text, hp_text_rect)
 
 
