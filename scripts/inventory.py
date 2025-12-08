@@ -52,6 +52,34 @@ player_inventory = {
     "consumables": []  # 소비 아이템 리스트
 }
 
+# 최대 무기 칸 (장착 + 보유 합계)
+MAX_WEAPONS = 42  # 장착 최대 6 + 보유 최대 36
+
+
+def try_add_weapon(weapon):
+    """
+    무기 획득 통합 함수 - 모든 무기 획득 경로에서 사용
+    상점, 이스터에그, 보스 드롭, 랜덤박스 등
+    
+    Returns:
+        tuple: (added_to_inventory: bool, message: str)
+    """
+    global player_inventory
+    
+    # 보유칸만 체크 (장착칸 제외)
+    weapons_count = len(player_inventory["weapons"])
+    max_weapons = inventory_state["max_inventory_slots"]
+    
+    if weapons_count < max_weapons:
+        # 보유칸에 공간 있음
+        player_inventory["weapons"].append(weapon)
+        return (True, "인벤토리에 추가됨")
+    else:
+        # 보유칸 꽉 참 -> 신전 보관함으로
+        from scripts import temple
+        temple.add_weapon_to_storage(weapon)
+        return (False, "신전 보관함으로 이동")
+
 def draw_inventory(screen, font_main, font_small, WIDTH, HEIGHT, battle_player, dt, font_path=None, game_state=None):
     """인벤토리 화면 그리기"""
     global inventory_state

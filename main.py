@@ -8,6 +8,7 @@ from scripts import interactions, battle_system, inventory
 from scripts.weapons import create_weapon
 from scripts import weapon_swap, consume_battle
 from scripts import blacksmith
+from scripts import temple
 
 # --- 기본 설정 ---
 WIDTH, HEIGHT = 800, 600
@@ -43,7 +44,7 @@ pftg_icon = pygame.image.load("resources\\png\\pftg_icon.png")
 game_state = {
     "state": "start",  # start, town, battle등등
     "player_name": "Hero",
-    "gold": 100,  # 초기 골드 추가
+    "gold": 10000000,  # 초기 골드 추가
     "message": "",
     "message_timer": 0
 }
@@ -365,6 +366,16 @@ dungeon = Building(
 buildings.add(dungeon)
 all_sprites.add(dungeon)
 
+# 왼쪽 - 신전 (128x128)
+temple_building = Building(
+    "신전", 177, 480, 160, 160, "resources\\png\\building\\temple.png",
+    on_interact=lambda: interactions.enter_temple(game_state),
+    hitbox=(9, 80, 143, 60),
+    interact_area=(47, 140, 66, 20)
+)
+buildings.add(temple_building)
+all_sprites.add(temple_building)
+
 # --- 히트박스 전용 오브젝트 (배경에 이미지 포함됨) ---
 # 나무 그루터기 - town_bg_2.png
 # 히트박스 위치: (280, 890), 크기: 90x25
@@ -667,6 +678,10 @@ while True:
         case "blacksmith":
             blacksmith.draw_blacksmith(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, game_state, dt, FONT_PATH)
             blacksmith.handle_blacksmith_input(events, game_state)
+        
+        case "temple":
+            temple.draw_temple(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, game_state, dt, FONT_PATH)
+            temple.handle_temple_input(events, game_state)
                     
         case "battle":
             battle_system.update_battle(screen, FONT_SMALL, WIDTH, HEIGHT, game_state, events)

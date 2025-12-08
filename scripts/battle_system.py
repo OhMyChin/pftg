@@ -20,6 +20,7 @@ floor_monsters = []
 current_monster_index = 0
 current_monster_data = None  # 현재 몬스터 데이터 (드롭용)
 current_bg_image = None  # 현재 층 배경 이미지 캐시
+max_floor_reached = 0  # 최대 도달 층 (스토리/대화 해금용)
 
 # --- 전투 상태 제어 ---
 battle_state = {
@@ -195,9 +196,14 @@ def spawn_next_monster():
 
 def advance_floor():
     """다음 층으로 진행"""
-    global current_floor, floor_monsters, current_monster_index, current_bg_image
+    global current_floor, floor_monsters, current_monster_index, current_bg_image, max_floor_reached
     
     current_floor += 1
+    
+    # 최대 도달 층 업데이트
+    if current_floor > max_floor_reached:
+        max_floor_reached = current_floor
+    
     floor_monsters = get_floor_monsters(current_floor)
     current_monster_index = 0
     
@@ -305,9 +311,12 @@ def execute_battle_action(game_state_ref):
                         game_state_ref["gold"] = game_state_ref.get("gold", 0) + drop["amount"]
                         drop_msgs.append(f"{drop['amount']}G")
                     elif drop["type"] == "weapon":
-                        from scripts.inventory import player_inventory
-                        player_inventory["weapons"].append(drop["item"])
-                        drop_msgs.append(f"[{drop['item'].grade}] {drop['item'].name}")
+                        from scripts.inventory import try_add_weapon
+                        added, msg = try_add_weapon(drop["item"])
+                        if added:
+                            drop_msgs.append(f"[{drop['item'].grade}] {drop['item'].name}")
+                        else:
+                            drop_msgs.append(f"[{drop['item'].grade}] {drop['item'].name} ({msg})")
                 
                 if drop_msgs:
                     battle_state["drop_message"] = "획득: " + ", ".join(drop_msgs)
