@@ -50,6 +50,9 @@ game_state = {
 }
 blink_timer = 0
 
+# --- 디버그 모드 (M키로 토글) ---
+debug_mode = False
+
 # --- 폰트 경로 설정 ---
 FONT_PATH = os.path.join("resources", "font", "DOSGothic.ttf")
 FONT_MAIN = pygame.font.Font(FONT_PATH, 60)
@@ -405,6 +408,10 @@ while True:
             pygame.quit()
             sys.exit()
         elif event.type == pygame.KEYDOWN:
+            # M키: 디버그 모드 토글 (마을에서만 작동)
+            if event.key == pygame.K_m and game_state["state"] == "town":
+                debug_mode = not debug_mode
+            
             # 이름 입력 상태일 때만 글자 입력 받기
             if game_state["state"] == "name_input":
                 if event.key == pygame.K_RETURN:
@@ -531,30 +538,31 @@ while True:
                     # 플레이어 그리기
                     screen.blit(player.display_image, player_image_rect)
 
-            # --- 디버깅용 테두리 (플레이어 위에 표시) ---
-            # 건물 히트박스 및 상호작용 영역
-            for building in buildings:
-                if isinstance(building, HitboxObject):
-                    # 히트박스 전용 오브젝트 (노란색 테두리)
-                    hitbox_debug = building.rect.move(-camera_offset.x, -camera_offset.y)
-                    pygame.draw.rect(screen, (255, 255, 0), hitbox_debug, 2)
-                else:
-                    # 건물 히트박스 (파란색 테두리)
-                    hitbox_debug = building.rect.move(-camera_offset.x, -camera_offset.y)
-                    pygame.draw.rect(screen, (0, 100, 255), hitbox_debug, 2)
-                    
-                    # 상호작용 영역 (빨간색 테두리)
-                    debug_rect = building.interact_rect.move(-camera_offset)
-                    pygame.draw.rect(screen, (255, 0, 0), debug_rect, 1)
+            # --- 디버깅용 테두리 (M키로 토글) ---
+            if debug_mode:
+                # 건물 히트박스 및 상호작용 영역
+                for building in buildings:
+                    if isinstance(building, HitboxObject):
+                        # 히트박스 전용 오브젝트 (노란색 테두리)
+                        hitbox_debug = building.rect.move(-camera_offset.x, -camera_offset.y)
+                        pygame.draw.rect(screen, (255, 255, 0), hitbox_debug, 2)
+                    else:
+                        # 건물 히트박스 (파란색 테두리)
+                        hitbox_debug = building.rect.move(-camera_offset.x, -camera_offset.y)
+                        pygame.draw.rect(screen, (0, 100, 255), hitbox_debug, 2)
+                        
+                        # 상호작용 영역 (빨간색 테두리)
+                        debug_rect = building.interact_rect.move(-camera_offset)
+                        pygame.draw.rect(screen, (255, 0, 0), debug_rect, 1)
 
-            # 플레이어 히트박스 (초록색 테두리)
-            hitbox_screen = pygame.Rect(
-                WIDTH // 2 - player.hitbox.width // 2,
-                HEIGHT // 2 - player.hitbox.height // 2,
-                player.hitbox.width,
-                player.hitbox.height
-            )
-            pygame.draw.rect(screen, (0, 255, 0), hitbox_screen, 2)
+                # 플레이어 히트박스 (초록색 테두리)
+                hitbox_screen = pygame.Rect(
+                    WIDTH // 2 - player.hitbox.width // 2,
+                    HEIGHT // 2 - player.hitbox.height // 2,
+                    player.hitbox.width,
+                    player.hitbox.height
+                )
+                pygame.draw.rect(screen, (0, 255, 0), hitbox_screen, 2)
 
             # --- 마을 체력 표시 (텍스트 + 체력바) ---
             if battle_system.battle_player:

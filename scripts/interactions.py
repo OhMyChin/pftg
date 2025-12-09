@@ -64,7 +64,7 @@ def enter_temple(game_state_ref):
     game_state_ref["state"] = "temple"
 
 def get_easter(game_state_ref):
-    """이스터에그 상호작용 - 테스트 무기 + 골드 + 강화재료 + 하이패스 전체 해금"""
+    """이스터에그 상호작용 - 테스트 무기 + 전설무기 3종 + 골드 + 강화재료 + 하이패스 전체 해금"""
     from scripts.weapons import create_weapon
     from scripts.inventory import try_add_weapon
     from scripts.blacksmith import player_materials
@@ -75,9 +75,12 @@ def get_easter(game_state_ref):
         game_state_ref["message"] = "이미 보물을 획득했습니다!"
         return
     
-    # 테스트 무기 지급
-    weapon_id = "test_sword"
-    new_weapon = create_weapon(weapon_id)
+    # 테스트 무기 + 전설무기 3종 지급
+    weapon_ids = ["test_sword", "excalibur", "zeus_thunderbolt", "poseidon_trident"]
+    for weapon_id in weapon_ids:
+        weapon = create_weapon(weapon_id)
+        if weapon:
+            try_add_weapon(weapon)
     
     # 골드 지급
     gold_reward = 10000000
@@ -96,14 +99,6 @@ def get_easter(game_state_ref):
     for key in temple.visited_places:
         temple.visited_places[key] = True
     
-    if new_weapon:
-        success, location = try_add_weapon(new_weapon)
-        game_state_ref["easter_claimed"] = True
-        if location == "storage":
-            game_state_ref["message"] = f"[치트] {new_weapon.name}(신전), {gold_reward}G, 광석, 하이패스 전체 해금!"
-        else:
-            game_state_ref["message"] = f"[치트] {new_weapon.name}, {gold_reward}G, 광석, 하이패스 전체 해금!"
-        print(f"이스터에그: {new_weapon.name} + {gold_reward}G + 광석 각 1000개 + 하이패스 45층 해금!")
-    else:
-        game_state_ref["easter_claimed"] = True
-        game_state_ref["message"] = f"[치트] {gold_reward}G, 광석 각 1000개, 하이패스 전체 해금!"
+    game_state_ref["easter_claimed"] = True
+    game_state_ref["message"] = f"[치트] 전설무기 4종 + {gold_reward}G + 광석 + 하이패스 전체 해금!"
+    print(f"이스터에그: 전설무기 4종 + {gold_reward}G + 광석 각 1000개 + 하이패스 45층 해금!")
