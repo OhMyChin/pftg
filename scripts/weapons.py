@@ -137,6 +137,39 @@ RUSTY_DAGGER = Weapon(
     transcend_skill="deep_wound"  # 초월: 깊은 상처
 )
 
+BASIC_SPEAR = Weapon(
+    id_="basic_spear",
+    name="기본 창",
+    grade="일반",
+    max_durability=35,
+    skill_ids=["sweep"],
+    description="간단하게 만든 창. 긴 사거리로 넓게 공격할 수 있다.",
+    image_path="resources/png/weapon/basic_spear.png",
+    transcend_skill="spear_charge"  # 초월: 창 돌진
+)
+
+SIMPLE_STAFF = Weapon(
+    id_="simple_staff",
+    name="소박한 지팡이",
+    grade="일반",
+    max_durability=25,
+    skill_ids=["magic_bolt"],
+    description="마력이 조금 깃든 지팡이. 기본적인 마법 공격이 가능하다.",
+    image_path="resources/png/weapon/simple_staff.png",
+    transcend_skill="mana_burst"  # 초월: 마나 폭발
+)
+
+HANDMADE_BOW = Weapon(
+    id_="handmade_bow",
+    name="수제 활",
+    grade="일반",
+    max_durability=30,
+    skill_ids=["precise_shot"],
+    description="손수 만든 활. 정확한 사격이 가능하다.",
+    image_path="resources/png/weapon/handmade_bow.png",
+    transcend_skill="arrow_rain"  # 초월: 화살비
+)
+
 IRON_SWORD = Weapon(
     id_="iron_sword",
     name="철 검",
@@ -528,9 +561,13 @@ EXCALIBUR = Weapon(
 ALL_WEAPONS = {
     "test_sword": TESTER_SWORD,
     "wooden_stick": WOODEN_STICK,
+    "rusty_dagger": RUSTY_DAGGER,
+    "basic_spear": BASIC_SPEAR,
+    "simple_staff": SIMPLE_STAFF,
+    "handmade_bow": HANDMADE_BOW,
+    # 희귀 무기
     "iron_sword": IRON_SWORD,
     "rapier": RAPIER,
-    "rusty_dagger": RUSTY_DAGGER,
     # 영웅 무기
     "sword_of_fire": SWORD_OF_FIRE,
     "bow_of_wind": BOW_OF_WIND,

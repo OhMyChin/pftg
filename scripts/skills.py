@@ -272,6 +272,34 @@ GOLDEN_RULE = Skill(
     description="[초월] 검에 부여된 황금의 축복으로 내구도를 회복시킨다."
 )
 
+# 일반 무기 초월 스킬
+SPEAR_CHARGE = Skill(
+    id_="spear_charge",
+    name="창 돌진",
+    power=30,
+    priority=1,
+    durability_cost=25,
+    description="[초월] 창을 앞세워 적에게 돌진한다"
+)
+
+MANA_BURST = Skill(
+    id_="mana_burst",
+    name="마나 폭발",
+    power=28,
+    priority=0,
+    durability_cost=20,
+    description="[초월] 마력을 폭발시켜 적에게 큰 피해를 입힌다"
+)
+
+ARROW_RAIN = Skill(
+    id_="arrow_rain",
+    name="화살비",
+    power=32,
+    priority=0,
+    durability_cost=25,
+    description="[초월] 하늘에서 화살비를 쏟아붓는다"
+)
+
 # ==================== 몬스터 전용 스킬 (슬라임) ====================
 
 BODY_SLAM = Skill(
@@ -632,6 +660,9 @@ ALL_SKILLS = {
     "continental_crush": CONTINENTAL_CRUSH,
     "slime_burst": SLIME_BURST,
     "golden_rule": GOLDEN_RULE,
+    "spear_charge": SPEAR_CHARGE,
+    "mana_burst": MANA_BURST,
+    "arrow_rain": ARROW_RAIN,
     # 스켈레톤 스킬
     "bone_strike": BONE_STRIKE,
     "muscle_punch": MUSCLE_PUNCH,
