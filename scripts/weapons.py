@@ -1,5 +1,6 @@
 from scripts.skills import ALL_SKILLS
 
+
 class Weapon:
     """무기 기본 클래스"""
     def __init__(self, id_, name, grade, max_durability, skill_ids, description="", image_path="",
@@ -102,18 +103,28 @@ class Weapon:
             name = f"[초월] {name}"
         return name
 
-# ==================== 무기 정의 ====================
+
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                            테스트 무기                                     ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
 
 TESTER_SWORD = Weapon(
     id_="test_sword",
     name="킹왕짱얼티밋 소드",
-    grade="일반",
+    grade="테스트",
     max_durability=9999,
     skill_ids=["test_slash"],
     description="테스트용 무기입니다.",
     image_path="resources/png/weapon/test_sword.png",
     transcend_skill=None
 )
+
+
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                         일반 등급 무기                                     ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║  나무 막대기, 녹슨 단검, 기본 창, 소박한 지팡이, 수제 활                     ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
 
 WOODEN_STICK = Weapon(
     id_="wooden_stick",
@@ -170,6 +181,13 @@ HANDMADE_BOW = Weapon(
     transcend_skill="arrow_rain"  # 초월: 화살비
 )
 
+
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                         희귀 등급 무기                                     ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║  철 검, 레이피어                                                           ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
+
 IRON_SWORD = Weapon(
     id_="iron_sword",
     name="철 검",
@@ -192,7 +210,12 @@ RAPIER = Weapon(
     transcend_skill="fast_pierce"  # 초월: 초고속 찌르기
 )
 
-# ==================== 영웅 무기 ====================
+
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                         영웅 등급 무기                                     ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║  불의 검, 바람의 활, 물의 지팡이, 대지의 폴암                                ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
 
 SWORD_OF_FIRE = Weapon(
     id_="sword_of_fire",
@@ -238,7 +261,12 @@ POLEARM_OF_EARTH = Weapon(
     transcend_skill="continental_crush"  # 초월: 대륙 분쇄
 )
 
-# ==================== 보스 드롭 무기 ====================
+
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                     영웅 등급 보스 드롭 무기                                ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║  킹 슬라임의 지팡이, 황금왕의 검, 뮤턴트의 대도끼                            ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
 
 SLIME_WAND = Weapon(
     id_="slime_wand",
@@ -260,7 +288,7 @@ GOLDEN_SWORD = Weapon(
     skill_ids=["golden_slash", "sword_rain", "kings_judgment"],
     description="황금왕이 사용하던 전설의 검. 무한한 부와 권력의 상징이다.",
     image_path="resources/png/weapon/golden_sword.png",
-    transcend_skill="golden_rule",
+    transcend_skill="golden_rule",  # 초월: 황금률
     is_boss_drop=True
 )
 
@@ -272,11 +300,47 @@ GOBLIN_BIG_AXE = Weapon(
     skill_ids=["giant_cleave", "whirlwind_axe", "executioner"],
     description="뮤턴트 고블린이 휘두르던 거대한 도끼. 그 무게만으로도 적을 압도한다.",
     image_path="resources/png/weapon/goblin_big_axe.png",
-    transcend_skill="titan_crush",
+    transcend_skill="titan_crush",  # 초월: 타이탄 크러쉬
     is_boss_drop=True
 )
 
-# ==================== 몬스터 전용 무기 (슬라임) ====================
+
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                         전설 등급 무기                                     ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║  엑스칼리버, 마공학 해머                                                    ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
+
+EXCALIBUR = Weapon(
+    id_="excalibur",
+    name="엑스칼리버",
+    grade="전설",
+    max_durability=500,
+    skill_ids=["holy_slash", "light_burst", "divine_judgment", "blessing_of_light"],
+    description="전설 속에만 존재하던 성스러운 검. 선택받은 자만이 그 진정한 힘을 발휘할 수 있다.",
+    image_path="resources/png/weapon/excalibur.png",
+    transcend_passive="stack_power",  # 초월 패시브: 스킬 사용 시 공격력 +1 스택
+    is_boss_drop=False
+)
+
+HEXTECH_HAMMER = Weapon(
+    id_="hextech_hammer",
+    name="마공학 해머",
+    grade="전설",
+    max_durability=350,
+    skill_ids=["hextech_strike", "energy_wave", "overcharge_smash", "core_charge"],
+    description="마공학 골렘의 코어로 만든 전설의 해머. 마법 기술의 정수가 담겨있다.",
+    image_path="resources/png/weapon/hextech_hammer.png",
+    transcend_passive="overcharge",  # 초월 패시브: 내구도가 낮을수록 공격력 증가
+    is_boss_drop=True
+)
+
+
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                       몬스터 전용 무기 (슬라임)                             ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║  슬라임, 빨간/노란/파란 슬라임, 블러드/마그마/소드/무지개 슬라임, 킹 슬라임   ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
 
 SLIME_BODY = Weapon(
     id_="slime1",
@@ -359,9 +423,12 @@ KING_SLIME_BODY = Weapon(
     image_path=""
 )
 
-# ==================== 몬스터 전용 무기 (스켈레톤) ====================
 
-# ==================== 몬스터 전용 무기 (고블린) ====================
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                       몬스터 전용 무기 (고블린)                             ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║  고블린, 궁수/도적/전사/마법사 고블린, 뮤턴트 고블린                         ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
 
 GOBLIN_CLUB = Weapon(
     id_="goblin1",
@@ -417,7 +484,12 @@ MUTANT_GOBLIN_FIST = Weapon(
     image_path=""
 )
 
-# ==================== 몬스터 전용 무기 (스켈레톤) ====================
+
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                      몬스터 전용 무기 (스켈레톤)                            ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║  스켈레톤, 머슬/사이킥/다크/윙 스켈레톤, 황금왕                             ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
 
 SKELETON_BONE = Weapon(
     id_="skeleton1",
@@ -473,7 +545,12 @@ RICH_KING_SWORD = Weapon(
     image_path=""
 )
 
-# ==================== 몬스터 전용 무기 (골렘) ====================
+
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                       몬스터 전용 무기 (골렘)                              ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║  골렘, 푸른/붉은/검은/킬러 골렘, 마공학 골렘                                ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
 
 GOLEM_FIST = Weapon(
     id_="golem1",
@@ -529,89 +606,83 @@ HEXTECH_GOLEM_CORE = Weapon(
     image_path=""
 )
 
-# ==================== 보스 드롭 무기 (골렘) ====================
 
-HEXTECH_HAMMER = Weapon(
-    id_="hextech_hammer",
-    name="마공학 해머",
-    grade="전설",
-    max_durability=350,
-    skill_ids=["hextech_strike", "energy_wave", "overcharge_smash", "core_charge"],
-    description="마공학 골렘의 코어로 만든 전설의 해머. 마법 기술의 정수가 담겨있다.",
-    image_path="resources/png/weapon/hextech_hammer.png",
-    transcend_passive="overcharge",  # 초월 패시브: 내구도가 낮을수록 공격력 증가
-    is_boss_drop=True
-)
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                          무기 딕셔너리 (ALL_WEAPONS)                       ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║  모든 무기를 ID로 접근 가능하도록 등록                                      ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
 
-# ==================== 전설 무기 ====================
-
-EXCALIBUR = Weapon(
-    id_="excalibur",
-    name="엑스칼리버",
-    grade="전설",
-    max_durability=500,
-    skill_ids=["holy_slash", "light_burst", "divine_judgment", "blessing_of_light"],
-    description="전설 속에만 존재하던 성스러운 검. 선택받은 자만이 그 진정한 힘을 발휘할 수 있다.",
-    image_path="resources/png/weapon/excalibur.png",
-    transcend_passive="stack_power",  # 초월 패시브: 스킬 사용 시 공격력 +1 스택
-    is_boss_drop=False
-)
-
-# 무기 딕셔너리 (ID로 접근 가능)
 ALL_WEAPONS = {
+    # ==================== 테스트 ====================
     "test_sword": TESTER_SWORD,
-    "wooden_stick": WOODEN_STICK,
-    "rusty_dagger": RUSTY_DAGGER,
-    "basic_spear": BASIC_SPEAR,
-    "simple_staff": SIMPLE_STAFF,
-    "handmade_bow": HANDMADE_BOW,
-    # 희귀 무기
-    "iron_sword": IRON_SWORD,
-    "rapier": RAPIER,
-    # 영웅 무기
-    "sword_of_fire": SWORD_OF_FIRE,
-    "bow_of_wind": BOW_OF_WIND,
-    "staff_of_water": STAFF_OF_WATER,
-    "polearm_of_earth": POLEARM_OF_EARTH,
-    # 보스 드롭
-    "slime_wand": SLIME_WAND,
-    "golden_sword": GOLDEN_SWORD,
-    "goblin_big_axe": GOBLIN_BIG_AXE,
-    "hextech_hammer": HEXTECH_HAMMER,
-    # 전설 무기
-    "excalibur": EXCALIBUR,
-    # 몬스터 무기 (슬라임)
-    "slime1": SLIME_BODY,
-    "slime2": RED_SLIME_BODY,
-    "slime3": YELLOW_SLIME_BODY,
-    "slime4": BLUE_SLIME_BODY,
-    "slime5": BLOOD_SLIME_BODY,
-    "slime6": MAGMA_SLIME_BODY,
-    "slime7": SWORD_SLIME_BODY,
-    "slime8": RAINBOW_SLIME_BODY,
-    "slime9": KING_SLIME_BODY,
-    # 몬스터 무기 (스켈레톤)
-    "skeleton1": SKELETON_BONE,
-    "skeleton2": MUSCLE_SKELETON_BODY,
-    "skeleton3": PSYCHIC_SKELETON_MIND,
-    "skeleton4": DARK_SKELETON_SHADOW,
-    "skeleton5": WING_SKELETON_WINGS,
-    "skeleton_boss": RICH_KING_SWORD,
-    # 몬스터 무기 (고블린)
-    "goblin1": GOBLIN_CLUB,
-    "goblin2": GOBLIN_BOW,
-    "goblin3": GOBLIN_DAGGER,
-    "goblin4": GOBLIN_AXE,
-    "goblin5": GOBLIN_STAFF,
-    "goblin_boss": MUTANT_GOBLIN_FIST,
-    # 몬스터 무기 (골렘)
-    "golem1": GOLEM_FIST,
-    "golem2": BLUE_GOLEM_FIST,
-    "golem3": RED_GOLEM_FIST,
-    "golem4": BLACK_GOLEM_FIST,
-    "golem5": KILLER_GOLEM_HAMMER,
-    "golem_boss": HEXTECH_GOLEM_CORE,
+    
+    # ==================== 일반 등급 ====================
+    "wooden_stick": WOODEN_STICK,      # 나무 막대기
+    "rusty_dagger": RUSTY_DAGGER,      # 녹슨 단검
+    "basic_spear": BASIC_SPEAR,        # 기본 창
+    "simple_staff": SIMPLE_STAFF,      # 소박한 지팡이
+    "handmade_bow": HANDMADE_BOW,      # 수제 활
+    
+    # ==================== 희귀 등급 ====================
+    "iron_sword": IRON_SWORD,          # 철 검
+    "rapier": RAPIER,                  # 레이피어
+    
+    # ==================== 영웅 등급 ====================
+    "sword_of_fire": SWORD_OF_FIRE,    # 불의 검
+    "bow_of_wind": BOW_OF_WIND,        # 바람의 활
+    "staff_of_water": STAFF_OF_WATER,  # 물의 지팡이
+    "polearm_of_earth": POLEARM_OF_EARTH,  # 대지의 폴암
+    
+    # ==================== 영웅 등급 (보스 드롭) ====================
+    "slime_wand": SLIME_WAND,          # 킹 슬라임의 지팡이
+    "golden_sword": GOLDEN_SWORD,      # 황금왕의 검
+    "goblin_big_axe": GOBLIN_BIG_AXE,  # 뮤턴트의 대도끼
+    
+    # ==================== 전설 등급 ====================
+    "excalibur": EXCALIBUR,            # 엑스칼리버
+    "hextech_hammer": HEXTECH_HAMMER,  # 마공학 해머 (보스 드롭)
+    
+    # ==================== 몬스터 무기 (슬라임) ====================
+    "slime1": SLIME_BODY,              # 슬라임
+    "slime2": RED_SLIME_BODY,          # 빨간 슬라임
+    "slime3": YELLOW_SLIME_BODY,       # 노란 슬라임
+    "slime4": BLUE_SLIME_BODY,         # 파란 슬라임
+    "slime5": BLOOD_SLIME_BODY,        # 블러드 슬라임
+    "slime6": MAGMA_SLIME_BODY,        # 마그마 슬라임
+    "slime7": SWORD_SLIME_BODY,        # 소드 슬라임
+    "slime8": RAINBOW_SLIME_BODY,      # 무지개 슬라임
+    "slime9": KING_SLIME_BODY,         # 킹 슬라임
+    
+    # ==================== 몬스터 무기 (고블린) ====================
+    "goblin1": GOBLIN_CLUB,            # 고블린
+    "goblin2": GOBLIN_BOW,             # 궁수 고블린
+    "goblin3": GOBLIN_DAGGER,          # 도적 고블린
+    "goblin4": GOBLIN_AXE,             # 전사 고블린
+    "goblin5": GOBLIN_STAFF,           # 마법사 고블린
+    "goblin_boss": MUTANT_GOBLIN_FIST, # 뮤턴트 고블린
+    
+    # ==================== 몬스터 무기 (스켈레톤) ====================
+    "skeleton1": SKELETON_BONE,        # 스켈레톤
+    "skeleton2": MUSCLE_SKELETON_BODY, # 머슬 스켈레톤
+    "skeleton3": PSYCHIC_SKELETON_MIND, # 사이킥 스켈레톤
+    "skeleton4": DARK_SKELETON_SHADOW, # 다크 스켈레톤
+    "skeleton5": WING_SKELETON_WINGS,  # 윙 스켈레톤
+    "skeleton_boss": RICH_KING_SWORD,  # 황금왕
+    
+    # ==================== 몬스터 무기 (골렘) ====================
+    "golem1": GOLEM_FIST,              # 골렘
+    "golem2": BLUE_GOLEM_FIST,         # 푸른 골렘
+    "golem3": RED_GOLEM_FIST,          # 붉은 골렘
+    "golem4": BLACK_GOLEM_FIST,        # 검은 골렘
+    "golem5": KILLER_GOLEM_HAMMER,     # 킬러 골렘
+    "golem_boss": HEXTECH_GOLEM_CORE,  # 마공학 골렘
 }
+
+
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                            무기 생성 함수                                  ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
 
 def create_weapon(weapon_id):
     """새로운 무기 인스턴스 생성 (내구도 초기화됨)"""
