@@ -674,11 +674,14 @@ def handle_shop_input(events, game_state):
                                 elif item["type"] == "consumable":
                                     # 소모품 추가
                                     from scripts.consume import create_consumable
+                                    from scripts import temple
                                     consumable = create_consumable(item["id"])
                                     if consumable:
                                         player_inventory["consumables"].append(consumable)
                                         shop_state["message"] = f"{item['name']}을(를) 구매했습니다!"
                                         shop_state["message_timer"] = 0
+                                        # 소비 아이템 질문 해금
+                                        temple.set_visited("shop_consumable")
                                 elif item["type"] == "bag":
                                     # 가방 구매 - 인벤토리 확장
                                     from scripts.inventory import inventory_state

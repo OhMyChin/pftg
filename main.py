@@ -681,6 +681,33 @@ while True:
         case "temple":
             temple.draw_temple(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, game_state, dt, FONT_PATH)
             temple.handle_temple_input(events, game_state)
+        
+        case "highpass":
+            # 마을 배경 그리기 (카메라 위치 고정 - 이동 없음)
+            camera_x = camera_offset.x
+            camera_y = camera_offset.y
+            
+            # 카메라 범위 제한
+            camera_x = max(0, min(camera_x, MAP_WIDTH - WIDTH))
+            camera_y = max(0, min(camera_y, MAP_HEIGHT - HEIGHT))
+            
+            if town_bg:
+                screen.blit(town_bg, (-camera_x, -camera_y))
+            else:
+                screen.fill((50, 50, 50))
+            
+            # 플레이어 그리기
+            player_screen_x = player.pos.x - camera_x - player.display_image.get_width() // 2
+            player_screen_y = player.pos.y - camera_y - player.image_height + player.hitbox.height // 2
+            screen.blit(player.display_image, (player_screen_x, player_screen_y))
+            
+            # 오버레이
+            if town_overlay:
+                screen.blit(town_overlay, (-camera_x, -camera_y))
+            
+            # 하이패스 UI
+            temple.draw_highpass(screen, FONT_MAIN, FONT_SMALL, WIDTH, HEIGHT, FONT_PATH)
+            temple.handle_highpass_input(events, game_state, battle_system.start_battle, game_state["player_name"])
                     
         case "battle":
             battle_system.update_battle(screen, FONT_SMALL, WIDTH, HEIGHT, game_state, events)

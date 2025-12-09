@@ -341,6 +341,34 @@ FLOOR_DATA = {
                     gold=(800, 1500), drop_weapon="hextech_hammer", image_size=280, 
                     drop_material={"type": "legend", "min": 1, "max": 3}),
     ],
+    
+    # ==================== 41~45층: 사념 & 최종 보스 ====================
+    41: [
+        # 킹 슬라임의 사념 (무기 드롭 X, 골드만)
+        MonsterData("킹 슬라임의 사념", 150, 12, "slime9", "resources/png/enemy/slimes/king_slime.png",
+                    gold=(200, 400), drop_weapon=None, image_size=160),
+    ],
+    42: [
+        # 뮤턴트 고블린의 사념 (무기 드롭 X, 골드만)
+        MonsterData("뮤턴트 고블린의 사념", 300, 10, "goblin_boss", "resources/png/enemy/goblins/mutant_goblin.png",
+                    gold=(300, 600), drop_weapon=None, image_size=280),
+    ],
+    43: [
+        # 황금왕의 사념 (무기 드롭 X, 골드만)
+        MonsterData("황금왕의 사념", 450, 14, "skeleton_boss", "resources/png/enemy/skeletons/rich_king.png",
+                    gold=(600, 1200), drop_weapon=None, image_size=240),
+    ],
+    44: [
+        # 마공학 골렘의 사념 (무기 드롭 X, 재료만)
+        MonsterData("마공학 골렘의 사념", 700, 14, "golem_boss", "resources/png/enemy/golems/hextech_golem.png",
+                    gold=None, drop_weapon=None, image_size=280,
+                    drop_material={"type": "legend", "min": 2, "max": 5}),
+    ],
+    # 45층: 최종 보스 - 어둠의 신 (추후 추가)
+    # 45: [
+    #     MonsterData("어둠의 신", ???, ???, "???", "resources/png/enemy/boss/dark_god.png",
+    #                 gold=(???), drop_weapon="???", image_size=???),
+    # ],
 }
 
 

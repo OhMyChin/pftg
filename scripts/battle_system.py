@@ -117,8 +117,8 @@ def wrap_battle_text(text, font, max_width):
     return lines
 
 
-def start_battle(game_state_ref, player_name):
-    """던전 진입 시 전투 시작"""
+def start_battle(game_state_ref, player_name, start_floor=1):
+    """던전 진입 시 전투 시작 (start_floor: 시작 층)"""
     global battle_player, battle_enemy, battle_message, selected_skill_index
     global current_floor, floor_monsters, current_monster_index, current_bg_image
 
@@ -134,7 +134,7 @@ def start_battle(game_state_ref, player_name):
         first_weapon = player_inventory["equipped_weapons"][0]
         battle_player.equip_weapon(first_weapon)
 
-    current_floor = 1
+    current_floor = start_floor  # 선택한 층에서 시작
     floor_monsters = get_floor_monsters(current_floor)
     current_monster_index = 0
     
@@ -339,19 +339,20 @@ def execute_battle_action(game_state_ref):
                     battle_state["showing_drop"] = True
                     battle_state["current_text"] = battle_state["drop_message"]
                     
-                    # 보스 처치 시 신전 대화 해금
+                    # 보스 처치 시 신전 대화 해금 + 하이패스 해금
+                    from scripts import temple
                     if battle_enemy and battle_enemy.name == "킹 슬라임":
-                        from scripts import temple
                         temple.set_visited("boss_king_slime")
+                        temple.set_max_floor_reached(11)  # 11층 하이패스 해금
                     elif battle_enemy and battle_enemy.name == "뮤턴트 고블린":
-                        from scripts import temple
                         temple.set_visited("boss_mutant_goblin")
+                        temple.set_max_floor_reached(21)  # 21층 하이패스 해금
                     elif battle_enemy and battle_enemy.name == "황금왕":
-                        from scripts import temple
                         temple.set_visited("boss_golden_king")
+                        temple.set_max_floor_reached(31)  # 31층 하이패스 해금
                     elif battle_enemy and battle_enemy.name == "마공학 골렘":
-                        from scripts import temple
                         temple.set_visited("boss_hextech_golem")
+                        temple.set_max_floor_reached(41)  # 41층 하이패스 해금
                     
                     return False
             
@@ -538,8 +539,22 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
             hp_bar_y += offset
             enemy_y += offset
         
-        # 이미지 그리기
+        # 몬스터 이미지 그리기
         screen.blit(enemy_image, (enemy_x, enemy_y))
+        
+        # 사념 보스일 경우 오라 이미지를 몬스터 위에 덮어씌우기
+        if "사념" in battle_enemy.name:
+            try:
+                ora_image = pygame.image.load("resources/png/enemy/dark_ora.png").convert_alpha()
+                # 오라 크기: 몬스터보다 1.3배 크게
+                ora_size = int(max(enemy_image_width, enemy_image_height) * 1.3)
+                ora_image = pygame.transform.scale(ora_image, (ora_size, ora_size))
+                # 오라 위치: 몬스터 중앙에 맞춤
+                ora_x = enemy_x + enemy_image_width // 2 - ora_size // 2
+                ora_y = enemy_y + enemy_image_height // 2 - ora_size // 2
+                screen.blit(ora_image, (ora_x, ora_y))
+            except:
+                pass  # 오라 이미지 로드 실패 시 무시
 
         # 이름 그리기 (가로 중앙 정렬)
         enemy_name_text = enemy_name_font.render(f"{battle_enemy.name}", True, (255, 255, 255))

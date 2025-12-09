@@ -227,7 +227,7 @@ GOLDEN_SWORD = Weapon(
     skill_ids=["golden_slash", "sword_rain", "kings_judgment"],
     description="황금왕이 사용하던 전설의 검. 무한한 부와 권력의 상징이다.",
     image_path="resources/png/weapon/golden_sword.png",
-    transcend_skill="kings_judgment",
+    transcend_skill="golden_rule",
     is_boss_drop=True
 )
 

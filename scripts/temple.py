@@ -4,8 +4,9 @@ import pygame
 # --- 신전 상태 ---
 temple_state = {
     "menu_index": 0,  # 0: 대화, 1: 무기 수령, 2: 나가기
-    "current_screen": "menu",  # menu, dialogue_menu, story, question_select, question, weapon_storage
+    "current_screen": "menu",  # menu, dialogue_menu, story_select, story, question_select, question, weapon_storage
     "dialogue_menu_index": 0,  # 0: 스토리, 1: 질문
+    "story_select_index": 0,  # 스토리 선택 인덱스
     "story_index": 0,
     "story_page": 0,
     "question_select_index": 0,  # 질문 선택 인덱스
@@ -327,6 +328,7 @@ def reset_temple_state():
         "menu_index": 0,
         "current_screen": "menu",
         "dialogue_menu_index": 0,
+        "story_select_index": 0,
         "story_index": 0,
         "story_page": 0,
         "question_select_index": 0,
@@ -364,6 +366,8 @@ def draw_temple(screen, font_main, font_small, width, height, game_state, dt, fo
         draw_menu(screen, font_main, font_small, width, height)
     elif current_screen == "dialogue_menu":
         draw_dialogue_menu(screen, font_main, font_small, width, height)
+    elif current_screen == "story_select":
+        draw_story_select(screen, font_main, font_small, width, height)
     elif current_screen == "story":
         draw_story(screen, font_main, font_small, width, height)
     elif current_screen == "question_select":
@@ -502,6 +506,75 @@ def draw_dialogue_menu(screen, font_main, font_small, width, height):
         btn_text = btn_font.render(item, True, text_color)
         text_rect = btn_text.get_rect(center=button_rect.center)
         screen.blit(btn_text, text_rect)
+
+
+def draw_story_select(screen, font_main, font_small, width, height):
+    """스토리 선택 화면 - 질문 선택과 동일한 스타일"""
+    unlocked = get_unlocked_stories()
+    
+    # 중앙 팝업
+    pw, ph = 400, 320
+    px, py = (width - pw) // 2, (height - ph) // 2
+    
+    pygame.draw.rect(screen, (35, 50, 60), (px, py, pw, ph))
+    pygame.draw.rect(screen, (100, 180, 220), (px, py, pw, ph), 3)
+    
+    # 제목
+    title_font = pygame.font.Font(FONT_PATH, 28) if FONT_PATH else font_small
+    title = title_font.render("스토리 선택", True, (150, 220, 255))
+    screen.blit(title, (px + pw // 2 - title.get_width() // 2, py + 15))
+    
+    if not unlocked:
+        no_s_font = pygame.font.Font(FONT_PATH, 22) if FONT_PATH else font_small
+        no_s_text = no_s_font.render("아직 해금된 스토리가 없습니다.", True, (180, 180, 180))
+        screen.blit(no_s_text, (px + pw // 2 - no_s_text.get_width() // 2, py + ph // 2 - 30))
+        no_s_text2 = no_s_font.render("던전을 탐험하세요.", True, (180, 180, 180))
+        screen.blit(no_s_text2, (px + pw // 2 - no_s_text2.get_width() // 2, py + ph // 2 + 10))
+        return
+    
+    # 스토리 목록 (스크롤)
+    ly = py + 60
+    item_font = pygame.font.Font(FONT_PATH, 20) if FONT_PATH else font_small
+    
+    visible = 5
+    scroll_offset = max(0, min(temple_state["story_select_index"] - 2, len(unlocked) - visible))
+    
+    for i in range(visible):
+        idx = scroll_offset + i
+        if idx >= len(unlocked):
+            break
+        
+        key, story = unlocked[idx]
+        ir = pygame.Rect(px + 20, ly, pw - 40, 40)
+        
+        if idx == temple_state["story_select_index"]:
+            pygame.draw.rect(screen, (50, 80, 100), ir)
+            pygame.draw.rect(screen, (100, 180, 220), ir, 2)
+            text_color = (255, 255, 255)
+        else:
+            text_color = (180, 180, 180)
+        
+        text = item_font.render(story["title"], True, text_color)
+        screen.blit(text, (ir.x + 15, ir.y + 8))
+        
+        ly += 45
+    
+    # 위쪽 화살표
+    arrow_x = px + pw // 2
+    if scroll_offset > 0:
+        pygame.draw.polygon(screen, (150, 220, 255), [
+            (arrow_x, py + 52),
+            (arrow_x - 8, py + 62),
+            (arrow_x + 8, py + 62)
+        ])
+    
+    # 아래쪽 화살표
+    if scroll_offset + visible < len(unlocked):
+        pygame.draw.polygon(screen, (150, 220, 255), [
+            (arrow_x, py + ph - 35),
+            (arrow_x - 8, py + ph - 45),
+            (arrow_x + 8, py + ph - 45)
+        ])
 
 
 def draw_story(screen, font_main, font_small, width, height):
@@ -836,14 +909,29 @@ def handle_temple_input(events, game_state):
                     temple_state["dialogue_menu_index"] = (temple_state["dialogue_menu_index"] + 1) % 2
                 elif event.key == pygame.K_RETURN:
                     if temple_state["dialogue_menu_index"] == 0:  # 스토리
-                        temple_state["current_screen"] = "story"
-                        temple_state["story_index"] = 0
-                        temple_state["story_page"] = 0
+                        temple_state["current_screen"] = "story_select"
+                        temple_state["story_select_index"] = 0
                     elif temple_state["dialogue_menu_index"] == 1:  # 질문
                         temple_state["current_screen"] = "question_select"
                         temple_state["question_select_index"] = 0
                 elif event.key == pygame.K_ESCAPE:
                     temple_state["current_screen"] = "menu"
+            
+            elif current_screen == "story_select":
+                unlocked = get_unlocked_stories()
+                if event.key == pygame.K_w:
+                    if unlocked:
+                        temple_state["story_select_index"] = (temple_state["story_select_index"] - 1) % len(unlocked)
+                elif event.key == pygame.K_s:
+                    if unlocked:
+                        temple_state["story_select_index"] = (temple_state["story_select_index"] + 1) % len(unlocked)
+                elif event.key == pygame.K_RETURN:
+                    if unlocked:
+                        temple_state["story_index"] = temple_state["story_select_index"]
+                        temple_state["story_page"] = 0
+                        temple_state["current_screen"] = "story"
+                elif event.key == pygame.K_ESCAPE:
+                    temple_state["current_screen"] = "dialogue_menu"
             
             elif current_screen == "story":
                 unlocked = get_unlocked_stories()
@@ -865,17 +953,13 @@ def handle_temple_input(events, game_state):
                                     temple_state["message"] = "나무 막대기를 획득했습니다!"
                                     temple_state["message_timer"] = 0
                             
-                            # 다음 스토리 or 돌아가기
-                            if temple_state["story_index"] < len(unlocked) - 1:
-                                temple_state["story_index"] += 1
-                                temple_state["story_page"] = 0
-                            else:
-                                temple_state["current_screen"] = "dialogue_menu"
-                                temple_state["story_page"] = 0
+                            # 스토리 선택 화면으로 돌아가기
+                            temple_state["current_screen"] = "story_select"
+                            temple_state["story_page"] = 0
                     else:
-                        temple_state["current_screen"] = "dialogue_menu"
+                        temple_state["current_screen"] = "story_select"
                 elif event.key == pygame.K_ESCAPE:
-                    temple_state["current_screen"] = "dialogue_menu"
+                    temple_state["current_screen"] = "story_select"
                     temple_state["story_page"] = 0
             
             elif current_screen == "question_select":
@@ -990,7 +1074,7 @@ def draw_highpass(screen, font_main, font_small, width, height, font_path=None):
         else:
             text_color = (180, 180, 180)
         
-        floor_text = f"{floor}층" if floor > 1 else "1층 (처음부터)"
+        floor_text = f"{floor}층"
         text = item_font.render(floor_text, True, text_color)
         screen.blit(text, (ir.x + ir.width // 2 - text.get_width() // 2, ir.y + 5))
         
