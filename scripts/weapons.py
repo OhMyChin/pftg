@@ -24,6 +24,7 @@ class Weapon:
         
         # 패시브 관련 (전설 무기용)
         self.passive_stacks = 0  # 패시브 스택 수
+        self.charge_up_ready = False  # charge_up 패시브: 다음 스킬 2배 여부
     
     def get_skills(self):
         """무기가 사용 가능한 스킬 객체 리스트 반환"""
@@ -35,8 +36,13 @@ class Weapon:
             return 0
         
         base_power = ALL_SKILLS[skill_id].power
-        passive_bonus = self.get_passive_bonus()
-        return base_power + self.bonus_power + passive_bonus
+        total_power = base_power + self.bonus_power + self.get_passive_bonus()
+        
+        # charge_up 패시브: 충전 완료 시 위력 2배
+        if self.is_transcended and self.transcend_passive == "charge_up" and self.charge_up_ready:
+            total_power *= 2
+        
+        return total_power
     
     def get_passive_bonus(self):
         """패시브로 인한 추가 공격력 반환"""
@@ -55,20 +61,50 @@ class Weapon:
     
     def on_skill_used(self):
         """스킬 사용 후 호출 (패시브 효과 적용)"""
-        if self.is_transcended and self.transcend_passive == "stack_power":
-            self.passive_stacks += 1  # 스킬 사용할 때마다 스택 증가
+        if self.is_transcended and self.transcend_passive:
+            if self.transcend_passive == "stack_power":
+                self.passive_stacks += 1  # 스킬 사용할 때마다 스택 증가
+            elif self.transcend_passive == "charge_up":
+                # 충전 패시브: 3스택 도달 시 다음 스킬 2배
+                if self.charge_up_ready:
+                    # 2배 공격 사용 후 초기화
+                    self.charge_up_ready = False
+                    self.passive_stacks = 0
+                else:
+                    self.passive_stacks += 1
+                    if self.passive_stacks >= 3:
+                        self.charge_up_ready = True
+    
+    def on_turn_start(self):
+        """턴 시작 시 호출 (패시브 효과 적용)"""
+        if self.is_transcended and self.transcend_passive == "sea_blessing":
+            # 바다의 축복: 매 턴 내구도 +15 회복
+            self.durability = min(self.max_durability, self.durability + 15)
+            return 15  # 회복량 반환 (UI 표시용)
+        return 0
     
     def reset_passive_stacks(self):
         """전투 종료 시 패시브 스택 초기화"""
         self.passive_stacks = 0
+        self.charge_up_ready = False
     
     def get_passive_description(self):
         """패시브 설명 반환"""
+        if not self.transcend_passive:
+            return ""
+        
         if self.transcend_passive == "stack_power":
-            return f"[패시브] 성검의 각성: 스킬 사용 시 공격력 +1 (현재: +{self.passive_stacks})"
+            return f"성검의 각성: 스킬 사용 시 공격력 +1 (현재: +{self.passive_stacks})"
         elif self.transcend_passive == "overcharge":
             bonus = self.get_passive_bonus()
-            return f"[패시브] 과부하: 내구도 70% 이하 시 공격력 증가 (현재: +{bonus})"
+            return f"과부하: 내구도 70% 이하 시 공격력 증가 (현재: +{bonus})"
+        elif self.transcend_passive == "charge_up":
+            if self.charge_up_ready:
+                return f"충전: 충전 완료! 다음 스킬 위력 2배"
+            else:
+                return f"충전: 스킬 3회 사용 시 다음 위력 2배 ({self.passive_stacks}/3)"
+        elif self.transcend_passive == "sea_blessing":
+            return f"바다의 축복: 매 턴 시작 시 내구도 +15 회복"
         return ""
     
     def use_skill(self, skill):
@@ -341,7 +377,7 @@ GOBLIN_BIG_AXE = Weapon(
 # ╔═══════════════════════════════════════════════════════════════════════════╗
 # ║                         전설 등급 무기                                     ║
 # ╠═══════════════════════════════════════════════════════════════════════════╣
-# ║  엑스칼리버, 마공학 해머                                                    ║
+# ║  엑스칼리버, 마공학 해머, 제우스의 번개, 포세이돈의 삼지창                   ║
 # ║  ※ 전설 무기는 초월 시 액티브 스킬이 아닌 패시브를 얻음                      ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
@@ -367,6 +403,30 @@ HEXTECH_HAMMER = Weapon(
     image_path="resources/png/weapon/hextech_hammer.png",
     transcend_passive="overcharge",  # 초월 패시브: 내구도 70% 이하 시 공격력 증가
     is_boss_drop=True
+)
+
+ZEUS_THUNDERBOLT = Weapon(
+    id_="zeus_thunderbolt",
+    name="제우스의 번개",
+    grade="전설",
+    max_durability=400,
+    skill_ids=["thunder_strike", "lightning_bolt", "chain_lightning", "divine_wrath"],
+    description="천공의 신 제우스가 휘두르던 번개. 하늘의 심판을 내릴 수 있다.",
+    image_path="resources/png/weapon/zeus_thunderbolt.png",
+    transcend_passive="charge_up",  # 초월 패시브: 스킬 3회 사용 시 다음 스킬 위력 2배
+    is_boss_drop=False
+)
+
+POSEIDON_TRIDENT = Weapon(
+    id_="poseidon_trident",
+    name="포세이돈의 삼지창",
+    grade="전설",
+    max_durability=450,
+    skill_ids=["trident_thrust", "tidal_wave", "whirlpool", "abyssal_rage"],
+    description="바다의 신 포세이돈이 휘두르던 삼지창. 대양의 힘이 깃들어 있다.",
+    image_path="resources/png/weapon/poseidon_trident.png",
+    transcend_passive="sea_blessing",  # 초월 패시브: 매 턴 내구도 +15 회복
+    is_boss_drop=False
 )
 
 
@@ -679,6 +739,8 @@ ALL_WEAPONS = {
     # ==================== 전설 등급 ====================
     "excalibur": EXCALIBUR,            # 엑스칼리버
     "hextech_hammer": HEXTECH_HAMMER,  # 마공학 해머 (보스 드롭)
+    "zeus_thunderbolt": ZEUS_THUNDERBOLT,  # 제우스의 번개
+    "poseidon_trident": POSEIDON_TRIDENT,  # 포세이돈의 삼지창
     
     # ==================== 몬스터 무기 (슬라임) ====================
     "slime1": SLIME_BODY,              # 슬라임

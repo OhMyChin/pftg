@@ -485,9 +485,80 @@ TITAN_CRUSH = Skill(
 # ╔═══════════════════════════════════════════════════════════════════════════╗
 # ║                         전설 등급 무기 스킬                                 ║
 # ╠═══════════════════════════════════════════════════════════════════════════╣
-# ║  무기: 엑스칼리버, 마공학 해머                                              ║
+# ║  무기: 엑스칼리버, 마공학 해머, 제우스의 번개, 포세이돈의 삼지창             ║
 # ║  ※ 전설 무기는 초월 시 액티브 스킬이 아닌 패시브를 얻음                      ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
+
+# -------------------- 제우스의 번개 스킬 --------------------
+THUNDER_STRIKE = Skill(
+    id_="thunder_strike",
+    name="번개 일격",
+    power=35,
+    priority=2,
+    durability_cost=30,
+    description="번개를 내리쳐 적을 공격한다"
+)
+
+LIGHTNING_BOLT = Skill(
+    id_="lightning_bolt",
+    name="벼락",
+    power=45,
+    priority=1,
+    durability_cost=40,
+    description="강력한 벼락을 떨어뜨린다"
+)
+
+CHAIN_LIGHTNING = Skill(
+    id_="chain_lightning",
+    name="천둥 연쇄",
+    power=55,
+    priority=1,
+    durability_cost=50,
+    description="연쇄하는 번개로 적을 강타한다"
+)
+
+DIVINE_WRATH = Skill(
+    id_="divine_wrath",
+    name="신벌",
+    power=70,
+    priority=0,
+    durability_cost=60,
+    description="신의 분노를 담은 벌을 내린다"
+)
+
+# ※ 제우스의 번개 초월 패시브: "charge_up" (스킬 3번 사용 시 다음 스킬 위력 2배)
+
+# -------------------- 포세이돈의 삼지창 스킬 --------------------
+TRIDENT_THRUST = Skill(
+    id_="trident_thrust",
+    name="삼지창 찌르기",
+    power=38,
+    priority=1,
+    durability_cost=28,
+    description="삼지창으로 적을 빠르게 찌른다"
+)
+
+# tidal_wave는 영웅 스킬에서 이미 정의됨
+
+WHIRLPOOL = Skill(
+    id_="whirlpool",
+    name="소용돌이",
+    power=50,
+    priority=0,
+    durability_cost=45,
+    description="거대한 소용돌이로 적을 집어삼킨다"
+)
+
+ABYSSAL_RAGE = Skill(
+    id_="abyssal_rage",
+    name="심해의 분노",
+    power=120,
+    priority=-5,
+    durability_cost=100,
+    description="심해의 힘을 폭발시켜 모든 것을 파괴한다"
+)
+
+# ※ 포세이돈의 삼지창 초월 패시브: "sea_blessing" (매 턴 내구도 +15 회복)
 
 # -------------------- 엑스칼리버 스킬 --------------------
 HOLY_SLASH = Skill(
@@ -1062,6 +1133,15 @@ ALL_SKILLS = {
     "titan_crush": TITAN_CRUSH,        # 초월
     
     # ==================== 전설 등급 무기 스킬 ====================
+    # 제우스의 번개
+    "thunder_strike": THUNDER_STRIKE,
+    "lightning_bolt": LIGHTNING_BOLT,
+    "chain_lightning": CHAIN_LIGHTNING,
+    "divine_wrath": DIVINE_WRATH,
+    # 포세이돈의 삼지창
+    "trident_thrust": TRIDENT_THRUST,
+    "whirlpool": WHIRLPOOL,
+    "abyssal_rage": ABYSSAL_RAGE,
     # 엑스칼리버
     "holy_slash": HOLY_SLASH,
     "light_burst": LIGHT_BURST,

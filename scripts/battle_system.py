@@ -82,18 +82,13 @@ def decide_order(player, p_skill, enemy, e_skill):
 
 
 def calc_damage(attacker, skill, defender):
-    """데미지 계산 - 스킬 위력 + 무기 추가 공격력"""
-    base_power = skill.power
-    bonus_power = 0
-    
-    # 무기의 추가 공격력 (강화 보너스 + 패시브 보너스)
-    if attacker.weapon:
-        bonus_power = getattr(attacker.weapon, 'bonus_power', 0)
-        # 패시브 보너스도 추가
-        passive_bonus = attacker.weapon.get_passive_bonus() if hasattr(attacker.weapon, 'get_passive_bonus') else 0
-        bonus_power += passive_bonus
-    
-    return max(1, base_power + bonus_power)
+    """데미지 계산 - 무기의 get_skill_power 사용 (패시브 포함)"""
+    if attacker.weapon and hasattr(attacker.weapon, 'get_skill_power'):
+        # 무기가 있으면 get_skill_power로 모든 보너스 적용 (charge_up 2배 포함)
+        return max(1, attacker.weapon.get_skill_power(skill.id))
+    else:
+        # 무기가 없으면 기본 스킬 위력만
+        return max(1, skill.power)
 
 
 def wrap_battle_text(text, font, max_width):
@@ -266,16 +261,30 @@ def execute_battle_action(game_state_ref):
             else:
                 attacker, defender = battle_enemy, battle_player
 
+            # charge_up 패시브: 충전 완료 시 2배 데미지 표시
+            is_charged = False
+            if attacker.weapon and hasattr(attacker.weapon, 'charge_up_ready'):
+                is_charged = attacker.weapon.charge_up_ready
+
+            # 데미지 계산을 먼저! (charge_up_ready가 True일 때 2배 적용)
+            dmg = calc_damage(attacker, skill_obj, defender)
+            
+            # 그 다음 스킬 사용 (여기서 charge_up_ready가 리셋됨)
             if attacker.weapon and skill_obj.durability_cost != 0:
                 attacker.weapon.use_skill(skill_obj)
 
-            dmg = calc_damage(attacker, skill_obj, defender)
             defender.hp = max(0, defender.hp - dmg)
-            battle_state["current_text"] = f"{defender.name}이(가) {dmg} 데미지를 입었다!"
+            
+            if is_charged:
+                battle_state["current_text"] = f"충전 완료! {defender.name}이(가) {dmg} 데미지를 입었다!"
+            else:
+                battle_state["current_text"] = f"{defender.name}이(가) {dmg} 데미지를 입었다!"
             battle_state["stage"] = "calculate"
             
             if defender.hp <= 0:
                 battle_state["action_queue"].clear()
+            
+            return False  # 여기서 멈춤!
             
         elif battle_state["stage"] == "calculate":
             # 다음 action으로 이동
@@ -285,16 +294,49 @@ def execute_battle_action(game_state_ref):
                 who = battle_player.name if actor_tag == "player" else battle_enemy.name
                 battle_state["current_text"] = f"{who}이(가) {skill_obj.name}을(를) 사용했다!"
                 battle_state["stage"] = "announce"
+                return False
             else:
                 # 모든 행동 완료 → HP 체크
                 if battle_player.hp <= 0:
+                    # 플레이어 사망 → passive 스킵
                     battle_state["current_text"] = "플레이어 패배..."
                     battle_state["stage"] = "player_defeat"
                 elif battle_enemy.hp <= 0:
+                    # 적 격파 → enemy_defeat (드롭 후 passive_msg)
                     battle_state["current_text"] = f"{battle_enemy.name}을(를) 격파했다!"
                     battle_state["stage"] = "enemy_defeat"
                 else:
-                    # 턴 종료
+                    # 둘 다 생존 → 패시브 메시지 표시
+                    passive_msg = ""
+                    if battle_player.weapon and battle_player.weapon.is_transcended:
+                        passive_type = battle_player.weapon.transcend_passive
+                        
+                        if passive_type == "sea_blessing":
+                            healed = battle_player.weapon.on_turn_start()
+                            if healed > 0:
+                                passive_msg = f"바다의 축복! 내구도 +{healed} 회복!"
+                        
+                        elif passive_type == "stack_power":
+                            stacks = battle_player.weapon.passive_stacks
+                            passive_msg = f"성검의 각성! 공격력 +1! (현재: {stacks}스택)"
+                        
+                        elif passive_type == "charge_up":
+                            if hasattr(battle_player.weapon, 'charge_up_ready') and battle_player.weapon.charge_up_ready:
+                                passive_msg = "충전 완료!"
+                            else:
+                                count = getattr(battle_player.weapon, 'passive_stacks', 0)
+                                passive_msg = f"충전 중... ({count}/3)"
+                        
+                        elif passive_type == "overcharge":
+                            bonus = battle_player.weapon.get_passive_bonus()
+                            passive_msg = f"과부하! 공격력 +{bonus}!"
+                    
+                    if passive_msg:
+                        battle_state["current_text"] = passive_msg
+                        battle_state["stage"] = "passive_done"
+                        return False  # 메시지 표시 후 대기
+                    
+                    # 패시브 없으면 바로 메뉴로
                     battle_state["turn_phase"] = "menu"
                     battle_state["waiting_for_click"] = False
                     battle_state["current_text"] = ""
@@ -303,12 +345,26 @@ def execute_battle_action(game_state_ref):
                     battle_state["stage"] = "announce"
                     battle_state["selected_row"] = 0
                     battle_state["selected_col"] = 0
+                return False
+        
+        elif battle_state["stage"] == "passive_done":
+            # 패시브 메시지 확인 후 메뉴로
+            battle_state["turn_phase"] = "menu"
+            battle_state["waiting_for_click"] = False
+            battle_state["current_text"] = ""
+            battle_state["action_queue"].clear()
+            battle_state["action_index"] = 0
+            battle_state["stage"] = "announce"
+            battle_state["selected_row"] = 0
+            battle_state["selected_col"] = 0
+            return False
         
         elif battle_state["stage"] == "player_defeat":
             battle_state["turn_phase"] = "end"
             battle_state["waiting_for_click"] = False
             battle_state["current_text"] = "플레이어 패배..."
             battle_state["action_queue"].clear()
+            return False
         
         elif battle_state["stage"] == "enemy_defeat":
             # 드롭 처리
@@ -355,11 +411,46 @@ def execute_battle_action(game_state_ref):
                         temple.set_max_floor_reached(41)  # 41층 하이패스 해금
                     
                     return False
+                else:
+                    # 드롭이 없어도 다음 스테이지로
+                    battle_state["stage"] = "passive_msg_after_defeat"
+                    return False
             
-            # 드롭 메시지 확인 후 다음 진행
+            # 드롭 메시지 확인 후 passive_msg로
             battle_state["showing_drop"] = False
             battle_state["drop_message"] = ""
             
+            # 패시브 메시지 표시
+            passive_msg = ""
+            if battle_player.weapon and battle_player.weapon.is_transcended:
+                passive_type = battle_player.weapon.transcend_passive
+                
+                if passive_type == "sea_blessing":
+                    healed = battle_player.weapon.on_turn_start()
+                    if healed > 0:
+                        passive_msg = f"바다의 축복! 내구도 +{healed} 회복!"
+                
+                elif passive_type == "stack_power":
+                    stacks = battle_player.weapon.passive_stacks
+                    passive_msg = f"성검의 각성! 공격력 +1! (현재: {stacks}스택)"
+                
+                elif passive_type == "charge_up":
+                    if hasattr(battle_player.weapon, 'charge_up_ready') and battle_player.weapon.charge_up_ready:
+                        passive_msg = "충전 완료!"
+                    else:
+                        count = getattr(battle_player.weapon, 'passive_stacks', 0)
+                        passive_msg = f"충전 중... ({count}/3)"
+                
+                elif passive_type == "overcharge":
+                    bonus = battle_player.weapon.get_passive_bonus()
+                    passive_msg = f"과부하! 공격력 +{bonus}!"
+            
+            if passive_msg:
+                battle_state["current_text"] = passive_msg
+                battle_state["stage"] = "passive_done_after_defeat"
+                return False  # 메시지 표시 후 대기
+            
+            # 패시브 없으면 바로 다음 진행
             if current_monster_index < len(floor_monsters):
                 spawn_next_monster()
                 battle_state["current_text"] = f"{battle_enemy.name}(이)가 나타났다!"
@@ -369,6 +460,20 @@ def execute_battle_action(game_state_ref):
                 battle_state["waiting_for_click"] = False
                 battle_state["current_text"] = f"{current_floor}층 클리어!"
                 battle_state["action_queue"].clear()
+            return False
+        
+        elif battle_state["stage"] == "passive_done_after_defeat":
+            # 패시브 메시지 확인 후 다음 진행
+            if current_monster_index < len(floor_monsters):
+                spawn_next_monster()
+                battle_state["current_text"] = f"{battle_enemy.name}(이)가 나타났다!"
+                battle_state["stage"] = "monster_appear"
+            else:
+                battle_state["turn_phase"] = "floor_clear"
+                battle_state["waiting_for_click"] = False
+                battle_state["current_text"] = f"{current_floor}층 클리어!"
+                battle_state["action_queue"].clear()
+            return False
         
         elif battle_state["stage"] == "monster_appear":
             battle_state["turn_phase"] = "menu"
@@ -379,6 +484,7 @@ def execute_battle_action(game_state_ref):
             battle_state["stage"] = "announce"
             battle_state["selected_row"] = 0
             battle_state["selected_col"] = 0
+            return False
         else:
             battle_state["turn_phase"] = "menu"
             battle_state["waiting_for_click"] = False

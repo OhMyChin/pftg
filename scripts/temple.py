@@ -947,7 +947,7 @@ def handle_temple_input(events, game_state):
                                 prologue_completed = True
                                 from scripts.weapons import create_weapon
                                 from scripts import inventory
-                                wooden_stick = create_weapon("excalibur")
+                                wooden_stick = create_weapon("wooden_stick")
                                 if wooden_stick:
                                     inventory.player_inventory["weapons"].append(wooden_stick)
                                     temple_state["message"] = "나무 막대기를 획득했습니다!"
