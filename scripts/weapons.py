@@ -185,7 +185,7 @@ HANDMADE_BOW = Weapon(
 # ╔═══════════════════════════════════════════════════════════════════════════╗
 # ║                         희귀 등급 무기                                     ║
 # ╠═══════════════════════════════════════════════════════════════════════════╣
-# ║  철 검, 레이피어                                                           ║
+# ║  철 검, 레이피어, 살상용 낫, 칠지도, 맹독 단검                               ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
 IRON_SWORD = Weapon(
@@ -208,6 +208,39 @@ RAPIER = Weapon(
     description="보급형 레이피어. 고급진 찌르기 기술을 사용할 수 있다.",
     image_path="resources/png/weapon/rapier.png",
     transcend_skill="fast_pierce"  # 초월: 초고속 찌르기
+)
+
+KILLING_SCYTHE = Weapon(
+    id_="killing_scythe",
+    name="살상용 낫",
+    grade="희귀",
+    max_durability=90,
+    skill_ids=["reap", "death_sweep"],
+    description="수확이 아닌 살상을 위해 개조된 낫. 날카로운 곡선이 섬뜩하다.",
+    image_path="resources/png/weapon/killing_scythe.png",
+    transcend_skill="soul_harvest"  # 초월: 영혼 수확
+)
+
+SEVEN_BRANCH_SWORD = Weapon(
+    id_="seven_branch_sword",
+    name="칠지도",
+    grade="희귀",
+    max_durability=110,
+    skill_ids=["seven_strike", "branch_slash"],
+    description="일곱 개의 가지가 달린 신비로운 검. 고대의 힘이 깃들어 있다.",
+    image_path="resources/png/weapon/seven_branch_sword.png",
+    transcend_skill="seven_branched_fury"  # 초월: 칠지의 분노
+)
+
+POISON_DAGGER = Weapon(
+    id_="poison_dagger",
+    name="맹독 단검",
+    grade="희귀",
+    max_durability=70,
+    skill_ids=["poison_stab", "venom_slash"],
+    description="맹독이 발린 단검. 작은 상처로도 치명적인 피해를 입힌다.",
+    image_path="resources/png/weapon/poison_dagger.png",
+    transcend_skill="deadly_poison"  # 초월: 치명적인 독
 )
 
 
@@ -309,6 +342,7 @@ GOBLIN_BIG_AXE = Weapon(
 # ║                         전설 등급 무기                                     ║
 # ╠═══════════════════════════════════════════════════════════════════════════╣
 # ║  엑스칼리버, 마공학 해머                                                    ║
+# ║  ※ 전설 무기는 초월 시 액티브 스킬이 아닌 패시브를 얻음                      ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
 EXCALIBUR = Weapon(
@@ -331,7 +365,7 @@ HEXTECH_HAMMER = Weapon(
     skill_ids=["hextech_strike", "energy_wave", "overcharge_smash", "core_charge"],
     description="마공학 골렘의 코어로 만든 전설의 해머. 마법 기술의 정수가 담겨있다.",
     image_path="resources/png/weapon/hextech_hammer.png",
-    transcend_passive="overcharge",  # 초월 패시브: 내구도가 낮을수록 공격력 증가
+    transcend_passive="overcharge",  # 초월 패시브: 내구도 70% 이하 시 공격력 증가
     is_boss_drop=True
 )
 
@@ -627,6 +661,9 @@ ALL_WEAPONS = {
     # ==================== 희귀 등급 ====================
     "iron_sword": IRON_SWORD,          # 철 검
     "rapier": RAPIER,                  # 레이피어
+    "killing_scythe": KILLING_SCYTHE,  # 살상용 낫
+    "seven_branch_sword": SEVEN_BRANCH_SWORD,  # 칠지도
+    "poison_dagger": POISON_DAGGER,    # 맹독 단검
     
     # ==================== 영웅 등급 ====================
     "sword_of_fire": SWORD_OF_FIRE,    # 불의 검

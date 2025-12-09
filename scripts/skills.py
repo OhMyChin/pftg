@@ -43,7 +43,7 @@ TEST_SLASH = Skill(
 # ║  무기: 나무 막대기, 녹슨 단검, 기본 창, 소박한 지팡이, 수제 활               ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
-# 나무 막대기 스킬
+# -------------------- 나무 막대기 스킬 --------------------
 SWING = Skill(
     id_="swing",
     name="휘두르기",
@@ -53,48 +53,6 @@ SWING = Skill(
     description="무기를 휘둘러 적을 공격한다"
 )
 
-# 녹슨 단검 스킬
-PIERCE = Skill(
-    id_="pierce",
-    name="찌르기",
-    power=8,
-    priority=1,
-    durability_cost=8,
-    description="날카로운 공격으로 빠르게 적을 찌른다"
-)
-
-# 기본 창 스킬
-SWEEP = Skill(
-    id_="sweep",
-    name="휩쓸기",
-    power=20,
-    priority=0,
-    durability_cost=18,
-    description="긴 창으로 넓게 휩쓴다"
-)
-
-# 소박한 지팡이 스킬
-MAGIC_BOLT = Skill(
-    id_="magic_bolt",
-    name="마력탄",
-    power=16,
-    priority=0,
-    durability_cost=12,
-    description="마력을 응축하여 발사한다"
-)
-
-# 수제 활 스킬
-PRECISE_SHOT = Skill(
-    id_="precise_shot",
-    name="정밀 사격",
-    power=18,
-    priority=1,
-    durability_cost=15,
-    description="정확하게 조준하여 급소를 노린다"
-)
-
-# -------------------- 일반 무기 초월 스킬 --------------------
-
 # 나무 막대기 초월
 POWER_STRIKE = Skill(
     id_="power_strike",
@@ -103,6 +61,16 @@ POWER_STRIKE = Skill(
     priority=0,
     durability_cost=20,
     description="[초월] 온 힘을 실어 강하게 내리친다"
+)
+
+# -------------------- 녹슨 단검 스킬 --------------------
+PIERCE = Skill(
+    id_="pierce",
+    name="찌르기",
+    power=8,
+    priority=1,
+    durability_cost=8,
+    description="날카로운 공격으로 빠르게 적을 찌른다"
 )
 
 # 녹슨 단검 초월
@@ -115,6 +83,16 @@ DEEP_WOUND = Skill(
     description="[초월] 정교한 상처를 입힌다."
 )
 
+# -------------------- 기본 창 스킬 --------------------
+SWEEP = Skill(
+    id_="sweep",
+    name="휩쓸기",
+    power=20,
+    priority=0,
+    durability_cost=18,
+    description="긴 창으로 넓게 휩쓴다"
+)
+
 # 기본 창 초월
 SPEAR_CHARGE = Skill(
     id_="spear_charge",
@@ -125,6 +103,16 @@ SPEAR_CHARGE = Skill(
     description="[초월] 창을 앞세워 적에게 돌진한다"
 )
 
+# -------------------- 소박한 지팡이 스킬 --------------------
+MAGIC_BOLT = Skill(
+    id_="magic_bolt",
+    name="마력탄",
+    power=16,
+    priority=0,
+    durability_cost=12,
+    description="마력을 응축하여 발사한다"
+)
+
 # 소박한 지팡이 초월
 MANA_BURST = Skill(
     id_="mana_burst",
@@ -133,6 +121,16 @@ MANA_BURST = Skill(
     priority=0,
     durability_cost=20,
     description="[초월] 마력을 폭발시켜 적에게 큰 피해를 입힌다"
+)
+
+# -------------------- 수제 활 스킬 --------------------
+PRECISE_SHOT = Skill(
+    id_="precise_shot",
+    name="정밀 사격",
+    power=18,
+    priority=1,
+    durability_cost=15,
+    description="정확하게 조준하여 급소를 노린다"
 )
 
 # 수제 활 초월
@@ -149,10 +147,10 @@ ARROW_RAIN = Skill(
 # ╔═══════════════════════════════════════════════════════════════════════════╗
 # ║                         희귀 등급 무기 스킬                                 ║
 # ╠═══════════════════════════════════════════════════════════════════════════╣
-# ║  무기: 철 검, 레이피어                                                     ║
+# ║  무기: 철 검, 레이피어, 살상용 낫, 칠지도, 맹독 단검                         ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
-# 철 검 스킬
+# -------------------- 철 검 스킬 --------------------
 SLASH1 = Skill(
     id_="slash1",
     name="세로 베기",
@@ -171,18 +169,6 @@ SLASH2 = Skill(
     description="강력하게 가로로 베어 큰 피해를 준다"
 )
 
-# 레이피어 스킬 (pierce는 일반에서 정의됨)
-RAPID_STAB = Skill(
-    id_="rapid_stab",
-    name="연속 찌르기",
-    power=16,
-    priority=0,
-    durability_cost=16,
-    description="연속으로 찌른다"
-)
-
-# -------------------- 희귀 무기 초월 스킬 --------------------
-
 # 철 검 초월
 SPIN_SLASH = Skill(
     id_="spin_slash",
@@ -193,6 +179,17 @@ SPIN_SLASH = Skill(
     description="[초월] 몸을 회전하며 주변을 베어버린다"
 )
 
+# -------------------- 레이피어 스킬 --------------------
+# pierce는 일반에서 정의됨
+RAPID_STAB = Skill(
+    id_="rapid_stab",
+    name="연속 찌르기",
+    power=16,
+    priority=0,
+    durability_cost=16,
+    description="연속으로 찌른다"
+)
+
 # 레이피어 초월
 FAST_PIERCE = Skill(
     id_="fast_pierce",
@@ -201,6 +198,93 @@ FAST_PIERCE = Skill(
     priority=3,
     durability_cost=15,
     description="[초월] 날카로운 공격으로 적을 찌른다"
+)
+
+# -------------------- 살상용 낫 스킬 --------------------
+REAP = Skill(
+    id_="reap",
+    name="수확",
+    power=18,
+    priority=0,
+    durability_cost=15,
+    description="낫으로 적을 베어 수확한다"
+)
+
+DEATH_SWEEP = Skill(
+    id_="death_sweep",
+    name="죽음의 휩쓸기",
+    power=22,
+    priority=0,
+    durability_cost=20,
+    description="낫을 크게 휘둘러 적을 쓸어버린다"
+)
+
+# 살상용 낫 초월
+SOUL_HARVEST = Skill(
+    id_="soul_harvest",
+    name="영혼 수확",
+    power=38,
+    priority=0,
+    durability_cost=30,
+    description="[초월] 적의 영혼까지 수확하는 죽음의 일격"
+)
+
+# -------------------- 칠지도 스킬 --------------------
+SEVEN_STRIKE = Skill(
+    id_="seven_strike",
+    name="칠지 난격",
+    power=20,
+    priority=0,
+    durability_cost=18,
+    description="일곱 갈래의 검으로 연속 공격한다"
+)
+
+BRANCH_SLASH = Skill(
+    id_="branch_slash",
+    name="가지 베기",
+    power=16,
+    priority=1,
+    durability_cost=14,
+    description="검의 가지를 이용해 빠르게 벤다"
+)
+
+# 칠지도 초월
+SEVEN_BRANCHED_FURY = Skill(
+    id_="seven_branched_fury",
+    name="칠지의 분노",
+    power=42,
+    priority=0,
+    durability_cost=32,
+    description="[초월] 일곱 갈래 모두를 사용한 필살의 연격"
+)
+
+# -------------------- 맹독 단검 스킬 --------------------
+POISON_STAB = Skill(
+    id_="poison_stab",
+    name="독 찌르기",
+    power=14,
+    priority=1,
+    durability_cost=12,
+    description="독이 묻은 단검으로 빠르게 찌른다"
+)
+
+VENOM_SLASH = Skill(
+    id_="venom_slash",
+    name="맹독 베기",
+    power=18,
+    priority=0,
+    durability_cost=16,
+    description="독을 뿌리며 베어낸다"
+)
+
+# 맹독 단검 초월
+DEADLY_POISON = Skill(
+    id_="deadly_poison",
+    name="치명적인 독",
+    power=35,
+    priority=1,
+    durability_cost=28,
+    description="[초월] 치명적인 맹독을 주입하는 일격"
 )
 
 
@@ -402,6 +486,7 @@ TITAN_CRUSH = Skill(
 # ║                         전설 등급 무기 스킬                                 ║
 # ╠═══════════════════════════════════════════════════════════════════════════╣
 # ║  무기: 엑스칼리버, 마공학 해머                                              ║
+# ║  ※ 전설 무기는 초월 시 액티브 스킬이 아닌 패시브를 얻음                      ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
 # -------------------- 엑스칼리버 스킬 --------------------
@@ -432,7 +517,6 @@ DIVINE_JUDGMENT = Skill(
     description="하늘의 심판을 내려 적을 정화한다"
 )
 
-# 엑스칼리버 초월 (패시브 - 내구도 회복)
 BLESSING_OF_LIGHT = Skill(
     id_="blessing_of_light",
     name="빛의 축복",
@@ -441,6 +525,8 @@ BLESSING_OF_LIGHT = Skill(
     durability_cost=-30,
     description="성스러운 빛으로 검을 정화하여 내구도를 회복한다"
 )
+
+# ※ 엑스칼리버 초월 패시브: "stack_power" (스킬 사용 시 공격력 +1 스택)
 
 # -------------------- 마공학 해머 스킬 --------------------
 HEXTECH_STRIKE = Skill(
@@ -470,7 +556,6 @@ OVERCHARGE_SMASH = Skill(
     description="과충전된 에너지로 강력하게 내리친다"
 )
 
-# 마공학 해머 내구도 회복 스킬
 CORE_CHARGE = Skill(
     id_="core_charge",
     name="코어 충전",
@@ -480,8 +565,7 @@ CORE_CHARGE = Skill(
     description="헥스텍 코어의 에너지를 충전하여 내구도를 회복한다"
 )
 
-# ※ 전설 무기는 초월 시 액티브 스킬이 아닌 패시브를 얻음
-# 마공학 해머 초월 패시브: "overcharge" (내구도 70% 이하 시 공격력 증가)
+# ※ 마공학 해머 초월 패시브: "overcharge" (내구도 70% 이하 시 공격력 증가)
 
 
 # ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -650,7 +734,6 @@ DARK_MAGIC = Skill(
     description="어둠의 마법으로 공격한다"
 )
 
-# 뮤턴트 고블린 보스 스킬
 MUTANT_SMASH = Skill(
     id_="mutant_smash",
     name="뮤턴트 스매시",
@@ -757,7 +840,6 @@ DIVE_ATTACK = Skill(
     description="하늘에서 급강하하여 공격한다"
 )
 
-# 황금왕 보스 스킬
 GOLDEN_SLASH = Skill(
     id_="golden_slash",
     name="황금 베기",
@@ -882,7 +964,6 @@ HAMMER_CRUSH = Skill(
     description="거대한 해머로 모든 것을 분쇄한다"
 )
 
-# 마공학 골렘 보스 스킬
 HEXTECH_BEAM = Skill(
     id_="hextech_beam",
     name="헥스텍 빔",
@@ -914,27 +995,42 @@ ALL_SKILLS = {
     "test_slash": TEST_SLASH,
     
     # ==================== 일반 등급 무기 스킬 ====================
-    # 기본 스킬
-    "swing": SWING,                    # 나무 막대기
-    "pierce": PIERCE,                  # 녹슨 단검
-    "sweep": SWEEP,                    # 기본 창
-    "magic_bolt": MAGIC_BOLT,          # 소박한 지팡이
-    "precise_shot": PRECISE_SHOT,      # 수제 활
-    # 초월 스킬
-    "power_strike": POWER_STRIKE,      # 나무 막대기 초월
-    "deep_wound": DEEP_WOUND,          # 녹슨 단검 초월
-    "spear_charge": SPEAR_CHARGE,      # 기본 창 초월
-    "mana_burst": MANA_BURST,          # 소박한 지팡이 초월
-    "arrow_rain": ARROW_RAIN,          # 수제 활 초월
+    # 나무 막대기
+    "swing": SWING,
+    "power_strike": POWER_STRIKE,      # 초월
+    # 녹슨 단검
+    "pierce": PIERCE,
+    "deep_wound": DEEP_WOUND,          # 초월
+    # 기본 창
+    "sweep": SWEEP,
+    "spear_charge": SPEAR_CHARGE,      # 초월
+    # 소박한 지팡이
+    "magic_bolt": MAGIC_BOLT,
+    "mana_burst": MANA_BURST,          # 초월
+    # 수제 활
+    "precise_shot": PRECISE_SHOT,
+    "arrow_rain": ARROW_RAIN,          # 초월
     
     # ==================== 희귀 등급 무기 스킬 ====================
-    # 기본 스킬
-    "slash1": SLASH1,                  # 철 검
-    "slash2": SLASH2,                  # 철 검
-    "rapid_stab": RAPID_STAB,          # 레이피어
-    # 초월 스킬
-    "spin_slash": SPIN_SLASH,          # 철 검 초월
-    "fast_pierce": FAST_PIERCE,        # 레이피어 초월
+    # 철 검
+    "slash1": SLASH1,
+    "slash2": SLASH2,
+    "spin_slash": SPIN_SLASH,          # 초월
+    # 레이피어
+    "rapid_stab": RAPID_STAB,
+    "fast_pierce": FAST_PIERCE,        # 초월
+    # 살상용 낫
+    "reap": REAP,
+    "death_sweep": DEATH_SWEEP,
+    "soul_harvest": SOUL_HARVEST,      # 초월
+    # 칠지도
+    "seven_strike": SEVEN_STRIKE,
+    "branch_slash": BRANCH_SLASH,
+    "seven_branched_fury": SEVEN_BRANCHED_FURY,  # 초월
+    # 맹독 단검
+    "poison_stab": POISON_STAB,
+    "venom_slash": VENOM_SLASH,
+    "deadly_poison": DEADLY_POISON,    # 초월
     
     # ==================== 영웅 등급 무기 스킬 ====================
     # 불의 검
@@ -970,13 +1066,12 @@ ALL_SKILLS = {
     "holy_slash": HOLY_SLASH,
     "light_burst": LIGHT_BURST,
     "divine_judgment": DIVINE_JUDGMENT,
-    "blessing_of_light": BLESSING_OF_LIGHT,  # 내구도 회복
+    "blessing_of_light": BLESSING_OF_LIGHT,
     # 마공학 해머
     "hextech_strike": HEXTECH_STRIKE,
     "energy_wave": ENERGY_WAVE,
     "overcharge_smash": OVERCHARGE_SMASH,
-    "core_charge": CORE_CHARGE,        # 내구도 회복
-    # ※ 전설 무기 초월 = 패시브 (스킬 아님)
+    "core_charge": CORE_CHARGE,
     
     # ==================== 몬스터 스킬 (슬라임) ====================
     "body_slam": BODY_SLAM,
