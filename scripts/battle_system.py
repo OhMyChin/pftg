@@ -884,6 +884,7 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
         # 에필로그 해금
         from scripts import temple
         temple.set_max_floor_reached(45)
+        temple.set_visited("game_cleared")  # 던전에 대하여 2 해금
         
         # 화면 어둡게
         overlay = pygame.Surface((WIDTH, HEIGHT))
