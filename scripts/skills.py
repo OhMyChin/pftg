@@ -1055,6 +1055,88 @@ CORE_OVERLOAD = Skill(
 
 
 # ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                       최종 보스 전용 스킬 (어둠의 신)                       ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║  1페이즈: 어둠의 신, 2페이즈: 옛 용사, 3페이즈: 플레이어                    ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
+
+# -------------------- 1페이즈: 어둠의 신 --------------------
+DARK_CORRUPTION = Skill(
+    id_="dark_corruption",
+    name="어둠의 침식",
+    power=35,
+    priority=0,
+    durability_cost=0,
+    description="어둠의 힘으로 적을 침식시킨다"
+)
+
+VOID_BLAST = Skill(
+    id_="void_blast",
+    name="공허 폭발",
+    power=45,
+    priority=-1,
+    durability_cost=0,
+    description="공허의 에너지를 폭발시켜 큰 피해를 입힌다"
+)
+
+SHADOW_CHAINS = Skill(
+    id_="shadow_chains",
+    name="그림자 사슬",
+    power=30,
+    priority=1,
+    durability_cost=0,
+    description="그림자 사슬로 적을 옭아맨다"
+)
+
+# -------------------- 2페이즈: 옛 용사 --------------------
+HERO_SLASH = Skill(
+    id_="hero_slash",
+    name="용사의 검격",
+    power=40,
+    priority=0,
+    durability_cost=0,
+    description="용사의 검으로 적을 베어버린다"
+)
+
+LIGHT_OF_HOPE = Skill(
+    id_="light_of_hope",
+    name="희망의 빛",
+    power=50,
+    priority=0,
+    durability_cost=0,
+    description="남은 희망의 빛으로 적을 공격한다"
+)
+
+DESPERATE_STRIKE = Skill(
+    id_="desperate_strike",
+    name="필사의 일격",
+    power=60,
+    priority=-2,
+    durability_cost=0,
+    description="모든 것을 건 필사의 일격"
+)
+
+CORRUPTED_LIGHT = Skill(
+    id_="corrupted_light",
+    name="오염된 빛",
+    power=45,
+    priority=1,
+    durability_cost=0,
+    description="어둠에 물든 빛으로 적을 공격한다"
+)
+
+# -------------------- 3페이즈: 진짜 자신 (연출용) --------------------
+FINAL_FAREWELL = Skill(
+    id_="final_farewell",
+    name="마지막 인사",
+    power=1,
+    priority=-99,
+    durability_cost=0,
+    description="...고마웠어."
+)
+
+
+# ╔═══════════════════════════════════════════════════════════════════════════╗
 # ║                          스킬 딕셔너리 (ALL_SKILLS)                        ║
 # ╠═══════════════════════════════════════════════════════════════════════════╣
 # ║  모든 스킬을 ID로 접근 가능하도록 등록                                      ║
@@ -1203,4 +1285,17 @@ ALL_SKILLS = {
     "hammer_crush": HAMMER_CRUSH,
     "hextech_beam": HEXTECH_BEAM,
     "core_overload": CORE_OVERLOAD,
+    
+    # ==================== 최종 보스 스킬 ====================
+    # 1페이즈: 어둠의 신
+    "dark_corruption": DARK_CORRUPTION,
+    "void_blast": VOID_BLAST,
+    "shadow_chains": SHADOW_CHAINS,
+    # 2페이즈: 옛 용사
+    "hero_slash": HERO_SLASH,
+    "light_of_hope": LIGHT_OF_HOPE,
+    "desperate_strike": DESPERATE_STRIKE,
+    "corrupted_light": CORRUPTED_LIGHT,
+    # 3페이즈: 진짜 자신
+    "final_farewell": FINAL_FAREWELL,
 }

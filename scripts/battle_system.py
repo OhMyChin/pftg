@@ -1,7 +1,8 @@
 import pygame
 import random
 from scripts.weapons import create_weapon
-from scripts.floor import get_floor_monsters, get_max_floor, get_floor_background
+from scripts.floor import get_floor_monsters, get_max_floor, get_floor_background, is_final_boss_floor
+from scripts import boss_battle
 
 # --- 한글 폰트 설정 ---
 FONT_PATH = None
@@ -204,11 +205,62 @@ def spawn_next_monster():
     return False
 
 
+def spawn_boss_phase_monster(phase_data):
+    """보스전 페이즈 몬스터 스폰"""
+    global battle_enemy, current_monster_data
+    
+    class BossMonster:
+        pass
+    
+    battle_enemy = BossMonster()
+    battle_enemy.name = phase_data["name"]
+    battle_enemy.hp = phase_data["hp"]
+    battle_enemy.max_hp = phase_data["hp"]
+    battle_enemy.speed = phase_data["speed"]
+    battle_enemy.weapon = create_weapon(phase_data["weapon_id"])
+    battle_enemy.image_size = phase_data.get("image_size", 280)
+    
+    try:
+        battle_enemy.image = pygame.transform.scale(
+            pygame.image.load(phase_data["image_path"]).convert_alpha(),
+            (battle_enemy.image_size, battle_enemy.image_size)
+        )
+    except:
+        print(f"Failed to load boss image: {phase_data['image_path']}")
+        # 이미지 로드 실패 시 기본 표시
+        battle_enemy.image = None
+    
+    def get_skills():
+        from scripts.skills import ALL_SKILLS
+        if battle_enemy.weapon:
+            skills = battle_enemy.weapon.get_skills()
+            if battle_enemy.weapon.is_broken():
+                return [ALL_SKILLS["struggle"]]
+            usable = [s for s in skills if battle_enemy.weapon.durability >= s.durability_cost]
+            if not usable:
+                return [ALL_SKILLS["struggle"]]
+            return usable
+        else:
+            return [ALL_SKILLS["struggle"]]
+    
+    battle_enemy.get_available_skills = get_skills
+    current_monster_data = None  # 보스는 일반 드롭 없음
+
+
 def advance_floor():
     """다음 층으로 진행"""
     global current_floor, floor_monsters, current_monster_index, current_bg_image
     
     current_floor += 1
+    
+    # 45층 최종보스 체크
+    if is_final_boss_floor(current_floor):
+        # 최종보스 층 - 보스전 시작은 update_battle에서 처리
+        floor_monsters = []
+        current_monster_index = 0
+        current_bg_image = load_floor_background(current_floor)
+        return "final_boss"
+    
     floor_monsters = get_floor_monsters(current_floor)
     current_monster_index = 0
     
@@ -216,6 +268,7 @@ def advance_floor():
     current_bg_image = load_floor_background(current_floor)
     
     spawn_next_monster()
+    return "normal"
 
 
 def load_floor_background(floor_num):
@@ -367,7 +420,17 @@ def execute_battle_action(game_state_ref):
             return False
         
         elif battle_state["stage"] == "enemy_defeat":
-            # 드롭 처리
+            # ===== 보스전 페이즈 전환 =====
+            if boss_battle.is_boss_battle_active():
+                # 보스 페이즈 클리어 → 대화로 전환
+                boss_battle.on_phase_complete()
+                battle_state["stage"] = "announce"
+                battle_state["current_text"] = ""
+                battle_state["waiting_for_click"] = False
+                battle_state["turn_phase"] = "text"
+                return False
+            
+            # ===== 일반 전투 드롭 처리 =====
             if current_monster_data and not battle_state["showing_drop"]:
                 drops = current_monster_data.get_drops()
                 drop_msgs = []
@@ -404,7 +467,7 @@ def execute_battle_action(game_state_ref):
                         temple.set_visited("boss_mutant_goblin")
                         temple.set_max_floor_reached(21)  # 21층 하이패스 해금
                     elif battle_enemy and battle_enemy.name == "황금왕":
-                        temple.set_visited("boss_golden_king")
+                        temple.set_visited("boss_rich_king")
                         temple.set_max_floor_reached(31)  # 31층 하이패스 해금
                     elif battle_enemy and battle_enemy.name == "마공학 골렘":
                         temple.set_visited("boss_hextech_golem")
@@ -521,8 +584,14 @@ def execute_battle_action(game_state_ref):
                 battle_state["turn_phase"] = "text"
                 battle_state["waiting_for_click"] = True
         elif selected_button == 3:  # 도망
-            game_state_ref["state"] = "town"
-            return True  # 마을로 돌아갔음을 표시
+            # 보스전에서는 도망 불가
+            if boss_battle.is_boss_battle_active():
+                battle_state["current_text"] = "보스전에서는 도망칠 수 없다!"
+                battle_state["turn_phase"] = "text"
+                battle_state["waiting_for_click"] = True
+            else:
+                game_state_ref["state"] = "town"
+                return True  # 마을로 돌아갔음을 표시
     
     # 스킬 선택
     elif battle_state["turn_phase"] == "skill_select":
@@ -564,6 +633,46 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
     """전투 화면 업데이트"""
     global battle_player, battle_enemy, battle_state
     
+    # ========== 보스전 대화 모드 처리 ==========
+    if boss_battle.is_boss_battle_active() and boss_battle.is_showing_dialogue():
+        # 배경 그리기
+        if current_bg_image:
+            scaled_bg = pygame.transform.scale(current_bg_image, (WIDTH, HEIGHT))
+            screen.blit(scaled_bg, (0, 0))
+        else:
+            screen.fill((20, 10, 30))
+        
+        # 보스전 대화 UI
+        boss_battle.draw_boss_dialogue(screen, FONT_PATH, WIDTH, HEIGHT)
+        
+        # 입력 처리
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    result = boss_battle.advance_dialogue()
+                    
+                    if result == "start_battle":
+                        # 전투 시작 - 보스 스폰
+                        boss_data = boss_battle.get_current_boss()
+                        if boss_data:
+                            spawn_boss_phase_monster(boss_data)
+                            battle_state["turn_phase"] = "text"
+                            battle_state["stage"] = "monster_appear"
+                            battle_state["current_text"] = f"{battle_enemy.name}(이)가 나타났다!"
+                            battle_state["waiting_for_click"] = True
+                    
+                    elif result == "next_phase":
+                        # 다음 페이즈 대화 (자동으로 showing_dialogue = True)
+                        pass
+                    
+                    elif result == "ending":
+                        # 엔딩 - 클리어 화면으로 전환
+                        boss_battle.reset_boss_state()
+                        game_state_ref["game_cleared"] = True  # 게임 클리어 플래그
+                        battle_state["turn_phase"] = "game_clear"  # 클리어 화면 표시
+                        battle_state["current_text"] = ""
+        return  # 대화 모드에서는 여기서 종료
+    
     # weapon_swap에서 돌아왔으면 메뉴로 초기화
     if battle_state.get("returning_from_swap", False):
         battle_state["turn_phase"] = "menu"
@@ -584,11 +693,15 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
     enemy_center_x = WIDTH - 220  # 가로 중심 X
     enemy_base_y = 280  # 바닥 기준 Y (이미지 하단이 이 위치)
 
-    # 층 진행도 (왼쪽 위)
-    floor_info_text = font.render(
-        f"{current_floor}층 - {current_monster_index}/{len(floor_monsters)}", 
-        True, (200, 200, 200)
-    )
+    # 층 진행도 (왼쪽 위) - 보스전이면 PHASE 표시
+    if boss_battle.is_boss_battle_active():
+        phase = boss_battle.get_phase()
+        floor_info_text = font.render(f"FINAL BOSS - PHASE {phase}", True, (255, 100, 100))
+    else:
+        floor_info_text = font.render(
+            f"{current_floor}층 - {current_monster_index}/{len(floor_monsters)}", 
+            True, (200, 200, 200)
+        )
     screen.blit(floor_info_text, (20, 20))
 
     if battle_enemy and battle_enemy.image:
@@ -648,8 +761,12 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
         # 몬스터 이미지 그리기
         screen.blit(enemy_image, (enemy_x, enemy_y))
         
-        # 사념 보스일 경우 오라 이미지를 몬스터 위에 덮어씌우기
-        if "사념" in battle_enemy.name:
+        # 사념 보스 또는 보스전 2페이즈일 경우 오라 이미지를 몬스터 위에 덮어씌우기
+        show_dark_aura = "사념" in battle_enemy.name
+        if boss_battle.is_boss_battle_active() and boss_battle.get_phase() == 2:
+            show_dark_aura = True
+        
+        if show_dark_aura:
             try:
                 ora_image = pygame.image.load("resources/png/enemy/dark_ora.png").convert_alpha()
                 # 오라 크기: 몬스터보다 1.3배 크게
@@ -762,6 +879,73 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
                                                       y=weapon_img_y + weapon_img_size + 8)
             screen.blit(no_weapon_text, no_weapon_rect)
 
+    # ---------- 게임 클리어 화면 처리 ----------
+    if battle_state["turn_phase"] == "game_clear":
+        # 에필로그 해금
+        from scripts import temple
+        temple.set_max_floor_reached(45)
+        
+        # 화면 어둡게
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(150)
+        screen.blit(overlay, (0, 0))
+        
+        # 축하 메시지 박스
+        box_width = WIDTH - 100
+        box_height = 200
+        box_x = 50
+        box_y = HEIGHT // 2 - box_height // 2 - 30
+        
+        # 금색 테두리 박스
+        box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
+        pygame.draw.rect(screen, (30, 25, 20), box_rect)
+        pygame.draw.rect(screen, (255, 215, 0), box_rect, 4)
+        
+        # 타이틀
+        title_font = pygame.font.Font(FONT_PATH, 32) if FONT_PATH else pygame.font.SysFont("malgungothic", 32)
+        title_text = title_font.render("~ GAME CLEAR ~", True, (255, 215, 0))
+        title_x = WIDTH // 2 - title_text.get_width() // 2
+        screen.blit(title_text, (title_x, box_y + 25))
+        
+        # 메시지
+        msg_font = pygame.font.Font(FONT_PATH, 22) if FONT_PATH else pygame.font.SysFont("malgungothic", 22)
+        messages = [
+            "축하합니다!",
+            "어둠의 신을 물리치고 메모리아에 평화가 찾아왔습니다.",
+            "기억의 사제가 당신을 기다리고 있습니다..."
+        ]
+        
+        y_offset = box_y + 75
+        for msg in messages:
+            msg_surface = msg_font.render(msg, True, (255, 255, 255))
+            msg_x = WIDTH // 2 - msg_surface.get_width() // 2
+            screen.blit(msg_surface, (msg_x, y_offset))
+            y_offset += 35
+        
+        # 마을로 돌아가기 버튼
+        btn_w, btn_h = 200, 50
+        btn_rect = pygame.Rect(WIDTH // 2 - btn_w // 2, box_y + box_height + 20, btn_w, btn_h)
+        pygame.draw.rect(screen, (100, 180, 100), btn_rect)
+        pygame.draw.rect(screen, (255, 215, 0), btn_rect, 3)
+        
+        btn_font = pygame.font.Font(FONT_PATH, 24) if FONT_PATH else pygame.font.SysFont("malgungothic", 24)
+        btn_text = btn_font.render("마을로 돌아가기", True, (255, 255, 255))
+        btn_text_rect = btn_text.get_rect(center=btn_rect.center)
+        screen.blit(btn_text, btn_text_rect)
+        
+        # 입력 처리
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    game_state_ref["state"] = "town"
+                    # 전투 상태 초기화
+                    battle_state["turn_phase"] = "menu"
+                    battle_state["selected_row"] = 0
+                    battle_state["selected_col"] = 0
+                    return
+        return
+
     # ---------- 전투 종료 상태 처리 ----------
     if battle_state["turn_phase"] == "floor_clear":
         text_box = pygame.Rect(50, HEIGHT - 180, WIDTH - 100, 100)
@@ -774,6 +958,10 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
         gap = 40
         
         has_next_floor = current_floor < get_max_floor()
+        
+        # 게임 클리어 후 44층이면 다음 층 버튼 비활성화
+        if game_state_ref.get("game_cleared", False) and current_floor == 44:
+            has_next_floor = False
         
         if has_next_floor:
             next_rect = pygame.Rect(WIDTH//2 - btn_w - gap//2, HEIGHT//2, btn_w, btn_h)
@@ -805,7 +993,16 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
                         battle_state["selected_col"] = 1
                     elif event.key == pygame.K_RETURN:
                         if battle_state["selected_col"] == 0:
-                            advance_floor()
+                            result = advance_floor()
+                            if result == "final_boss":
+                                # 최종보스전 시작 - battle 상태 유지 (update_battle에서 보스전 처리)
+                                boss_battle.start_boss_battle(battle_player.name)
+                                # game_state는 "battle" 유지 - update_battle 내부에서 보스전 분기 처리
+                                battle_state["turn_phase"] = "text"
+                                battle_state["stage"] = "announce"
+                                battle_state["current_text"] = ""
+                                battle_state["waiting_for_click"] = False
+                                return
                             battle_state["turn_phase"] = "menu"
                             battle_state["waiting_for_click"] = False
                             battle_state["current_text"] = ""
@@ -909,8 +1106,14 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
             screen.blit(txt, txt_rect)
     
     elif battle_state["turn_phase"] in ["menu", "text"]:
-        menu_labels = ["전투", "소비", "교체", "도망"]
-        menu_colors = [(150, 150, 250), (100, 200, 100), (200, 150, 100), (200, 100, 100)]
+        # 보스전이면 도망 불가
+        is_boss = boss_battle.is_boss_battle_active()
+        if is_boss:
+            menu_labels = ["전투", "소비", "교체", "---"]
+            menu_colors = [(150, 150, 250), (100, 200, 100), (200, 150, 100), (80, 80, 80)]
+        else:
+            menu_labels = ["전투", "소비", "교체", "도망"]
+            menu_colors = [(150, 150, 250), (100, 200, 100), (200, 150, 100), (200, 100, 100)]
         
         for i, rect in enumerate(menu_button_rects):
             row = i // 2
@@ -919,7 +1122,10 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
                           battle_state["selected_col"] == col and
                           battle_state["turn_phase"] == "menu")
             
-            if is_selected:
+            # 보스전에서 도망 버튼(3번)은 선택 불가
+            if is_boss and i == 3:
+                color = (80, 80, 80)
+            elif is_selected:
                 # 선택된 버튼은 더 밝게
                 r, g, b = menu_colors[i]
                 color = (min(255, r + 50), min(255, g + 50), min(255, b + 50))
@@ -930,7 +1136,12 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
             
             # 선택된 버튼 하이라이트
             if is_selected:
-                pygame.draw.rect(screen, (100, 150, 255), rect, 4)
+                if is_boss and i == 3:
+                    pygame.draw.rect(screen, (120, 120, 120), rect, 4)  # 보스전 도망은 회색 테두리
+                elif is_boss:
+                    pygame.draw.rect(screen, (255, 100, 100), rect, 4)  # 보스전은 붉은색
+                else:
+                    pygame.draw.rect(screen, (100, 150, 255), rect, 4)  # 일반은 파란색
             
             txt = font.render(menu_labels[i], True, (0, 0, 0))
             txt_rect = txt.get_rect(center=rect.center)
@@ -946,8 +1157,14 @@ def update_battle(screen, font, WIDTH, HEIGHT, game_state_ref, events):
                     battle_state["selected_row"] = 0
                     battle_state["selected_col"] = 0
                 elif battle_state["turn_phase"] == "menu":
-                    game_state_ref["state"] = "town"
-                    return
+                    # 보스전에서는 ESC로 도망 불가
+                    if boss_battle.is_boss_battle_active():
+                        battle_state["current_text"] = "보스전에서는 도망칠 수 없다!"
+                        battle_state["turn_phase"] = "text"
+                        battle_state["waiting_for_click"] = True
+                    else:
+                        game_state_ref["state"] = "town"
+                        return
             
             # 텍스트 진행 중이 아닐 때만 이동 가능
             elif battle_state["turn_phase"] != "text":

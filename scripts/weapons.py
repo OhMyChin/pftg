@@ -702,6 +702,40 @@ HEXTECH_GOLEM_CORE = Weapon(
 
 
 # ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                      최종 보스 전용 무기 (어둠의 신)                        ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║  1페이즈: 어둠의 신, 2페이즈: 옛 용사, 3페이즈: 플레이어                    ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
+
+DARK_GOD_WEAPON = Weapon(
+    id_="dark_god_weapon",
+    name="어둠의 힘",
+    grade="보스",
+    max_durability=9999,
+    skill_ids=["dark_corruption", "void_blast", "shadow_chains"],
+    image_path=""
+)
+
+OLD_HERO_WEAPON = Weapon(
+    id_="old_hero_weapon",
+    name="옛 용사의 검",
+    grade="보스",
+    max_durability=9999,
+    skill_ids=["hero_slash", "light_of_hope", "desperate_strike", "corrupted_light"],
+    image_path=""
+)
+
+FINAL_FORM_WEAPON = Weapon(
+    id_="final_form_weapon",
+    name="기억의 검",
+    grade="보스",
+    max_durability=9999,
+    skill_ids=["final_farewell"],
+    image_path=""
+)
+
+
+# ╔═══════════════════════════════════════════════════════════════════════════╗
 # ║                          무기 딕셔너리 (ALL_WEAPONS)                       ║
 # ╠═══════════════════════════════════════════════════════════════════════════╣
 # ║  모든 무기를 ID로 접근 가능하도록 등록                                      ║
@@ -776,6 +810,11 @@ ALL_WEAPONS = {
     "golem4": BLACK_GOLEM_FIST,        # 검은 골렘
     "golem5": KILLER_GOLEM_HAMMER,     # 킬러 골렘
     "golem_boss": HEXTECH_GOLEM_CORE,  # 마공학 골렘
+    
+    # ==================== 최종 보스 무기 ====================
+    "dark_god_weapon": DARK_GOD_WEAPON,      # 1페이즈: 어둠의 신
+    "old_hero_weapon": OLD_HERO_WEAPON,      # 2페이즈: 옛 용사
+    "final_form_weapon": FINAL_FORM_WEAPON,  # 3페이즈: 진짜 자신
 }
 
 

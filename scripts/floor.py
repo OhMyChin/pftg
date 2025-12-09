@@ -364,20 +364,27 @@ FLOOR_DATA = {
                     gold=None, drop_weapon=None, image_size=280,
                     drop_material={"type": "legend", "min": 2, "max": 5}),
     ],
-    # 45층: 최종 보스 - 어둠의 신 (추후 추가)
-    # 45: [
-    #     MonsterData("어둠의 신", ???, ???, "???", "resources/png/enemy/boss/dark_god.png",
-    #                 gold=(???), drop_weapon="???", image_size=???),
-    # ],
+    # 45층: 최종 보스 - 어둠의 신 (3페이즈 - boss_battle.py에서 처리)
+    # 이 층은 특수 처리됨 (is_final_boss_floor() 함수로 체크)
+    45: None,  # None이면 특수 보스전으로 처리
 }
 
 
 def get_floor_monsters(floor_num):
     """특정 층의 몬스터 리스트 반환"""
     if floor_num in FLOOR_DATA:
-        return FLOOR_DATA[floor_num].copy()
+        monsters = FLOOR_DATA[floor_num]
+        if monsters is None:
+            # 45층 등 특수 보스전은 빈 리스트 반환
+            return []
+        return monsters.copy()
     else:
         return [MonsterData("슬라임", 30, 8, "slime1", "resources/png/enemy/slimes/slime.png")]
+
+
+def is_final_boss_floor(floor_num):
+    """최종 보스 층인지 확인 (45층)"""
+    return floor_num == 45
 
 
 def get_max_floor():
