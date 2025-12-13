@@ -426,24 +426,40 @@ def draw_shop_buying(screen, font_main, font_small, WIDTH, HEIGHT, game_state, f
                                        (item_x, item_img_y, item_size, item_size))
                 
                 elif item["type"] == "bag":
-                    # 가방 이미지 (기본 표시)
+                    # 가방 이미지 (레벨별 이미지 파일 사용)
                     item_x = slot_x + (slot_width - item_size) // 2
-                    # 가방 레벨에 따른 색상
-                    level = item.get("level", 1)
-                    if level == 1:
-                        color = (139, 90, 43)  # 갈색
-                    elif level == 2:
-                        color = (192, 192, 192)  # 은색
-                    elif level == 3:
-                        color = (255, 215, 0)  # 금색
-                    else:  # level 4
-                        color = (147, 112, 219)  # 보라색 (최대)
-                    pygame.draw.rect(screen, color, (item_x, item_img_y, item_size, item_size))
-                    pygame.draw.rect(screen, (255, 255, 255), (item_x, item_img_y, item_size, item_size), 3)
-                    # 가방 아이콘 텍스트
-                    bag_icon = font_small.render("BAG", True, (0, 0, 0))
-                    bag_icon_rect = bag_icon.get_rect(center=(item_x + item_size // 2, item_img_y + item_size // 2))
-                    screen.blit(bag_icon, bag_icon_rect)
+                    # 가방 레벨 확인 (다음 레벨 가방이므로 현재+1)
+                    current_level = get_current_bag_level()
+                    next_level = current_level + 1
+                    
+                    # 레벨별 이미지 파일 경로
+                    bag_images = {
+                        1: "resources/png/bag/bag1.png",
+                        2: "resources/png/bag/bag2.png",
+                        3: "resources/png/bag/bag3.png",
+                        4: "resources/png/bag/bag4.png",
+                    }
+                    
+                    try:
+                        bag_img_path = bag_images.get(next_level, bag_images[1])
+                        bag_img = pygame.image.load(bag_img_path).convert_alpha()
+                        bag_img = pygame.transform.scale(bag_img, (item_size, item_size))
+                        screen.blit(bag_img, (item_x, item_img_y))
+                    except:
+                        # 이미지 로드 실패시 기본 색상 표시
+                        if next_level == 1:
+                            color = (139, 90, 43)  # 갈색
+                        elif next_level == 2:
+                            color = (192, 192, 192)  # 은색
+                        elif next_level == 3:
+                            color = (255, 215, 0)  # 금색
+                        else:  # level 4
+                            color = (147, 112, 219)  # 보라색 (최대)
+                        pygame.draw.rect(screen, color, (item_x, item_img_y, item_size, item_size))
+                        pygame.draw.rect(screen, (255, 255, 255), (item_x, item_img_y, item_size, item_size), 3)
+                        bag_icon = font_small.render("BAG", True, (0, 0, 0))
+                        bag_icon_rect = bag_icon.get_rect(center=(item_x + item_size // 2, item_img_y + item_size // 2))
+                        screen.blit(bag_icon, bag_icon_rect)
                 
                 elif item["type"] == "none":
                     # 최대 레벨 표시

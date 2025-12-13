@@ -44,7 +44,7 @@ pftg_icon = pygame.image.load("resources\\png\\pftg_icon.png")
 game_state = {
     "state": "start",  # start, town, battle등등
     "player_name": "Hero",
-    "gold": 150,  # 초기 골드 추가
+    "gold": 1000,  # 초기 골드 추가
     "message": "",
     "message_timer": 0
 }
@@ -346,14 +346,6 @@ forge = Building("대장간", 678, 81, 175, 175, "resources\\png\\building\\blac
 buildings.add(forge)
 all_sprites.add(forge)
 
-# 왼쪽 밝은 길 끝 - 교회 (이미지 준비되면 주석 해제)
-# church = Building("교회", 50, 420, 125, 125, "resources\\png\\building\\church.png",
-#     hitbox=(10, 95, 105, 25),
-#     interact_area=(30, 120, 65, 30)
-# )
-# buildings.add(church)
-# all_sprites.add(church)
-
 # 아래쪽 보라색 영역 - 던전 (128x192)
 # 히트박스: 건물 하단부 (던전은 세로로 길어서 아래쪽에)
 # 상호작용: 히트박스 바로 아래
@@ -387,6 +379,15 @@ stump = HitboxObject(280, 890, 90, 25,
     image_offset=(-280, -890)  # 이미지가 히트박스 위쪽에 그려지도록 (조정 필요)
 )
 buildings.add(stump)
+
+wall1 = HitboxObject(0, 0, 1024, 1)
+wall2 = HitboxObject(0, 1024, 1024, 1)
+wall3 = HitboxObject(1024, 0, 1, 1024)
+wall4 = HitboxObject(0, 0, 1, 1024)
+buildings.add(wall1)
+buildings.add(wall2)
+buildings.add(wall3)
+buildings.add(wall4)
 
 # --- 카메라 오프셋 ---
 camera_offset = pygame.Vector2(0, 0)
